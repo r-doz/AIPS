@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "double-catfish-475813-h4",
+  "private_key_id": "689d2571193758b393e969e0c977847704c34298",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDa3Im9LEFb6X66\n4Uth3X54F9Vj8Xy9ckm6gI7MrFMwPRak83RRcdCr3h/eVH5NpcChSLCX6mcqtcX9\n1a13IIwO7Dv9q4I2ddjRvoegSbIs63lqDTqYEr79APvdjzvqEjnjX7ktVhjq85SM\nKsI9V7bZ8d43XQ0QOtM1YASjhTTXm/v1j9i5NFU7H649o1b3DHl7dX8oOLbh29bv\njFnJx8kHF8+BUKaC5RnBaU15gS6HaHtjGWF45IA6C664644frsul9vjvDdkJyDDS\nQRHwW5210t2J8j58qNn6epUL9YlCkQXDMireGRzXp3NaFe+e6211oaY5QM1gIRip\nJ91tFDshAgMBAAECggEAApBcVbi/wEOlPiu2/hvB6EbBM3VIBJEi73ojkh6/r7w7\neG24sl6OtwC4Z1qeiyrSraEEHpd6o2uzONTIvjFFqsQWNNPOR/SL+HMOtDBA09lj\nV/x1MARiM+UPzknoBgc2IeWEbhVI3/HADv9OPLk7FWUJuSTQKx1BTaoFC+Ra2N6/\nnpekvuxNmzRByrvGPUpS/yXPfeQZnBUPrphpFzGWbN4OzF0oyKTeOkMYRHmQ5tVe\n4FlXxGRzixvIqVxh8imYIXOycW2ObASwWY5SsqDzC2IXDdHD4oCUL+UB0QJWRLur\n/e5FkKgOmEcV0/nvr3dFPONzyOPa4Xz+MYgksWz7wQKBgQD+n4awLlJCXtAs8vFy\ngldCDVl3Wy1vYvOpYTMUMgicL6ThGCY7BJ0ZCuWFkdFHAIrzBAUtmRMbGaGeXqEG\nPOBkwRHylMGTtdgg9b4ZthwKvYCcoJdNbgIDQ2cLmCUu6v5LFhMluVxl6zy0eOGe\nhHUdROWLRaRSmVzwbsFyDRZSUQKBgQDcC4HVvkzZQY5G2/hXThc8cOy39TF1SH+4\n90TJWdV54bU7IOgEBnEPF0Wq31K/oXMtmhu/7L/TzzIJ+BPpJxCou8WiB0Vm5bLA\nq7AmV4rKdeaSoo8j/BMPk2qpX8GWwUtMMH4iwqof7fDWXegnn1p8fDIrV8ORlgre\nnNHhI+nX0QKBgQD3th8Em6vvYepJMHjxHBjj67TUR2HmcW/3otZcmWiC+l7/lczr\nsctcJ5uv3HKrDr4fOhQHjlpmDQOM3SbuuJ7dpm9dfpbsqwZ+2lR9Ewwo7r+GoT1R\nWOqgXhyLzRKvmHKYfftWwgRAKyC9urRU0SxWs0ZVvgTlTsp6JmYQHOdQYQKBgFRj\nnWGJ4BMaDyShy/Y/nq2xaTeLs3IVYdZgDmNiLnrV0xlgH1sb1VRCSpejmiqgEnoU\ntju+4jqrJbepConKT5tGmB7xxu4VfZ5iueWagUHwQYNPELJuRCkfEjLu5GGas/P+\nTQGrwm8IY+ryjMxVUvCW+O6idABrmLOTVPKRQWdhAoGAK/nc0W4xxZ1lc2X2eRqL\nuYcy5Qor+x2v26CHLO9/FMOJwD9dG57fxc7iMbb7AYdZFAUf1qGGeSKpFgBmtneu\nCPyZiYVORzlpuxJcpk+0jifqZgfrysEuE9SIx6CqaYcvy9GmEU4dDdhmHuQ1TF9F\nN5fidCp7UsWjHfTUtwCmRmI=\n-----END PRIVATE KEY-----\n",
+  "client_email": "bq-client@double-catfish-475813-h4.iam.gserviceaccount.com",
+  "client_id": "103799480980087674609",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bq-client%40double-catfish-475813-h4.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
