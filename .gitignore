@@ -210,7 +210,9 @@ __marimo__/
 *.csv
 *.parquet
 *.feather
-/gcp_bigquery_key.json
+/secrets/gcp_bigquery_key.json
+/secrets/gfw_token.txt
+
 
 
 
