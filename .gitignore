@@ -207,11 +207,11 @@ marimo/_lsp/
 __marimo__/
 
 # BY ME 
-*.csv
 *.parquet
 *.feather
 /secrets/gcp_bigquery_key.json
 /secrets/gfw_token.txt
+
 
 
 
