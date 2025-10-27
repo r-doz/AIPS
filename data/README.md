@@ -1,5 +1,7 @@
+# Folders description 
+
 Raw
-- origianl data
+- original data
 - untouched
 
 Interim
