@@ -209,8 +209,24 @@ __marimo__/
 # BY ME 
 *.parquet
 *.feather
-secrets/
+*.csv
+*.xlsx
+*.xls
+*.pkl
+*.pickle
+*.joblib
+*.h5
+*.hdf5
+*.pt
+*.pth
+*.onnx
 
+secrets/
+data/raw/
+data/processed/
+outputs/
+figures/tmp/
+models/saved/
 
 
 
