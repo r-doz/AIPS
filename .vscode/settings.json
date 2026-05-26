@@ -1,0 +1,9 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.terminal.activateEnvironment": true,
+  "jupyter.notebookFileRoot": "${workspaceFolder}",
+  "editor.formatOnSave": true,
+  "ruff.enable": true,
+  "ruff.format.args": [],
+  "python.analysis.typeCheckingMode": "basic"
+}

@@ -209,8 +209,7 @@ __marimo__/
 # BY ME 
 *.parquet
 *.feather
-/secrets/gcp_bigquery_key.json
-/secrets/gfw_token.txt
+secrets/
 
 
 
