@@ -29,13 +29,14 @@ torch.set_default_dtype(torch.float32)
 # -------------------------
 # Training helper
 # -------------------------
-def train_model(coords, covs, y, M=300, lr=1e-2, num_steps=1000, minibatch=1024, device="cpu"):
-    model = SparseLGCP(coords, covs, y, M_inducing=M, device=device)
+def train_model(coords, covs, y, M=300, lr=1e-2, num_steps=1000, minibatch=1024, device="cpu", num_mc=7, np_seed=0):
+    model = SparseLGCP(coords, covs, y, M_inducing=M, device=device, np_seed=np_seed)
+    minibatch = min(minibatch, coords.shape[0])
     optim = torch.optim.Adam(model.parameters(), lr=lr)
     losses = []
     for step in range(1, num_steps + 1):
         optim.zero_grad()
-        elbo, info = model.elbo_mc(num_mc=3, minibatch_size=minibatch)
+        elbo, info = model.elbo_mc(num_mc=num_mc, minibatch_size=minibatch)
         loss = -elbo
         loss.backward()
         # gradient clipping to help stabilize
@@ -44,8 +45,17 @@ def train_model(coords, covs, y, M=300, lr=1e-2, num_steps=1000, minibatch=1024,
         losses.append(loss.item())
         if step % 50 == 0 or step == 1:
            #print(f"[{step}/{num_steps}] - loss={loss.item():.3f} (ll_est={info['elbo_ll']:.3f} kl={info['kl']:.3f} scale={info['scale']:.1f})")
-            print(loss.item())
+            print(f"{loss.item():.4f}")
     return model, losses
+
+
+# ------------------------- Utilities 
+def is_leap_year(year: int) -> bool:
+    """
+    Returns True if 'year' is a leap year, False otherwise.
+    """
+    return (year % 4 == 0) and ((year % 100 != 0) or (year % 400 == 0))
+
 
 # -------------------------
 # Data preparation function (from your parquet)
@@ -54,29 +64,38 @@ def prepare_data_from_parquet(parquet_path, train_fraction=0.9, random_seed=42):
     """
     Loads parquet with columns:
     date (YYYY-MM-DD), latitude, longitude, chl, thetao, ais_vessels_count
+    Definitions:
+        - coords: key of each ds record ([longitude, latitude, t_norm])
+        - covariates: predictor variables but not target
+        - target: objective of the prediction  
     Returns:
       train_coords, train_covs, train_y
       test_coords, test_covs, test_y
       scalers: dict of fitted scalers (for later prediction)
       df: original DataFrame
     """
-    df = pd.read_parquet(parquet_path)
-    df['date'] = pd.to_datetime(df['date'])
-    df['t_norm'] = df['date'].dt.dayofyear.astype(float) / 365.0
 
-    # Standardize lat/lon and covariates
-    coord_scaler = StandardScaler()
+    df = pd.read_parquet(parquet_path)
+    
+    # Build the scalers  
+    coord_scaler = StandardScaler() # x - mean / std 
     cov_scaler = StandardScaler()
     t_scaler = StandardScaler()
+
+    # Build standardized coordinates
+    df['date'] = pd.to_datetime(df['date'])
+    year = df['date'].dt.year.iloc[0]
+    days_in_year = 366.0 if is_leap_year(year) else 365.0
+    df['t_norm'] = df['date'].dt.dayofyear.astype(float) / days_in_year
+    t_norm = df['t_norm'].values.astype(np.float32).reshape(-1, 1)
+    t_std = t_scaler.fit_transform(t_norm)
 
     coords_raw = df[['longitude', 'latitude']].values.astype(np.float32)
     coords_std = coord_scaler.fit_transform(coords_raw)
 
-    t_norm = df['t_norm'].values.astype(np.float32).reshape(-1, 1)
-    t_std = t_scaler.fit_transform(t_norm)
-
     coords = np.hstack([coords_std, t_std])  # [N,3]
 
+    # Define standardized covariates and target
     covs_raw = df[['chl', 'thetao']].values.astype(np.float32)
     covs = cov_scaler.fit_transform(covs_raw)
 
@@ -88,14 +107,12 @@ def prepare_data_from_parquet(parquet_path, train_fraction=0.9, random_seed=42):
     unique_dates = np.sort(df["date"].unique())
     rng = np.random.default_rng(random_seed)
 
-    # compute split index based on days
     num_train_days = int(train_fraction * len(unique_dates))
     rng.shuffle(unique_dates)
 
     train_dates = unique_dates[:num_train_days]
     test_dates = unique_dates[num_train_days:]
 
-    # mask by date
     train_mask = df["date"].isin(train_dates)
     test_mask = df["date"].isin(test_dates)
 
@@ -408,24 +425,72 @@ def periodic_kernel_1d(t1, t2, period, lengthscale, variance):
 # -------------------------
 # Build Kuu and Kfu (space-time)
 # -------------------------
-def build_Kuu(Z, kern_params, jitter):
+#def build_Kuu(Z, kern_params, jitter):
+#    # Z: [M,3] -> spatial (0:2) + time (2:3)
+#    Z_space = Z[:, 0:2]   # lon, lat
+#    Z_time = Z[:, 2:3]    # time normalized
+#    K_s = rbf_kernel(Z_space, Z_space, kern_params["spatial_length"], kern_params["spatial_var"])
+#    K_t = periodic_kernel_1d(Z_time, Z_time, kern_params["time_period"], kern_params["time_length"], kern_params["time_var"])
+#    Kuu = K_s + K_t + (kern_params.get("noise_var", 0.0) + jitter) * torch.eye(Z.shape[0], device=Z.device)
+#    return Kuu
+#
+#def build_Kfu(X, Z, kern_params):
+#    # X: [B,3], Z: [M,3] -> returns [B, M]
+#    X_space = X[:, 0:2]
+#    Z_space = Z[:, 0:2]
+#    X_time = X[:, 2:3]
+#    Z_time = Z[:, 2:3]
+#    Ks = rbf_kernel(X_space, Z_space, kern_params["spatial_length"], kern_params["spatial_var"])
+#    Kt = periodic_kernel_1d(X_time, Z_time, kern_params["time_period"], kern_params["time_length"], kern_params["time_var"])
+#    return Ks + Kt
+
+def build_Kuu(Z, kern_params, jitter=1e-6):
     # Z: [M,3] -> spatial (0:2) + time (2:3)
-    Z_space = Z[:, 0:2]   # lat, lon
-    Z_time = Z[:, 2:3]    # time normalized
-    K_s = rbf_kernel(Z_space, Z_space, kern_params["spatial_length"], kern_params["spatial_var"])
-    K_t = periodic_kernel_1d(Z_time, Z_time, kern_params["time_period"], kern_params["time_length"], kern_params["time_var"])
-    Kuu = K_s + K_t + (kern_params.get("noise_var", 0.0) + jitter) * torch.eye(Z.shape[0], device=Z.device)
+    Z_space = Z[:, 0:2]   # spatial coords (e.g., lon, lat)
+    Z_time  = Z[:, 2:3]   # time (normalized/standardized)
+
+    K_s = rbf_kernel(
+        Z_space, Z_space,
+        kern_params["spatial_length"],
+        kern_params["spatial_var"],
+    )
+    K_t = periodic_kernel_1d(
+        Z_time, Z_time,
+        kern_params["time_period"],
+        kern_params["time_length"],
+        kern_params["time_var"],
+    )
+
+    # Space-time separable kernel (captures interaction)
+    K_st = K_s * K_t
+
+    noise = kern_params.get("noise_var", 0.0)
+    Kuu = K_st + (noise + jitter) * torch.eye(Z.shape[0], device=Z.device, dtype=Z.dtype)
     return Kuu
+
 
 def build_Kfu(X, Z, kern_params):
     # X: [B,3], Z: [M,3] -> returns [B, M]
     X_space = X[:, 0:2]
     Z_space = Z[:, 0:2]
-    X_time = X[:, 2:3]
-    Z_time = Z[:, 2:3]
-    Ks = rbf_kernel(X_space, Z_space, kern_params["spatial_length"], kern_params["spatial_var"])
-    Kt = periodic_kernel_1d(X_time, Z_time, kern_params["time_period"], kern_params["time_length"], kern_params["time_var"])
-    return Ks + Kt
+    X_time  = X[:, 2:3]
+    Z_time  = Z[:, 2:3]
+
+    K_s = rbf_kernel(
+        X_space, Z_space,
+        kern_params["spatial_length"],
+        kern_params["spatial_var"],
+    )
+    K_t = periodic_kernel_1d(
+        X_time, Z_time,
+        kern_params["time_period"],
+        kern_params["time_length"],
+        kern_params["time_var"],
+    )
+
+    # Space-time separable kernel
+    return K_s * K_t
+
 
 # -------------------------
 # KL between q(u)=N(m,S) and p(u)=N(0,K)
@@ -448,9 +513,9 @@ def kl_qp(m, S, K, jitter=1e-6):
 # Main model class
 # -------------------------
 class SparseLGCP(nn.Module):
-    def __init__(self, coords_np, covariates_np, y_np, M_inducing=300, device="cpu"):
+    def __init__(self, coords_np, covariates_np, y_np, M_inducing=300, device="cpu", np_seed=0):
         """
-        coords_np: [N,3] numpy array columns = [lat, lon, time_norm]
+        coords_np: [N,3] numpy array columns = [lon, lat, time_norm]
         covariates_np: [N,2] numpy columns = [chl, thetao] (standardized outside or will be)
         y_np: [N] counts (ints)
         """
@@ -464,8 +529,8 @@ class SparseLGCP(nn.Module):
         # kernel hyperparameters (log-space for positivity)
         self.log_spatial_length = nn.Parameter(torch.tensor(math.log(0.5), device=self.device))
         self.log_spatial_var = nn.Parameter(torch.tensor(math.log(1.0), device=self.device))
-        self.log_time_length = nn.Parameter(nn.Parameter(torch.tensor(math.log(0.2), device=self.device)))
-        self.log_time_var = nn.Parameter(nn.Parameter(torch.tensor(math.log(0.5), device=self.device)))
+        self.log_time_length = nn.Parameter(torch.tensor(math.log(0.2), device=self.device))
+        self.log_time_var = nn.Parameter(torch.tensor(math.log(0.5), device=self.device))
         self.log_time_period = nn.Parameter(torch.tensor(math.log(1.0), device=self.device))  # period (in time-norm units)
         self.log_noise = nn.Parameter(torch.tensor(math.log(1e-3), device=self.device))
 
@@ -474,9 +539,11 @@ class SparseLGCP(nn.Module):
         self.beta = nn.Parameter(torch.tensor([0.5, 0.5], device=self.device))  # [beta_chl, beta_thetao]
 
         # inducing points initialization
-        self.M = min(M_inducing, max(10, int(0.05 * self.N)))
+        #self.M = min(M_inducing, max(10, int(0.05 * self.N)))
+        self.M = M_inducing
         # random subset of data coords for Z init
-        idx = np.random.choice(self.N, size=self.M, replace=False)
+        rng = np.random.default_rng(np_seed)
+        idx = rng.choice(self.N, size=self.M, replace=False)
         Z_init = torch.tensor(coords_np[idx, :], dtype=torch.get_default_dtype(), device=self.device)
         self.Z = nn.Parameter(Z_init)   # [M,3]
 
@@ -537,9 +604,11 @@ class SparseLGCP(nn.Module):
         Kfu = build_Kfu(X_batch, Z, kern)  # [n_batch, M]
 
         # Precompute A = Kfu @ Kuu^{-1}  (n_batch x M)
-        Kuu_eye = torch.eye(self.M, device=self.device)
-        Kuu_inv_eye = Kuu_inv(Kuu_eye)
-        A = Kfu @ Kuu_inv_eye   # [n_batch, M]
+        #Kuu_eye = torch.eye(self.M, device=self.device)
+        #Kuu_inv_eye = Kuu_inv(Kuu_eye)
+        #A = Kfu @ Kuu_inv_eye   # [n_batch, M]
+        A = torch.cholesky_solve(Kfu.T, cholKuu).T   # (Kuu^{-1} Kfu^T)^T = Kfu Kuu^{-1}
+
 
         # Sample u ~ q(u) and compute f_mean = A @ u for each MC
         Lq = torch.linalg.cholesky(S + 1e-8 * torch.eye(self.M, device=self.device))
@@ -592,4 +661,9 @@ class SparseLGCP(nn.Module):
         rate_p05 = torch.quantile(rates, 0.05, dim=0).cpu().detach().numpy()
         rate_p95 = torch.quantile(rates, 0.95, dim=0).cpu().detach().numpy()
         return rate_mean, rate_p05, rate_p95
+    
+
+
+  
+
 
