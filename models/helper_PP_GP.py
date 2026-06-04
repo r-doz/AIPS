@@ -336,7 +336,7 @@ def plot_pp_overview(model, df, coords, covariate, y_true, meta, num_samples=200
     rm = rate_mean[mask]
     yt = y_true[mask]
 
-    gulf_df = pd.read_csv('../data/raw/ts_gulf_coords.csv')
+    gulf_df = pd.read_csv('data/raw/ts_gulf_coords.csv')
     #gulf_x = (gulf_df["longitude"].to_numpy() - meta["lon_min"]) / (meta["lon_max"]- meta["lon_min"])
     #gulf_y = (gulf_df["latitude"].to_numpy() - meta["lat_min"]) / (meta["lat_max"] - meta["lat_min"])
     # Assuming coords are your GP input tensor
