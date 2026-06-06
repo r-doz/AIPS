@@ -25,6 +25,7 @@ import numpy as np
 import torch
 import yaml
 
+
 # ---- Make src importable when script is run from the project root ----------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -49,7 +50,7 @@ DEFAULT_CONFIG = {
     "np_seed": 0,
     # --- training ---
     "lr": 1e-4,
-    "num_steps": 10_000,
+    "num_steps": 1000,  # to be increased
     "minibatch": 1024,
     "num_mc": 7,
     "grad_clip": 10.0,
@@ -62,6 +63,19 @@ DEFAULT_CONFIG = {
     "output_dir": "outputs",
     "log_every": 50,
 }
+
+
+def load_config(config_path=None):
+    cfg = DEFAULT_CONFIG.copy()
+
+    if config_path is not None:
+        with open(config_path, "r") as f:
+            user_cfg = yaml.safe_load(f)
+
+        if user_cfg is not None:
+            cfg.update(user_cfg)
+
+    return cfg
 
 
 # ---------------------------------------------------------------------------
@@ -113,8 +127,18 @@ def main(cfg: dict):
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
-    out_dir = Path(cfg["output_dir"]) / cfg["run_name"]
+    out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
+    plots_dir = out_dir / "plots"
+
     out_dir.mkdir(parents=True, exist_ok=True)
+    plots_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save experiment parameters
+    params_path = out_dir / "params.yaml"
+    with open(params_path, "w") as f:
+        yaml.dump(cfg, f, sort_keys=False)
+
+    print(f"Experiment parameters saved → {params_path}")
 
     # ---- Data ----------------------------------------------------------------
     print("Loading data …")
@@ -159,7 +183,7 @@ def main(cfg: dict):
     print(f"Checkpoint saved → {ckpt_path}")
 
     # Loss curve
-    plot_loss(losses)
+    plot_loss(losses, save_path=plots_dir / "loss.png")
 
     # ---- Evaluation on test set ----------------------------------------------
     print("Evaluating on test set …")
@@ -198,9 +222,30 @@ def main(cfg: dict):
     all_y = all_y[sort_idx]
 
     # Pick a random test date for the spatial map
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(cfg.get("np_seed", 0))
     target_date = str(pd.to_datetime(rng.choice(test_dates)).date())
     print(f"  Spatial map target date: {target_date}")
+
+    # print("\n=== DEBUG spatial dates ===")
+    # print("df shape:", df.shape)
+    # print("df date min/max:", df["date"].min(), df["date"].max())
+
+    # daily_counts = df.groupby("date").size().sort_values(ascending=False)
+    # print("Top 10 dates by number of rows:")
+    # print(daily_counts.head(10))
+
+    # print("Target date:", target_date)
+    # print(
+    #    "Rows in df for target_date:",
+    #    (
+    #        pd.to_datetime(df["date"]).dt.date == pd.to_datetime(target_date).date()
+    #    ).sum(),
+    # )
+
+    # Check how many rows in all_coords correspond to target_date via t-scaler logic
+    t_scaler = scalers["t_scaler"]
+    t_min, t_max = pd.Timestamp(meta["t_min"]), pd.Timestamp(meta["t_max"])
+    span = t_max - t_min
 
     plot_pp_overview(
         model=model,
@@ -214,6 +259,7 @@ def main(cfg: dict):
         num_samples=cfg["num_vis_samples"],
         target_date=target_date,
         test_coords=test_coords,
+        save_dir=plots_dir,
     )
 
     print("Done.")
@@ -221,15 +267,14 @@ def main(cfg: dict):
 
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train Sparse LGCP")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--config", type=str, default=None, help="Path to YAML config file"
+        "--config",
+        type=str,
+        default="config/train_basic_lgcp.yaml",
+        help="Path to YAML config file.",
     )
     args = parser.parse_args()
 
-    cfg = dict(DEFAULT_CONFIG)
-    if args.config and Path(args.config).exists():
-        with open(args.config) as f:
-            cfg.update(yaml.safe_load(f))
-
+    cfg = load_config(args.config)
     main(cfg)

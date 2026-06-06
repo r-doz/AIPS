@@ -47,6 +47,7 @@ def plot_pp_overview(
     target_date: str | None = None,
     test_coords: np.ndarray | None = None,
     cmap: str = "viridis",
+    save_dir=None,
 ) -> None:
     """
     Two-panel figure:
@@ -134,8 +135,14 @@ def plot_pp_overview(
     ax.set_title("Daily total ships — observed vs. predicted")
     ax.legend()
     ax.grid(alpha=0.3)
+
     plt.tight_layout()
-    plt.show()
+
+    if save_dir is not None:
+        fig.savefig(save_dir / "daily_timeseries.png", dpi=200, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
 
     # =========================================================================
     # 2. Spatial map for one date
@@ -155,12 +162,15 @@ def plot_pp_overview(
     closest_tnorm = (closest_ts - t_min) / span
     closest_tstd = t_scaler.transform([[float(closest_tnorm)]])[0, 0]
 
-    mask = np.isclose(coords[:, 2], closest_tstd, atol=1e-4)
-    if mask.sum() == 0:
-        # Fallback: use nearest point
-        mask = np.zeros(len(coords), dtype=bool)
-        mask[np.argmin(np.abs(coords[:, 2] - closest_tstd))] = True
+    # Select the closest available standardized time value.
+    # Important: if the exact transformed date is not found, we select the whole
+    # nearest time slice, not just one nearest point.
+    time_dist = np.abs(coords[:, 2] - closest_tstd)
+    nearest_tstd = coords[np.argmin(time_dist), 2]
 
+    mask = np.isclose(coords[:, 2], nearest_tstd, atol=1e-6)
+
+    print(f"Rows in selected spatial slice: {mask.sum()}")
     print(f"Spatial map for: {closest_ts.date()}  (t_norm={float(closest_tnorm):.3f})")
 
     # ---- Standardized spatial coords for selected slice ---------------------
@@ -182,6 +192,28 @@ def plot_pp_overview(
     xi = np.linspace(gulf_x.min(), gulf_x.max(), nx)
     yi = np.linspace(gulf_y.min(), gulf_y.max(), ny)
     Xi, Yi = np.meshgrid(xi, yi)
+
+    # ---- Interpolation ---------------------------------------------------------
+    valid = (
+        np.isfinite(x_sl) & np.isfinite(y_sl) & np.isfinite(rm_sl) & np.isfinite(yt_sl)
+    )
+
+    x_sl = x_sl[valid]
+    y_sl = y_sl[valid]
+    rm_sl = rm_sl[valid]
+    yt_sl = yt_sl[valid]
+
+    n_unique_points = len(np.unique(np.column_stack([x_sl, y_sl]), axis=0))
+
+    print(f"Valid spatial points for interpolation: {len(x_sl)}")
+    print(f"Unique spatial points for interpolation: {n_unique_points}")
+
+    if len(x_sl) < 3 or n_unique_points < 3:
+        print(
+            f"Skipping spatial RBF interpolation: only {len(x_sl)} valid points "
+            f"and {n_unique_points} unique spatial points available."
+        )
+        return
 
     rbf_rm = Rbf(x_sl, y_sl, rm_sl, function="gaussian")
     rbf_yt = Rbf(x_sl, y_sl, yt_sl, function="gaussian")
@@ -226,7 +258,12 @@ def plot_pp_overview(
         plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
     plt.tight_layout()
-    plt.show()
+
+    if save_dir is not None:
+        fig2.savefig(save_dir / "spatial_map.png", dpi=200, bbox_inches="tight")
+        plt.close(fig2)
+    else:
+        plt.show()
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +271,9 @@ def plot_pp_overview(
 # ---------------------------------------------------------------------------
 
 
-def plot_loss(losses: list[float], title: str = "Training loss") -> None:
+def plot_loss(
+    losses: list[float], title: str = "Training loss", save_path=None
+) -> None:
     fig, ax = plt.subplots(figsize=(9, 3))
     ax.plot(losses, color="tab:blue", lw=1.5)
     ax.set_xlabel("Iteration")
@@ -242,4 +281,9 @@ def plot_loss(losses: list[float], title: str = "Training loss") -> None:
     ax.set_title(title)
     ax.grid(alpha=0.3)
     plt.tight_layout()
-    plt.show()
+
+    if save_path is not None:
+        fig.savefig(save_path, dpi=200, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
