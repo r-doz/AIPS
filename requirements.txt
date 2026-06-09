@@ -194,3 +194,4 @@ widgetsnbextension==4.0.15
 xarray==2026.4.0
 zarr==3.1.6
 zipp==4.1.0
+svgwrite==1.4.3

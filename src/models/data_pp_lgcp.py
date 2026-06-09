@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from scipy.special import gammaln
 from sklearn.preprocessing import StandardScaler
 
 
@@ -165,48 +164,3 @@ def compute_meta(
 # ---------------------------------------------------------------------------
 # Evaluation metrics
 # ---------------------------------------------------------------------------
-
-
-def evaluate_metrics(
-    y_true: np.ndarray, rate_mean: np.ndarray, dates: pd.DatetimeIndex | np.ndarray
-) -> dict:
-    """
-    Compute Poisson prediction quality metrics.
-
-    Metrics
-    -------
-    mean_ll_obs    : mean Poisson log-likelihood per observation
-    rmse_daily     : RMSE of daily totals (sum over grid cells)
-    mean_ll_daily  : mean Poisson log-likelihood of daily totals
-
-    Parameters
-    ----------
-    y_true     : [N]   observed counts
-    rate_mean  : [N]   predicted Poisson rates
-    dates      : [N]   corresponding dates (one per observation)
-    """
-    dates = pd.to_datetime(dates)
-    rate_mean = np.clip(rate_mean, 0, None)  # safety
-
-    # ---- Per-observation log-likelihood ----
-    log_ll_obs = y_true * np.log(rate_mean + 1e-9) - rate_mean - gammaln(y_true + 1)
-    mean_ll_obs = float(log_ll_obs.mean())
-
-    # ---- Daily aggregates ----
-    df_eval = pd.DataFrame({"date": dates, "y": y_true, "lambda_hat": rate_mean})
-    daily = df_eval.groupby("date").sum().reset_index()
-
-    rmse_daily = float(np.sqrt(np.mean((daily["y"] - daily["lambda_hat"]) ** 2)))
-
-    ll_daily = (
-        daily["y"].values * np.log(daily["lambda_hat"].values + 1e-9)
-        - daily["lambda_hat"].values
-        - gammaln(daily["y"].values + 1)
-    )
-    mean_ll_daily = float(ll_daily.mean())
-
-    return {
-        "mean_ll_obs": mean_ll_obs,
-        "rmse_daily": rmse_daily,
-        "mean_ll_daily": mean_ll_daily,
-    }

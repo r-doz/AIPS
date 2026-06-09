@@ -8,7 +8,7 @@ Usage
 
 All hyperparameters live in config.yaml (or the CONFIG dict below as
 defaults).  Results (model checkpoint + metrics) are saved under
-outputs/<run_name>/.
+reports/<model_family>/<run_name>/.
 """
 
 from __future__ import annotations
@@ -30,7 +30,8 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.data_pp_lgcp import prepare_data, compute_meta, evaluate_metrics
+from src.models.data_pp_lgcp import prepare_data, compute_meta
+from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
 from src.visualization.viz_lgcp import plot_loss, plot_pp_overview
 
@@ -59,8 +60,10 @@ DEFAULT_CONFIG = {
     "num_pred_samples": 200,
     "num_vis_samples": 800,
     # --- output ---
-    "run_name": "lgcp_run",
-    "output_dir": "outputs",
+    # --- output ---
+    "report_root": "reports",
+    "model_family": "basic_lgcp",
+    "run_name": "lgcp_run_debug",
     "log_every": 50,
 }
 
@@ -199,9 +202,15 @@ def main(cfg: dict):
 
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)
     print("\n=== Test metrics ===")
-    print(f"  Mean log-likelihood (per obs): {metrics['mean_ll_obs']:.4f}")
-    print(f"  Daily RMSE:                    {metrics['rmse_daily']:.4f}")
-    print(f"  Daily mean log-likelihood:     {metrics['mean_ll_daily']:.4f}")
+    print("Observation-level metrics:")
+    print(f"  Mean log-likelihood per obs: {metrics['mean_ll_obs']:.4f}")
+    print(f"  MAE per obs:                 {metrics['mae_obs']:.4f}")
+    print(f"  RMSE per obs:                {metrics['rmse_obs']:.4f}")
+
+    print("Daily-level metrics:")
+    print(f"  Mean log-likelihood daily:   {metrics['mean_ll_daily']:.4f}")
+    print(f"  MAE daily:                   {metrics['mae_daily']:.4f}")
+    print(f"  RMSE daily:                  {metrics['rmse_daily']:.4f}")
 
     # Save metrics
     metrics_path = out_dir / "metrics.yaml"
