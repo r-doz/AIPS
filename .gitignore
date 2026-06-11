@@ -221,12 +221,7 @@ __marimo__/
 
 secrets/
 
-data/interim/*
-data/processed/*
-
-!data/interim/.gitkeep
-!data/processed/.gitkeep
-!data/README.md
+data/
 
 outputs/
 figures/tmp/
