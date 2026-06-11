@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import yaml
 import matplotlib.pyplot as plt
-
+import time
 
 # ---- Make src importable when script is run from the project root ----------
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -35,7 +35,8 @@ from src.models.metrics_lgcp import evaluate_metrics
 # ---------------------------------------------------------------------------
 DEFAULT_CONFIG = {
     # --- data ---
-    "parquet_path": "data/processed/cpr_gfw_2024.parquet",
+    "years": 2024,
+    "parquet_path": "data/processed/cpr_gfw",
     "train_fraction": 0.9,
     "data_seed": 42,
     # --- output ---
@@ -108,7 +109,9 @@ def plot_daily_predictions(
 
 def main(cfg: dict):
     # ---- Output folders ------------------------------------------------------
-    out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
+    #out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
+    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['run_name']}_{cfg['years']}_{time.strftime('%Y%m%d-%H%M%S')}")
+
     plots_dir = out_dir / "plots"
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -122,6 +125,7 @@ def main(cfg: dict):
     print(f"Experiment parameters saved → {params_path}")
 
     # ---- Data ----------------------------------------------------------------
+    parquet_path = cfg["parquet_path"]+f"_{cfg['years']}.parquet"
     print("Loading data …")
     (
         train_coords,
@@ -133,7 +137,7 @@ def main(cfg: dict):
         scalers,
         df,
     ) = prepare_data(
-        cfg["parquet_path"],
+        parquet_path,
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
     )

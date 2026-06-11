@@ -130,7 +130,8 @@ def main(cfg: dict):
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
-    out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
+    #out_dir = Path(cfg["report_root"]) / cfg["model_family"] / str(cfg["run_name"]) + "_" + str(cfg["year"]) + "_" + time.strftime("%Y%m%d-%H%M%S")
+    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['run_name']}_{cfg['years']}_{time.strftime('%Y%m%d-%H%M%S')}")
     plots_dir = out_dir / "plots"
 
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -145,9 +146,10 @@ def main(cfg: dict):
 
     # ---- Data ----------------------------------------------------------------
     print("Loading data …")
+    parquet_path = cfg["parquet_path"]+f"_{cfg['years']}.parquet"
     (train_coords, train_covs, train_y, test_coords, test_covs, test_y, scalers, df) = (
         prepare_data(
-            cfg["parquet_path"],
+            parquet_path,
             train_fraction=cfg["train_fraction"],
             random_seed=cfg["data_seed"],
         )

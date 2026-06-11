@@ -16,3 +16,5 @@ report_root: reports
 model_family: basic_lgcp
 run_name: debug2
 log_every: 100
+global_mean_run_name: global_mean_debug
+last_available_run_name: last_available_debug
