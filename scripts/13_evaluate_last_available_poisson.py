@@ -47,7 +47,7 @@ DEFAULT_CONFIG = {
     # --- output ---
     "report_root": "reports",
     "model_family": "last_available_poisson",
-    "run_name": "last_available_debug",
+    "run_name": "debug",
 }
 
 
@@ -176,7 +176,7 @@ def plot_daily_predictions(
 def main(cfg: dict):
     # ---- Output folders ------------------------------------------------------
     #out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
-    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['run_name']}_{cfg['years']}_{time.strftime('%Y%m%d-%H%M%S')}")
+    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['years']}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}")
 
     plots_dir = out_dir / "plots"
 

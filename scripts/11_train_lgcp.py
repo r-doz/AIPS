@@ -131,7 +131,7 @@ def main(cfg: dict):
     torch.set_default_dtype(torch.float32)
 
     #out_dir = Path(cfg["report_root"]) / cfg["model_family"] / str(cfg["run_name"]) + "_" + str(cfg["year"]) + "_" + time.strftime("%Y%m%d-%H%M%S")
-    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['run_name']}_{cfg['years']}_{time.strftime('%Y%m%d-%H%M%S')}")
+    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['years']}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}")
     plots_dir = out_dir / "plots"
 
     out_dir.mkdir(parents=True, exist_ok=True)
