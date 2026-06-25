@@ -9,7 +9,7 @@ target_col: ais_vessels_count
 # Options:
 #   random_day     -> same style as current LGCP split
 #   chronological  -> train first part of the year, test final part
-split_strategy: random_day
+split_strategy: chronological
 train_fraction: 0.9
 data_seed: 42
 
@@ -28,11 +28,11 @@ include_coords: true
 include_time: true
 
 # --- model ---
-poisson_alpha: 0.2
+poisson_alpha: 0.05
 max_iter: 1000
 standardize_features: true
 
 # --- output ---
 report_root: reports
 model_family: window_poisson_glm
-run_name: window_poisson_glm_W1_alpha02_random_day
+run_name: window_poisson_glm_W1_alpha005_chronological

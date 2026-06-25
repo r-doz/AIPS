@@ -30,7 +30,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.data_pp_lgcp import prepare_data, compute_meta
+from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
 from src.visualization.viz_lgcp import plot_loss, plot_pp_overview
@@ -42,10 +42,12 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 DEFAULT_CONFIG = {
     # --- data ---
-    "parquet_path": "data/processed/cpr_gfw_2024.parquet",
+    "years": 2024,
+    "parquet_path": "data/processed/cpr_gfw.parquet",
     "gulf_csv_path": "data/raw/ts_gulf_coords.csv",
     "train_fraction": 0.9,
     "data_seed": 42,
+    "split_strategy": "random_day",
     "covariate_cols": ["chl", "thetao"],
     # --- model ---
     "M_inducing": 300,
@@ -191,16 +193,25 @@ def main(cfg: dict):
 
     # ---- Data ----------------------------------------------------------------
     print("Loading data …")
-    parquet_path = cfg["parquet_path"] + f"_{cfg['years']}.parquet"
     (train_coords, train_covs, train_y, test_coords, test_covs, test_y, scalers, df) = (
         prepare_data(
             cfg["parquet_path"],
             train_fraction=cfg["train_fraction"],
             random_seed=cfg["data_seed"],
+            split_strategy=cfg.get("split_strategy", "random_day"),
             covariate_cols=cfg.get("covariate_cols"),
         )
     )
     meta = compute_meta(df)
+
+    _, test_mask = make_day_split_masks(
+        df=df,
+        train_fraction=cfg["train_fraction"],
+        random_seed=cfg["data_seed"],
+        split_strategy=cfg.get("split_strategy", "random_day"),
+    )
+
+    test_dates = df.loc[test_mask, "date"].values
 
     print(
         f"  Train: {train_coords.shape[0]:,} obs   "
@@ -241,12 +252,6 @@ def main(cfg: dict):
     rate_mean_test, rate_p05_test, rate_p95_test = model.predict_rate(
         test_coords, test_covs, num_samples=cfg["num_pred_samples"]
     )
-
-    # Recover test dates for metric computation
-    t_scaler = scalers["t_scaler"]
-    t_norm_test = t_scaler.inverse_transform(test_coords[:, 2].reshape(-1, 1)).ravel()
-    t_min, t_max = pd.Timestamp(meta["t_min"]), pd.Timestamp(meta["t_max"])
-    test_dates = t_min + pd.to_timedelta(t_norm_test * (t_max - t_min))
 
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)
     print("\n=== Test metrics ===")
@@ -300,9 +305,6 @@ def main(cfg: dict):
     # )
 
     # Check how many rows in all_coords correspond to target_date via t-scaler logic
-    t_scaler = scalers["t_scaler"]
-    t_min, t_max = pd.Timestamp(meta["t_min"]), pd.Timestamp(meta["t_max"])
-    span = t_max - t_min
 
     plot_pp_overview(
         model=model,

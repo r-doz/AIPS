@@ -31,6 +31,51 @@ def _is_leap_year(year: int) -> bool:
     return (year % 4 == 0) and ((year % 100 != 0) or (year % 400 == 0))
 
 
+def make_day_split_masks(
+    df: pd.DataFrame,
+    train_fraction: float = 0.9,
+    random_seed: int = 42,
+    split_strategy: str = "random_day",
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Create train/test masks at day level.
+
+    split_strategy:
+        random_day:
+            random split of days, same style as the original LGCP split.
+
+        chronological:
+            train on the first train_fraction of dates,
+            test on the final part of the year.
+    """
+    dates = pd.to_datetime(df["date"])
+    unique_dates = np.sort(dates.unique())
+
+    n_train = int(train_fraction * len(unique_dates))
+
+    if split_strategy == "random_day":
+        rng = np.random.default_rng(random_seed)
+        shuffled = rng.permutation(unique_dates)
+
+        train_dates = set(shuffled[:n_train])
+        test_dates = set(shuffled[n_train:])
+
+    elif split_strategy == "chronological":
+        train_dates = set(unique_dates[:n_train])
+        test_dates = set(unique_dates[n_train:])
+
+    else:
+        raise ValueError(
+            f"Unknown split_strategy: {split_strategy}. "
+            "Use 'random_day' or 'chronological'."
+        )
+
+    train_mask = dates.isin(train_dates).values
+    test_mask = dates.isin(test_dates).values
+
+    return train_mask, test_mask
+
+
 # ---------------------------------------------------------------------------
 # Main data-preparation function
 # ---------------------------------------------------------------------------
@@ -40,6 +85,7 @@ def prepare_data(
     parquet_path: str,
     train_fraction: float = 0.9,
     random_seed: int = 42,
+    split_strategy: str = "random_day",
     covariate_cols: list[str] | None = None,
 ) -> tuple:
     """
@@ -82,15 +128,12 @@ def prepare_data(
     df["t_norm"] = df["date"].dt.dayofyear.astype(float) / days_in_year
 
     # ----- Day-level train/test split (no leakage between days) ---------------
-    unique_dates = np.sort(df["date"].unique())
-    rng = np.random.default_rng(random_seed)
-    shuffled = rng.permutation(unique_dates)
-    n_train = int(train_fraction * len(unique_dates))
-    train_dates = set(shuffled[:n_train])
-    test_dates = set(shuffled[n_train:])
-
-    train_mask = df["date"].isin(train_dates).values
-    test_mask = df["date"].isin(test_dates).values
+    train_mask, test_mask = make_day_split_masks(
+        df=df,
+        train_fraction=train_fraction,
+        random_seed=random_seed,
+        split_strategy=split_strategy,
+    )
 
     # ----- Raw arrays ---------------------------------------------------------
     coords_raw = df[["longitude", "latitude"]].values.astype(np.float32)

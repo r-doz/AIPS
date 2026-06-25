@@ -26,7 +26,8 @@ import time
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.data_pp_lgcp import prepare_data, compute_meta
+
+from src.models.data_pp_lgcp import prepare_data, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 
 
@@ -36,9 +37,10 @@ from src.models.metrics_lgcp import evaluate_metrics
 DEFAULT_CONFIG = {
     # --- data ---
     "years": 2024,
-    "parquet_path": "data/processed/cpr_gfw",
+    "parquet_path": "data/processed/cpr_gfw.parquet",
     "train_fraction": 0.9,
     "data_seed": 42,
+    "split_strategy": "random_day",
     # --- output ---
     "report_root": "reports",
     "model_family": "global_mean_poisson",
@@ -86,6 +88,7 @@ def load_config(config_path=None):
                 "parquet_path",
                 "train_fraction",
                 "data_seed",
+                "split_strategy",
                 "report_root",
             ]:
                 if key in shared_cfg:
@@ -142,7 +145,6 @@ def plot_daily_predictions(
 
 def main(cfg: dict):
     # ---- Output folders ------------------------------------------------------
-    # out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
     out_dir = (
         Path(cfg["report_root"])
         / cfg["model_family"]
@@ -162,7 +164,6 @@ def main(cfg: dict):
     print(f"Experiment parameters saved → {params_path}")
 
     # ---- Data ----------------------------------------------------------------
-    parquet_path = cfg["parquet_path"] + f"_{cfg['years']}.parquet"
     print("Loading data …")
     (
         train_coords,
@@ -174,12 +175,20 @@ def main(cfg: dict):
         scalers,
         df,
     ) = prepare_data(
-        parquet_path,
+        cfg["parquet_path"],
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
+        split_strategy=cfg.get("split_strategy", "random_day"),
     )
 
-    meta = compute_meta(df)
+    _, test_mask = make_day_split_masks(
+        df=df,
+        train_fraction=cfg["train_fraction"],
+        random_seed=cfg["data_seed"],
+        split_strategy=cfg.get("split_strategy", "random_day"),
+    )
+
+    test_dates = df.loc[test_mask, "date"].values
 
     print(f"  Train: {train_y.shape[0]:,} obs   Test: {test_y.shape[0]:,} obs")
 
@@ -188,15 +197,6 @@ def main(cfg: dict):
     rate_mean_test = np.full_like(test_y, fill_value=lambda_global, dtype=np.float32)
 
     print(f"Global mean lambda: {lambda_global:.6f}")
-
-    # ---- Recover test dates --------------------------------------------------
-    t_scaler = scalers["t_scaler"]
-    t_norm_test = t_scaler.inverse_transform(test_coords[:, 2].reshape(-1, 1)).ravel()
-
-    t_min = pd.Timestamp(meta["t_min"])
-    t_max = pd.Timestamp(meta["t_max"])
-
-    test_dates = t_min + pd.to_timedelta(t_norm_test * (t_max - t_min))
 
     # ---- Evaluation ----------------------------------------------------------
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)

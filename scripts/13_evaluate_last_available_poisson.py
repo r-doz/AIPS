@@ -31,7 +31,7 @@ import time
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.models.data_pp_lgcp import prepare_data
+from src.models.data_pp_lgcp import prepare_data, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 
 
@@ -44,6 +44,7 @@ DEFAULT_CONFIG = {
     "parquet_path": "data/processed/cpr_gfw.parquet",
     "train_fraction": 0.9,
     "data_seed": 42,
+    "split_strategy": "random_day",
     # --- output ---
     "report_root": "reports",
     "model_family": "last_available_poisson",
@@ -103,6 +104,7 @@ def load_config(config_path=None):
                 "parquet_path",
                 "train_fraction",
                 "data_seed",
+                "split_strategy",
                 "report_root",
             ]:
                 if key in shared_cfg:
@@ -117,29 +119,6 @@ def load_config(config_path=None):
             cfg = resolve_parquet_path(cfg)
 
     return cfg
-
-
-def get_day_level_split_masks(
-    df: pd.DataFrame,
-    train_fraction: float,
-    random_seed: int,
-) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Reproduce the same day-level train/test split used in prepare_data().
-    """
-    unique_dates = np.sort(df["date"].unique())
-
-    rng = np.random.default_rng(random_seed)
-    shuffled = rng.permutation(unique_dates)
-
-    n_train = int(train_fraction * len(unique_dates))
-    train_dates = set(shuffled[:n_train])
-    test_dates = set(shuffled[n_train:])
-
-    train_mask = df["date"].isin(train_dates).values
-    test_mask = df["date"].isin(test_dates).values
-
-    return train_mask, test_mask
 
 
 def build_last_available_predictions(
@@ -240,7 +219,7 @@ def main(cfg: dict):
     print(f"Experiment parameters saved → {params_path}")
 
     # ---- Data ----------------------------------------------------------------
-    parquet_path = cfg["parquet_path"] + f"_{cfg['years']}.parquet"
+
     print("Loading data …")
     (
         train_coords,
@@ -252,20 +231,22 @@ def main(cfg: dict):
         scalers,
         df,
     ) = prepare_data(
-        parquet_path,
+        cfg["parquet_path"],
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
+        split_strategy=cfg.get("split_strategy", "random_day"),
     )
 
     df["date"] = pd.to_datetime(df["date"])
 
-    train_mask, test_mask = get_day_level_split_masks(
-        df,
+    train_mask, test_mask = make_day_split_masks(
+        df=df,
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
+        split_strategy=cfg.get("split_strategy", "random_day"),
     )
 
-    test_df = df.loc[test_mask].copy()
+    test_dates = df.loc[test_mask, "date"].values
 
     print(f"  Train: {train_y.shape[0]:,} obs   Test: {test_y.shape[0]:,} obs")
 
@@ -279,8 +260,6 @@ def main(cfg: dict):
     print("Last-available predictions computed.")
 
     # ---- Evaluation ----------------------------------------------------------
-    test_dates = test_df["date"].values
-
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)
 
     print("\n=== Test metrics ===")
@@ -325,5 +304,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cfg = load_config(args.config)
-    print(cfg)
     main(cfg)

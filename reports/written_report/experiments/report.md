@@ -42,3 +42,20 @@ Tested with 1-day window.
 The best alpha was 
 - 0.05
 This is currently the best model among the tested ones: LGCP, last available Pisson and W7
+
+# Conclusions 
+Random-day split:
+    Window W1 alpha=0.05 is the best.
+
+Chronological split:
+    Window W1 alpha=0.05 is still the best on 5 over 6 of the metrics. 
+
+LGCP:
+    - good as a spatio-temporal probabilistic model,
+    - however, at the moment, is worse than the window model
+    - in the chronological split is even worse than the global mean model
+    
+
+Last available:
+    - strong on puntual MAE
+    - Bad as probbilistic model

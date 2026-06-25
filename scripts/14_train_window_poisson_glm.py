@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -111,21 +112,24 @@ def resolve_parquet_path(cfg: dict) -> dict:
 
 def resolve_run_name(cfg: dict) -> dict:
     """
-    Prefix run_name with the selected year.
+    Build a unique run name.
 
     Example
     -------
     years: 2024
-    run_name: window_poisson_glm_W7_random_day
+    run_name: window_poisson_glm_W1_alpha005_random_day
 
     becomes:
 
-    run_name: 2024_window_poisson_glm_W7_random_day
+    run_name: 2024_window_poisson_glm_W1_alpha005_random_day_20260625-162430
     """
-    if "years" not in cfg or cfg["years"] is None:
+    if "run_name" not in cfg:
         return cfg
 
-    year = cfg["years"]
+    run_name_from_config = str(cfg["run_name"])
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+
+    year = cfg.get("years", None)
 
     if isinstance(year, list):
         if len(year) != 1:
@@ -135,10 +139,20 @@ def resolve_run_name(cfg: dict) -> dict:
             )
         year = year[0]
 
-    run_name = str(cfg["run_name"])
+    # Avoid duplicating the year if the config already contains it.
+    if year is not None:
+        year_str = str(year)
 
-    if not run_name.startswith(f"{year}_"):
-        cfg["run_name"] = f"{year}_{run_name}"
+        if run_name_from_config.startswith(f"{year_str}_"):
+            base_run_name = run_name_from_config
+        else:
+            base_run_name = f"{year_str}_{run_name_from_config}"
+    else:
+        base_run_name = run_name_from_config
+
+    cfg["run_name_base"] = run_name_from_config
+    cfg["run_id"] = timestamp
+    cfg["run_name"] = f"{base_run_name}_{timestamp}"
 
     return cfg
 
