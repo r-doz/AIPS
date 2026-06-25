@@ -8,27 +8,27 @@ train_fraction: 0.9
 data_seed: 42
 
 # --- model ---
-M_inducing: 400
+M_inducing: 300
 np_seed: 0
 
 # --- training ---
 lr: 0.0001
-num_steps: 2000
+num_steps: 5000
 minibatch: 1024
 num_mc: 7
 grad_clip: 10.0
 device: cpu
 
 # --- evaluation ---
-num_pred_samples: 200
-num_vis_samples: 800
+num_pred_samples: 300
+num_vis_samples: 500
 
 # --- output ---
 report_root: reports
 model_family: basic_lgcp
-run_name: goodTrial
+run_name: lgcp_M300_steps5000_lr1e-4
 log_every: 100
 
 # --- baseline runs ---
-global_mean_run_name: global_mean_debug
-last_available_run_name: last_available_debug
+global_mean_run_name: global_mean_M300_split090_seed42
+last_available_run_name: last_available_M300_split090_seed42
