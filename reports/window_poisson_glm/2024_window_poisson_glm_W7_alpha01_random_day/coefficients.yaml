@@ -1,0 +1,17 @@
+intercept: -1.9595467934383508
+coefficients:
+  longitude: 0.020787649392540342
+  latitude: 0.04000983935221482
+  t_norm: 0.1292453761490679
+  chl: 0.18943752091656202
+  thetao: 0.08038097543451882
+  is_holiday: -0.11187730424065259
+  is_weekend: -0.26906598286475664
+  fishing_block: -0.2542728297723761
+  ais_vessels_count_lag_1: 0.2210449960593347
+  ais_vessels_count_lag_2: 0.026458573259215076
+  ais_vessels_count_lag_3: 0.08220543408465165
+  ais_vessels_count_lag_4: 0.059930487058706475
+  ais_vessels_count_lag_5: 0.07995311175035402
+  ais_vessels_count_lag_6: 0.1114127256477432
+  ais_vessels_count_lag_7: 0.09277305792493139

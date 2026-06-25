@@ -25,3 +25,20 @@ Last available Poisson is the better. this result likely come from the fact that
 I added holidays, weekend, fishing block. ALmost every metrics improved. Moreover, the plot shows the model better fits the trend flucations daily.
 
 The biogeochimical cov together with weekends and holidays improve the results considerably. The biogeochimical with just fishing_block imrpove slightly. However, using biogeochimical + holdays + weekends and adding also fishing_block, is the better configuration. 
+
+# Window Poisson GLM
+y = ais_vessels_count
+y_t ~ Poisson(lambda_t)
+x = covariates + past y of the same cell
+
+W7 model \
+This model was unstable. With low regularization, it achieved good log-likelihood but poor RMSE, especially at daily level.
+The best version was
+- alpha 1
+This was worse than the best LGCP and worse than later W1 models. 
+
+W1 model \
+Tested with 1-day window. 
+The best alpha was 
+- 0.05
+This is currently the best model among the tested ones: LGCP, last available Pisson and W7
