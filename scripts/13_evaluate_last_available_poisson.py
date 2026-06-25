@@ -41,7 +41,7 @@ from src.models.metrics_lgcp import evaluate_metrics
 DEFAULT_CONFIG = {
     # --- data ---
     "years": 2024,
-    "parquet_path": "data/processed/cpr_gfw",
+    "parquet_path": "data/processed/cpr_gfw.parquet",
     "train_fraction": 0.9,
     "data_seed": 42,
     # --- output ---
@@ -49,6 +49,44 @@ DEFAULT_CONFIG = {
     "model_family": "last_available_poisson",
     "run_name": "debug",
 }
+
+
+def resolve_parquet_path(cfg: dict) -> dict:
+    """
+    Resolve year-specific parquet path.
+
+    Example
+    -------
+    years: 2024
+    parquet_path: data/processed/cpr_gfw.parquet
+
+    becomes:
+
+    parquet_path: data/processed/cpr_gfw_2024.parquet
+    """
+    if "years" not in cfg or cfg["years"] is None:
+        return cfg
+
+    year = cfg["years"]
+
+    if isinstance(year, list):
+        if len(year) != 1:
+            raise NotImplementedError(
+                "Multiple years are not supported yet. "
+                "For now, use a single year, e.g. years: 2024."
+            )
+        year = year[0]
+
+    path = Path(cfg["parquet_path"])
+
+    if f"_{year}" not in path.stem:
+        resolved_path = path.with_name(f"{path.stem}_{year}{path.suffix}")
+    else:
+        resolved_path = path
+
+    cfg["parquet_path"] = str(resolved_path)
+
+    return cfg
 
 
 def load_config(config_path=None):
@@ -60,7 +98,13 @@ def load_config(config_path=None):
 
         if shared_cfg is not None:
             # Import shared data settings from the LGCP config.
-            for key in ["parquet_path", "train_fraction", "data_seed", "report_root"]:
+            for key in [
+                "years",
+                "parquet_path",
+                "train_fraction",
+                "data_seed",
+                "report_root",
+            ]:
                 if key in shared_cfg:
                     cfg[key] = shared_cfg[key]
 
@@ -70,6 +114,7 @@ def load_config(config_path=None):
 
             # Keep track of the source config for reproducibility.
             cfg["data_config_path"] = config_path
+            cfg = resolve_parquet_path(cfg)
 
     return cfg
 
@@ -175,8 +220,12 @@ def plot_daily_predictions(
 
 def main(cfg: dict):
     # ---- Output folders ------------------------------------------------------
-    #out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
-    out_dir = (Path(cfg["report_root"]) / cfg["model_family"] / f"{cfg['years']}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}")
+    # out_dir = Path(cfg["report_root"]) / cfg["model_family"] / cfg["run_name"]
+    out_dir = (
+        Path(cfg["report_root"])
+        / cfg["model_family"]
+        / f"{cfg['years']}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}"
+    )
 
     plots_dir = out_dir / "plots"
 
@@ -191,7 +240,7 @@ def main(cfg: dict):
     print(f"Experiment parameters saved → {params_path}")
 
     # ---- Data ----------------------------------------------------------------
-    parquet_path = cfg["parquet_path"]+f"_{cfg['years']}.parquet"
+    parquet_path = cfg["parquet_path"] + f"_{cfg['years']}.parquet"
     print("Loading data …")
     (
         train_coords,

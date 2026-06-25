@@ -37,7 +37,10 @@ def _is_leap_year(year: int) -> bool:
 
 
 def prepare_data(
-    parquet_path: str, train_fraction: float = 0.9, random_seed: int = 42
+    parquet_path: str,
+    train_fraction: float = 0.9,
+    random_seed: int = 42,
+    covariate_cols: list[str] | None = None,
 ) -> tuple:
     """
     Load a parquet file and return train/test tensors ready for SparseLGCP.
@@ -63,6 +66,16 @@ def prepare_data(
     df = pd.read_parquet(parquet_path)
     df["date"] = pd.to_datetime(df["date"])
 
+    if covariate_cols is None:
+        covariate_cols = ["chl", "thetao"]
+
+    missing_cols = [col for col in covariate_cols if col not in df.columns]
+    if missing_cols:
+        raise ValueError(
+            f"Missing covariate columns in dataset: {missing_cols}. "
+            f"Available columns are: {list(df.columns)}"
+        )
+
     # ----- Compute fractional day-of-year ∈ (0, 1] ---------------------------
     year = int(df["date"].dt.year.iloc[0])
     days_in_year = 366.0 if _is_leap_year(year) else 365.0
@@ -82,7 +95,7 @@ def prepare_data(
     # ----- Raw arrays ---------------------------------------------------------
     coords_raw = df[["longitude", "latitude"]].values.astype(np.float32)
     t_raw = df["t_norm"].values.astype(np.float32).reshape(-1, 1)
-    covs_raw = df[["chl", "thetao"]].values.astype(np.float32)
+    covs_raw = df[covariate_cols].values.astype(np.float32)
     y = df["ais_vessels_count"].fillna(0).astype(np.int32).values
 
     # ----- Fit scalers on TRAIN only, then transform both splits --------------
