@@ -5,9 +5,11 @@ years: 2024
 parquet_path: data/processed/cpr_gfw.parquet
 gulf_csv_path: data/raw/ts_gulf_coords.csv
 
-covariate_cols:
+covariate_cols: # chl - thetao - is_holiday - is_weekend - fishing_block
   - chl
   - thetao
+  - is_holiday
+  - is_weekend 
   - fishing_block
 
 # --- split ---
@@ -34,7 +36,7 @@ num_vis_samples: 500
 # --- output ---
 report_root: reports
 model_family: basic_lgcp
-run_name: lgcp_M300_steps5000_COVcthwf_chrono # lgcp_M300_steps5000_COVcthwf 
+run_name: lgcp_M300_steps5000_COVcthwf_chrono # lgcp_M300_steps5000_COVcthwf_chrono
 log_every: 100
 
 # --- baseline runs ---
