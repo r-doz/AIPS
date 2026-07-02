@@ -11,7 +11,7 @@ Architecture
 Intensity model:
   log λ(s,t) = α + β·x + f(s,t)
   f(s,t) ~ GP(0, k_s(s,s') · k_t(t,t'))   (separable space-time kernel)
-  k_s : RBF,  k_t : Periodic
+    k_s, k_t configurable per dimension (RBF, periodic, Rational Quadratic)
 
 Inference:
   Sparse variational GP:  q(u) = N(m, L Lᵀ)  with M inducing points.
@@ -25,6 +25,15 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+CANONICAL_KERNEL_NAMES = {
+    "rbf": "rbf",
+    "periodic": "periodic",
+    "rationalquadratic": "rational_quadratic",
+    "rational_quadratic": "rational_quadratic",
+    "rq": "rational_quadratic",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -48,21 +57,93 @@ def rbf_kernel(
     return variance * torch.exp(-0.5 * d2 / lengthscale**2)
 
 
-def periodic_kernel_1d(
-    t1: torch.Tensor,
-    t2: torch.Tensor,
+def periodic_kernel(
+    x: torch.Tensor,
+    y: torch.Tensor,
     period: torch.Tensor,
     lengthscale: torch.Tensor,
     variance: torch.Tensor,
 ) -> torch.Tensor:
     """
     Standard periodic (Mackay) kernel.
-    t1 : [N, 1],  t2 : [M, 1]  →  [N, M]
-    k(t,t') = σ² exp(−2 sin²(π|t−t'|/p) / ℓ²)
+    x : [N, D],  y : [M, D]  →  [N, M]
+    k(x,y) = σ² exp(−2 sin²(π||x−y||/p) / ℓ²)
     """
-    diff = (t1 - t2.T).abs()
-    arg = torch.sin(math.pi * diff / period)
+    x2 = (x**2).sum(dim=1, keepdim=True)
+    y2 = (y**2).sum(dim=1, keepdim=True)
+    d2 = x2 + y2.T - 2.0 * (x @ y.T)
+    d2 = d2.clamp(min=0.0)
+    dist = torch.sqrt(d2 + 1e-12)
+    arg = torch.sin(math.pi * dist / period)
     return variance * torch.exp(-2.0 * arg**2 / lengthscale**2)
+
+
+def rational_quadratic_kernel(
+    x: torch.Tensor,
+    y: torch.Tensor,
+    lengthscale: torch.Tensor,
+    variance: torch.Tensor,
+    alpha: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Rational Quadratic kernel.
+    x : [N, D],  y : [M, D]  →  [N, M]
+    k(x,y) = σ² (1 + ||x−y||² / (2 α ℓ²))^(−α)
+    """
+    x2 = (x**2).sum(dim=1, keepdim=True)
+    y2 = (y**2).sum(dim=1, keepdim=True)
+    d2 = x2 + y2.T - 2.0 * (x @ y.T)
+    d2 = d2.clamp(min=0.0)
+    base = 1.0 + d2 / (2.0 * alpha * lengthscale**2)
+    return variance * torch.pow(base, -alpha)
+
+
+def _canonical_kernel_name(name: str) -> str:
+    key = str(name).strip().replace("-", "_").replace(" ", "_").lower()
+    key = key.replace("__", "_")
+    if key not in CANONICAL_KERNEL_NAMES:
+        raise ValueError(
+            f"Unsupported kernel type '{name}'. Supported kernels: RBF, periodic, RationalQuadratic."
+        )
+    return CANONICAL_KERNEL_NAMES[key]
+
+
+def _apply_kernel(
+    x: torch.Tensor, y: torch.Tensor, kernel_type: str, params: dict
+) -> torch.Tensor:
+    kind = _canonical_kernel_name(kernel_type)
+    if kind == "rbf":
+        return rbf_kernel(x, y, params["lengthscale"], params["variance"])
+    if kind == "periodic":
+        return periodic_kernel(
+            x,
+            y,
+            params["period"],
+            params["lengthscale"],
+            params["variance"],
+        )
+    return rational_quadratic_kernel(
+        x,
+        y,
+        params["lengthscale"],
+        params["variance"],
+        params["alpha"],
+    )
+
+
+def _sum_kernel_components(
+    x: torch.Tensor, y: torch.Tensor, components: list[dict], component_name: str
+) -> torch.Tensor:
+    if len(components) == 0:
+        raise ValueError(f"Kernel component list '{component_name}' cannot be empty.")
+
+    kernel_sum = None
+    for comp in components:
+        current = _apply_kernel(x, y, comp["type"], comp["params"])
+        kernel_sum = current if kernel_sum is None else kernel_sum + current
+    if kernel_sum is None:
+        raise ValueError(f"Kernel component list '{component_name}' cannot be empty.")
+    return kernel_sum
 
 
 # ---------------------------------------------------------------------------
@@ -74,9 +155,17 @@ def _kern_matrices(
     X: torch.Tensor, Z: torch.Tensor, kern: dict
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Return (Ks [Nx, M], Kt [Nx, M]) for data points X and inducing Z."""
-    Ks = rbf_kernel(X[:, :2], Z[:, :2], kern["spatial_length"], kern["spatial_var"])
-    Kt = periodic_kernel_1d(
-        X[:, 2:3], Z[:, 2:3], kern["time_period"], kern["time_length"], kern["time_var"]
+    Ks = _sum_kernel_components(
+        X[:, :2],
+        Z[:, :2],
+        kern["spatial"],
+        "spatial",
+    )
+    Kt = _sum_kernel_components(
+        X[:, 2:3],
+        Z[:, 2:3],
+        kern["temporal"],
+        "temporal",
     )
     return Ks, Kt
 
@@ -154,6 +243,7 @@ class SparseLGCP(nn.Module):
         coords_np,
         covariates_np,
         y_np,
+        kernel_config: dict,
         M_inducing: int = 300,
         device: str = "cpu",
         np_seed: int = 0,
@@ -168,24 +258,13 @@ class SparseLGCP(nn.Module):
         self.N = self.X.shape[0]
         self.C = self.covs.shape[1]
 
-        # ---- Kernel hyperparameters (log-parameterized for positivity) --------
-        self.log_spatial_length = nn.Parameter(
-            torch.tensor(math.log(0.5), device=self.device)
-        )
-        self.log_spatial_var = nn.Parameter(
-            torch.tensor(math.log(1.0), device=self.device)
-        )
-        self.log_time_length = nn.Parameter(
-            torch.tensor(math.log(0.3), device=self.device)
-        )
-        self.log_time_var = nn.Parameter(
-            torch.tensor(math.log(0.5), device=self.device)
-        )
-        # Period fixed to 1.0 in standardized time — learnable so the model can
-        # discover sub-annual periodicity if present.
-        self.log_time_period = nn.Parameter(
-            torch.tensor(math.log(1.0), device=self.device)
-        )
+        if kernel_config is None:
+            raise ValueError("kernel_config is required.")
+        self._kernel_cfg = kernel_config
+        self._kernel_param_names = {"spatial": [], "temporal": []}
+        self._init_kernel_hyperparameters(dtype)
+
+        # Keep a learnable nugget/noise term for numerical robustness.
         self.log_noise = nn.Parameter(torch.tensor(math.log(1e-3), device=self.device))
 
         # ---- Linear predictor --------------------------------------------------
@@ -194,6 +273,10 @@ class SparseLGCP(nn.Module):
 
         # ---- Inducing points ---------------------------------------------------
         self.M = M_inducing
+        if self.M > self.N:
+            raise ValueError(
+                f"M_inducing ({self.M}) cannot exceed number of observations ({self.N})."
+            )
         rng = np.random.default_rng(np_seed)
         idx = rng.choice(self.N, size=self.M, replace=False)
         Z_init = torch.tensor(coords_np[idx], dtype=dtype, device=self.device)
@@ -206,6 +289,31 @@ class SparseLGCP(nn.Module):
         # Store the raw (unconstrained) lower triangle; diagonal is passed through
         # softplus to guarantee S ≻ 0 without adding a separate jitter term.
         self._L_raw = nn.Parameter(1e-3 * torch.eye(self.M, device=self.device))
+
+    def _init_kernel_hyperparameters(self, dtype: torch.dtype) -> None:
+        for component in ("spatial", "temporal"):
+            component_blocks = self._kernel_cfg[component]
+            for idx, component_cfg in enumerate(component_blocks):
+                hyper = component_cfg["hyperparameters"]
+                trainable_cfg = component_cfg["trainable"]
+                hp_attr_names = {}
+                for hp_name, hp_value in hyper.items():
+                    trainable = bool(trainable_cfg[hp_name])
+                    attr_name = f"log_{component}_{idx}_{hp_name}"
+                    raw = torch.tensor(
+                        math.log(float(hp_value)), dtype=dtype, device=self.device
+                    )
+                    if trainable:
+                        self.register_parameter(attr_name, nn.Parameter(raw))
+                    else:
+                        self.register_buffer(attr_name, raw)
+                    hp_attr_names[hp_name] = attr_name
+                self._kernel_param_names[component].append(
+                    {
+                        "type": component_cfg["type"],
+                        "params": hp_attr_names,
+                    }
+                )
 
     # ------------------------------------------------------------------
     def _get_L(self) -> torch.Tensor:
@@ -222,12 +330,23 @@ class SparseLGCP(nn.Module):
         return L @ L.T
 
     def kernel_params(self) -> dict:
+        def _component_params(name: str) -> list[dict]:
+            component_params = []
+            for block in self._kernel_param_names[name]:
+                raw_params = {}
+                for hp_name, attr_name in block["params"].items():
+                    raw_params[hp_name] = torch.exp(getattr(self, attr_name))
+                component_params.append(
+                    {
+                        "type": block["type"],
+                        "params": raw_params,
+                    }
+                )
+            return component_params
+
         return {
-            "spatial_length": torch.exp(self.log_spatial_length),
-            "spatial_var": torch.exp(self.log_spatial_var),
-            "time_length": torch.exp(self.log_time_length),
-            "time_var": torch.exp(self.log_time_var),
-            "time_period": torch.exp(self.log_time_period),
+            "spatial": _component_params("spatial"),
+            "temporal": _component_params("temporal"),
             "noise_var": torch.exp(self.log_noise),
         }
 

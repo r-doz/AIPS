@@ -1,4 +1,4 @@
-# config/11_train_lgcp.yaml
+# config/train_basic_lgcp_multi_kernel.yaml
 years: 2024
 
 # --- data ---
@@ -9,6 +9,8 @@ covariate_cols:
   - chl
   - thetao
   - fishing_block
+  - is_holiday
+  - is_weekend
 
 # --- split ---
 split_strategy: chronological
@@ -27,24 +29,38 @@ model:
       trainable:
         lengthscale: true
         variance: true
+    - type: RationalQuadratic
+      hyperparameters:
+        lengthscale: 1.2
+        variance: 0.35
+        alpha: 0.8
+      trainable:
+        lengthscale: true
+        variance: true
+        alpha: false
   temporal_kernels:
     - type: periodic
       hyperparameters:
         lengthscale: 0.3
-        variance: 0.5
+        variance: 0.55
         period: 1.0
       trainable:
         lengthscale: true
         variance: true
         period: true
+    - type: RBF
+      hyperparameters:
+        lengthscale: 0.01
+        variance: 0.20
+      trainable:
+        lengthscale: false
+        variance: true
 
-# Supported kernel types for each block: RBF, periodic, RationalQuadratic
-# For RationalQuadratic use hyperparameters: lengthscale, variance, alpha
-# You can add multiple entries under spatial_kernels and temporal_kernels;
-# within each dimension the model uses their sum.
+# Supported kernel types: RBF, periodic, RationalQuadratic
+# Within each dimension, kernels are summed.
 
 # --- training ---
-lr: 0.0001
+lr: 0.0005
 num_steps: 5000
 minibatch: 1024
 num_mc: 7
@@ -57,8 +73,8 @@ num_vis_samples: 500
 
 # --- output ---
 report_root: reports
-model_family: basic_lgcp
-run_name: lgcp_M300_steps5000_COVcthwf_chrono # lgcp_M300_steps5000_COVcthwf 
+model_family: multi-kernel_lgcp
+run_name: lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono
 log_every: 100
 
 # --- baseline runs ---

@@ -14,12 +14,14 @@ reports/<model_family>/<run_name>/.
 from __future__ import annotations
 
 import argparse
+import copy
 import math
 import os
 import random
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import torch
@@ -52,6 +54,36 @@ DEFAULT_CONFIG = {
     # --- model ---
     "M_inducing": 300,
     "np_seed": 0,
+    "model": {
+        "spatial_kernels": [
+            {
+                "type": "RBF",
+                "hyperparameters": {
+                    "lengthscale": 0.5,
+                    "variance": 1.0,
+                },
+                "trainable": {
+                    "lengthscale": True,
+                    "variance": True,
+                },
+            }
+        ],
+        "temporal_kernels": [
+            {
+                "type": "periodic",
+                "hyperparameters": {
+                    "lengthscale": 0.3,
+                    "variance": 0.5,
+                    "period": 1.0,
+                },
+                "trainable": {
+                    "lengthscale": True,
+                    "variance": True,
+                    "period": True,
+                },
+            }
+        ],
+    },
     # --- training ---
     "lr": 1e-4,
     "num_steps": 1000,  # to be increased
@@ -68,6 +100,20 @@ DEFAULT_CONFIG = {
     "model_family": "basic_lgcp",
     "run_name": "lgcp_run_debug",
     "log_every": 50,
+}
+
+KERNEL_TYPE_MAP = {
+    "rbf": "rbf",
+    "periodic": "periodic",
+    "rationalquadratic": "rational_quadratic",
+    "rational_quadratic": "rational_quadratic",
+    "rq": "rational_quadratic",
+}
+
+REQUIRED_HYPERPARAMETERS = {
+    "rbf": {"lengthscale", "variance"},
+    "periodic": {"lengthscale", "variance", "period"},
+    "rational_quadratic": {"lengthscale", "variance", "alpha"},
 }
 
 
@@ -110,18 +156,170 @@ def resolve_parquet_path(cfg: dict) -> dict:
 
 
 def load_config(config_path=None):
-    cfg = DEFAULT_CONFIG.copy()
+    cfg = copy.deepcopy(DEFAULT_CONFIG)
 
     if config_path is not None:
         with open(config_path, "r") as f:
             user_cfg = yaml.safe_load(f)
 
         if user_cfg is not None:
-            cfg.update(user_cfg)
+            if not isinstance(user_cfg, dict):
+                raise ValueError("Top-level YAML config must be a mapping.")
+            cfg = _deep_merge(cfg, user_cfg)
 
     cfg = resolve_parquet_path(cfg)
+    cfg["kernel_config"] = normalize_kernel_config(cfg)
 
     return cfg
+
+
+def _deep_merge(base: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any]:
+    for key, value in updates.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            base[key] = _deep_merge(base[key], value)
+        else:
+            base[key] = value
+    return base
+
+
+def _normalize_kernel_type(raw_name: str, location: str) -> str:
+    if raw_name is None:
+        raise ValueError(
+            f"Missing kernel type at {location}. Supported kernels: RBF, periodic, RationalQuadratic."
+        )
+
+    key = str(raw_name).strip().replace("-", "_").replace(" ", "_").lower()
+    key = key.replace("__", "_")
+    if key not in KERNEL_TYPE_MAP:
+        raise ValueError(
+            f"Unsupported kernel type '{raw_name}' at {location}. "
+            "Supported kernels: RBF, periodic, RationalQuadratic."
+        )
+    return KERNEL_TYPE_MAP[key]
+
+
+def _normalize_kernel_block(
+    block: dict,
+    location: str,
+    default_type: str | None = None,
+) -> dict:
+    if not isinstance(block, dict):
+        raise ValueError(f"{location} must be a mapping.")
+
+    kernel_type = block.get("type", default_type)
+    normalized_type = _normalize_kernel_type(kernel_type, f"{location}.type")
+
+    hyperparameters = block.get("hyperparameters")
+    if not isinstance(hyperparameters, dict):
+        raise ValueError(f"{location}.hyperparameters must be a mapping.")
+
+    required = REQUIRED_HYPERPARAMETERS[normalized_type]
+    unknown_hparams = set(hyperparameters) - required
+    if unknown_hparams:
+        raise ValueError(
+            f"Unknown hyperparameters in {location}.hyperparameters: {sorted(unknown_hparams)}. "
+            f"Required hyperparameters for {normalized_type}: {sorted(required)}"
+        )
+
+    missing_hparams = required - set(hyperparameters)
+    if missing_hparams:
+        raise ValueError(
+            f"Missing hyperparameters in {location}.hyperparameters: {sorted(missing_hparams)}. "
+            f"Required hyperparameters for {normalized_type}: {sorted(required)}"
+        )
+
+    normalized_hparams = {}
+    for hp_name in sorted(required):
+        value = hyperparameters[hp_name]
+        if not isinstance(value, (int, float)):
+            raise ValueError(
+                f"{location}.hyperparameters.{hp_name} must be numeric, got {type(value).__name__}."
+            )
+        value = float(value)
+        if value <= 0.0:
+            raise ValueError(
+                f"{location}.hyperparameters.{hp_name} must be > 0, got {value}."
+            )
+        normalized_hparams[hp_name] = value
+
+    trainable = block.get("trainable", {})
+    if not isinstance(trainable, dict):
+        raise ValueError(f"{location}.trainable must be a mapping.")
+
+    unknown_trainable = set(trainable) - required
+    if unknown_trainable:
+        raise ValueError(
+            f"Unknown trainable flags in {location}.trainable: {sorted(unknown_trainable)}. "
+            f"Allowed keys: {sorted(required)}"
+        )
+
+    normalized_trainable = {}
+    for hp_name in sorted(required):
+        flag = trainable.get(hp_name, True)
+        if not isinstance(flag, bool):
+            raise ValueError(
+                f"{location}.trainable.{hp_name} must be boolean, got {type(flag).__name__}."
+            )
+        normalized_trainable[hp_name] = flag
+
+    return {
+        "type": normalized_type,
+        "hyperparameters": normalized_hparams,
+        "trainable": normalized_trainable,
+    }
+
+
+def normalize_kernel_config(cfg: dict) -> dict:
+    model_cfg = cfg.get("model")
+    if not isinstance(model_cfg, dict):
+        raise ValueError(
+            "Missing required model config block. Expected spatial and temporal kernel configuration."
+        )
+
+    def _normalize_kernel_collection(
+        singular_key: str,
+        plural_key: str,
+        location: str,
+        default_type: str | None = None,
+    ) -> list[dict]:
+        if plural_key in model_cfg:
+            raw_blocks = model_cfg[plural_key]
+            if not isinstance(raw_blocks, list) or len(raw_blocks) == 0:
+                raise ValueError(f"model.{plural_key} must be a non-empty list.")
+        elif singular_key in model_cfg:
+            raw_blocks = [model_cfg[singular_key]]
+        else:
+            raise ValueError(
+                f"Missing required config block: model.{plural_key} (or model.{singular_key})."
+            )
+
+        normalized_blocks = []
+        for idx, block in enumerate(raw_blocks):
+            block_location = f"{location}[{idx}]"
+            normalized_blocks.append(
+                _normalize_kernel_block(block, block_location, default_type=default_type)
+            )
+        return normalized_blocks
+
+    spatial = _normalize_kernel_collection(
+        singular_key="spatial_kernel",
+        plural_key="spatial_kernels",
+        location="model.spatial_kernels",
+    )
+    temporal = _normalize_kernel_collection(
+        singular_key="temporal_kernel",
+        plural_key="temporal_kernels",
+        location="model.temporal_kernels",
+        default_type="periodic",
+    )
+
+    normalized = {
+        "spatial": spatial,
+        "temporal": temporal,
+    }
+    cfg["model"]["spatial_kernels"] = spatial
+    cfg["model"]["temporal_kernels"] = temporal
+    return normalized
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +368,7 @@ def train(model: SparseLGCP, cfg: dict) -> list[float]:
 # Main
 # ---------------------------------------------------------------------------
 def main(cfg: dict):
-    set_seeds(cfg.get("np_seed", 0))
+    #set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
     # out_dir = Path(cfg["report_root"]) / cfg["model_family"] / str(cfg["run_name"]) + "_" + str(cfg["year"]) + "_" + time.strftime("%Y%m%d-%H%M%S")
@@ -223,6 +421,10 @@ def main(cfg: dict):
     # Sanity checks
     assert train_coords.shape[0] == train_covs.shape[0] == train_y.shape[0]
     assert test_coords.shape[0] == test_covs.shape[0] == test_y.shape[0]
+    if cfg["M_inducing"] > train_coords.shape[0]:
+        raise ValueError(
+            f"M_inducing ({cfg['M_inducing']}) cannot exceed train observations ({train_coords.shape[0]})."
+        )
 
     # ---- Model ---------------------------------------------------------------
     print(f"Building SparseLGCP with M={cfg['M_inducing']} inducing points …")
@@ -230,6 +432,7 @@ def main(cfg: dict):
         train_coords,
         train_covs,
         train_y,
+        kernel_config=cfg["kernel_config"],
         M_inducing=cfg["M_inducing"],
         device=cfg["device"],
         np_seed=cfg["np_seed"],
