@@ -39,19 +39,19 @@ model:
         variance: true
         alpha: false
   temporal_kernels:
-    - type: periodic
-      hyperparameters:
-        lengthscale: 0.3
-        variance: 0.55
-        period: 1.0
-      trainable:
-        lengthscale: true
-        variance: true
-        period: true
+    #- type: periodic
+    #  hyperparameters:
+    #    lengthscale: 0.3
+    #    variance: 0.55
+    #    period: 3.85
+    #  trainable:
+    #    lengthscale: true
+    #    variance: true
+    #    period: false
     - type: RBF
       hyperparameters:
-        lengthscale: 0.01
-        variance: 0.20
+        lengthscale: 0.10 # 0.01
+        variance: 0.20 # 0.20
       trainable:
         lengthscale: false
         variance: true
