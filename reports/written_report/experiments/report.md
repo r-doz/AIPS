@@ -249,6 +249,39 @@ The Last Available Poisson baseline is strong in pointwise MAE because it direct
 
 However, it performs poorly as a probabilistic model, especially in terms of log-likelihood. This suggests that it is not well calibrated and can be heavily penalized when it assigns too low a rate to observations with positive counts.
 
+# LGCP multi kernel 
+
+After introducing the multi-kernel LGCP formulation, we tested several temporal kernel configurations to improve chronological generalization on the test set.
+
+The original multi-kernel model fitted the training period well, but during the chronological test period it tended to produce conservative daily predictions close to an average level. This suggests that, when extrapolating in time, the GP component tends to revert toward its prior mean.
+
+The periodic temporal kernel appeared problematic. Since the model uses standardized time, a period value of `1.0` does not necessarily correspond to one year in the model input space. A corrected annual period improved some observation-level metrics, but worsened the daily metrics and produced overly low predictions in the test period. For this reason, we removed the periodic component and tested temporal RBF kernels only.
+
+The temporal RBF experiments were run with fixed lengthscale, initial variance `0.20`, and trainable variance:
+
+| Temporal lengthscale | MAE daily | RMSE daily | Mean LL daily | MAE obs | RMSE obs | Mean LL obs |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0.01 | 8.4181 | 11.0029 | -8.2891 | 0.3839 | 0.9837 | -0.8075 |
+| 0.03 | 8.4805 | 11.0163 | -8.2091 | 0.3840 | 0.9830 | -0.8030 |
+| 0.05 | 9.3466 | 11.8589 | -9.5782 | **0.3732** | 0.9846 | -0.8223 |
+| 0.10 | **7.2456** | **9.9016** | **-8.0434** | 0.4012 | **0.9615** | **-0.7657** |
+| 0.20 | 14.6856 | 19.4433 | -12.2703 | 0.5742 | 1.7102 | -0.8580 |
+
+The best configuration found so far is:
+
+```yaml
+temporal_kernels:
+  - type: RBF
+    hyperparameters:
+      lengthscale: 0.10
+      variance: 0.20
+    trainable:
+      lengthscale: false
+      variance: true
+
+## Period
+Since time is standardized, a periodic kernel with period = 1.0 corresponds to approximately 95 days, not one year. The correct annual period in standardized time is approximately 3.85.
+
 ## Overall conclusion
 
 The results suggest that local temporal persistence is a key source of predictive information.

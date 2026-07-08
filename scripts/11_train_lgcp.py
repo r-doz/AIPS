@@ -297,7 +297,9 @@ def normalize_kernel_config(cfg: dict) -> dict:
         for idx, block in enumerate(raw_blocks):
             block_location = f"{location}[{idx}]"
             normalized_blocks.append(
-                _normalize_kernel_block(block, block_location, default_type=default_type)
+                _normalize_kernel_block(
+                    block, block_location, default_type=default_type
+                )
             )
         return normalized_blocks
 
@@ -364,11 +366,145 @@ def train(model: SparseLGCP, cfg: dict) -> list[float]:
     return losses
 
 
+def get_kernel_parameters_dict(model):
+    params = model.kernel_params()
+    out = {}
+
+    for group_name, group_value in params.items():
+        if isinstance(group_value, list):
+            out[group_name] = []
+
+            for component in group_value:
+                component_out = {
+                    "type": component["type"],
+                    "params": {},
+                }
+
+                for par_name, par_value in component["params"].items():
+                    component_out["params"][par_name] = float(par_value.detach().cpu())
+
+                out[group_name].append(component_out)
+
+        else:
+            try:
+                out[group_name] = float(group_value.detach().cpu())
+            except Exception:
+                out[group_name] = group_value
+
+    return out
+
+
+def print_kernel_parameters(model, title="Kernel parameters"):
+    print(f"\n=== {title} ===")
+
+    params = get_kernel_parameters_dict(model)
+
+    for group_name, group_value in params.items():
+        print(f"\n{group_name}:")
+
+        if isinstance(group_value, list):
+            for i, component in enumerate(group_value):
+                print(f"  component {i}: {component['type']}")
+
+                for par_name, par_value in component["params"].items():
+                    print(f"    {par_name}: {par_value:.6f}")
+        else:
+            if isinstance(group_value, float):
+                print(f"  {group_value:.8f}")
+            else:
+                print(f"  {group_value}")
+
+
+def save_kernel_parameters(model, save_path):
+    params = get_kernel_parameters_dict(model)
+
+    with open(save_path, "w") as f:
+        yaml.dump(params, f, sort_keys=False)
+
+    print(f"Kernel parameters saved → {save_path}")
+
+
+def compute_time_diagnostics(scalers, lengthscales=None, periods=None):
+    if lengthscales is None:
+        lengthscales = [0.01, 0.03, 0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.30]
+
+    if periods is None:
+        periods = [1.0, 3.85]
+
+    if "t_scaler" not in scalers:
+        raise KeyError(
+            f"'t_scaler' not found in scalers. Available keys: {list(scalers.keys())}"
+        )
+
+    t_scaler = scalers["t_scaler"]
+
+    t_mean = float(np.ravel(t_scaler.mean_)[0])
+    t_scale = float(np.ravel(t_scaler.scale_)[0])
+
+    annual_period_raw = 1.0
+    annual_period_std = annual_period_raw / t_scale
+
+    diagnostics = {
+        "t_raw_mean": t_mean,
+        "t_raw_std": t_scale,
+        "annual_period_raw": annual_period_raw,
+        "annual_period_standardized": annual_period_std,
+        "lengthscale_to_days": {},
+        "period_to_days": {},
+    }
+
+    print("\n=== Time scaler diagnostics ===")
+    print(f"t_raw mean: {t_mean:.6f}")
+    print(f"t_raw std:  {t_scale:.6f}")
+    print(f"Annual period in standardized time: {annual_period_std:.6f}")
+
+    print("\nLengthscale interpretation:")
+    for l in lengthscales:
+        days = l * t_scale * 365.25
+        diagnostics["lengthscale_to_days"][float(l)] = float(days)
+        print(f"  lengthscale {l:.3f} ≈ {days:.2f} days")
+
+    print("\nPeriod interpretation:")
+    for p in periods:
+        days = p * t_scale * 365.25
+        diagnostics["period_to_days"][float(p)] = float(days)
+        print(f"  period {p:.3f} ≈ {days:.2f} days")
+
+    print(
+        f"\nCorrect annual period to use in standardized time: {annual_period_std:.6f}"
+    )
+
+    return diagnostics
+
+
+def configure_log_noise(model, cfg):
+    noise_cfg = cfg.get("kernel_noise", {})
+
+    value = noise_cfg.get("value", None)
+    trainable = noise_cfg.get("trainable", True)
+
+    if value is not None:
+        value = float(value)
+        if value <= 0:
+            raise ValueError(f"kernel_noise.value must be positive, got {value}")
+
+        with torch.no_grad():
+            model.log_noise.fill_(math.log(value))
+
+    model.log_noise.requires_grad_(bool(trainable))
+
+    noise_var = float(torch.exp(model.log_noise).detach().cpu())
+
+    print("\n=== Kernel noise configuration ===")
+    print(f"noise_var: {noise_var:.8f}")
+    print(f"trainable: {model.log_noise.requires_grad}")
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main(cfg: dict):
-    #set_seeds(cfg.get("np_seed", 0))
+    set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
     # out_dir = Path(cfg["report_root"]) / cfg["model_family"] / str(cfg["run_name"]) + "_" + str(cfg["year"]) + "_" + time.strftime("%Y%m%d-%H%M%S")
@@ -401,6 +537,13 @@ def main(cfg: dict):
         )
     )
     meta = compute_meta(df)
+    time_diagnostics = compute_time_diagnostics(scalers)
+
+    time_diag_path = out_dir / "time_diagnostics.yaml"
+    with open(time_diag_path, "w") as f:
+        yaml.dump(time_diagnostics, f, sort_keys=False)
+
+    print(f"Time diagnostics saved → {time_diag_path}")
 
     _, test_mask = make_day_split_masks(
         df=df,
@@ -438,9 +581,16 @@ def main(cfg: dict):
         np_seed=cfg["np_seed"],
     )
 
+    configure_log_noise(model, cfg)
+    print_kernel_parameters(model, "Kernel parameters BEFORE training")
+    save_kernel_parameters(model, out_dir / "kernel_params_before.yaml")
+
     # ---- Training ------------------------------------------------------------
     print(f"Training for {cfg['num_steps']:,} steps on {cfg['device']} …")
     losses = train(model, cfg)
+
+    print_kernel_parameters(model, "Kernel parameters AFTER training")
+    save_kernel_parameters(model, out_dir / "kernel_params_after.yaml")
 
     # Save checkpoint
     ckpt_path = out_dir / "model.pt"

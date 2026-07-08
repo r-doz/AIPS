@@ -43,7 +43,7 @@ model:
     #  hyperparameters:
     #    lengthscale: 0.3
     #    variance: 0.55
-    #    period: 3.85
+    #    period: 3.853699
     #  trainable:
     #    lengthscale: true
     #    variance: true
@@ -55,13 +55,16 @@ model:
       trainable:
         lengthscale: false
         variance: true
+kernel_noise:
+  value: 1.0e-3
+  trainable: false
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
 
 # --- training ---
 lr: 0.0005
-num_steps: 5000
+num_steps: 2000
 minibatch: 1024
 num_mc: 7
 grad_clip: 10.0
@@ -74,7 +77,7 @@ num_vis_samples: 500
 # --- output ---
 report_root: reports
 model_family: multi-kernel_lgcp
-run_name: lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono
+run_name: debug # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono
 log_every: 100
 
 # --- baseline runs ---
