@@ -15,16 +15,16 @@ covariate_cols:
 # --- split ---
 split_strategy: fixed_test_window # fixed_test_window OR chronological OR random_day
 test_start_date: "2024-12-01"
-test_end_date: "2024-12-10"
+test_end_date: "2024-12-15"
 train_fraction: 0.9
 data_seed: 42
 
 # --- model names ---
-last_available_mode: frozen_train  # frozen_train OR one_step_ahead  
+last_available_mode: one_step_ahead  # frozen_train OR one_step_ahead  
 
-run_name: lgcp_multikernel_dec01_dec10 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
-last_available_run_name: dataseed42_npseed0_frozen_dec01_dec10
-global_mean_run_name: dataseed42_npseed0_dec01_dec10
+run_name: lgcp_multikernel_dec01_dec15 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
+last_available_run_name: dataseed42_npseed0_onestep_dec01_dec15 # onestep OR frozen
+global_mean_run_name: dataseed42_npseed0_dec01_dec15
 
 # --- model lgcp ---
 M_inducing: 300

@@ -91,6 +91,8 @@ def load_config(config_path=None):
                 "train_fraction",
                 "data_seed",
                 "split_strategy",
+                "test_start_date",
+                "test_end_date",
                 "report_root",
             ]:
                 if key in shared_cfg:

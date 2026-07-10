@@ -328,3 +328,12 @@ The multi-kernel LGCP achieved the best overall performance. It obtained the bes
 The test-window daily plot confirms the numerical results. During December 1–6, the LGCP correctly predicts a period of positive activity, although it smooths the strongest observed peaks, especially around December 3. On December 7–8, where the observed daily total drops to zero, the LGCP prediction also becomes very low. The main visual error occurs on December 9–10, where the observations remain zero but the model predicts a renewed increase in activity.
 
 Overall, the fixed-window experiment shows that the multi-kernel LGCP adds clear predictive value compared with the baseline models. It is more flexible than the Global Mean baseline, more stable than the Last Available baselines in probabilistic terms, and provides the best daily-level accuracy among the tested models. At the same time, the plot highlights an important limitation: the model tends to smooth sharp peaks and does not always capture sudden drops to zero. This suggests that the LGCP captures the general temporal and spatial structure of the process, but additional information or model refinements may be needed to better predict abrupt changes in fishing activity.
+
+
+## Fixed Test Window Evaluation: December 1–15, 2024
+
+Model                         LL obs     MAE obs   RMSE obs   LL daily    MAE daily   RMSE daily
+Global Mean                  -0.7896     0.4389    0.9455     -9.4323    11.2683     12.8802
+Last Available frozen        -5.4411     0.3973    1.1405    -10.5890    11.4667     13.6821
+Last Available one-step      -2.9455     0.3347    1.0169    -73.7131    11.4667     13.8756
+LGCP multi-kernel            -0.6305     0.3496    0.8967     -6.1605     7.6881     10.1395
