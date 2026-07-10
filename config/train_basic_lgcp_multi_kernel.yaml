@@ -13,11 +13,13 @@ covariate_cols:
   - is_weekend
 
 # --- split ---
-split_strategy: chronological
+split_strategy: fixed_test_window # fixed_test_window OR chronological OR random_day
+test_start_date: "2024-12-01"
+test_end_date: "2024-12-10"
 train_fraction: 0.9
 data_seed: 42
 
-# --- model ---
+# --- model lgcp ---
 M_inducing: 300
 np_seed: 0
 model:
@@ -59,6 +61,13 @@ kernel_noise:
   value: 1.0e-3
   trainable: false
 
+# --- dummy models ---
+last_available_mode: frozen_train  # frozen_train OR one_step_ahead  
+
+last_available_run_name: dataseed42_npseed0_frozen_dec01_dec10
+global_mean_run_name: dataseed42_npseed0_dec01_dec10
+
+
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
 
@@ -80,6 +89,4 @@ model_family: multi-kernel_lgcp
 run_name: debug # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono
 log_every: 100
 
-# --- baseline runs ---
-global_mean_run_name: dataseed42_npseed0_chrono
-last_available_run_name: dataseed42_npseed0_chrono
+

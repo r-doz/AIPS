@@ -534,6 +534,8 @@ def main(cfg: dict):
             random_seed=cfg["data_seed"],
             split_strategy=cfg.get("split_strategy", "random_day"),
             covariate_cols=cfg.get("covariate_cols"),
+            test_start_date=cfg.get("test_start_date"),
+            test_end_date=cfg.get("test_end_date"),
         )
     )
     meta = compute_meta(df)
@@ -550,6 +552,8 @@ def main(cfg: dict):
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
         split_strategy=cfg.get("split_strategy", "random_day"),
+        test_start_date=cfg.get("test_start_date"),
+        test_end_date=cfg.get("test_end_date"),
     )
 
     test_dates = df.loc[test_mask, "date"].values

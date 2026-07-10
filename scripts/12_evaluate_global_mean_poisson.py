@@ -40,7 +40,9 @@ DEFAULT_CONFIG = {
     "parquet_path": "data/processed/cpr_gfw.parquet",
     "train_fraction": 0.9,
     "data_seed": 42,
-    "split_strategy": "random_day",
+    "split_strategy": "fixed_test_window",
+    "test_start_date": "2024-12-01",
+    "test_end_date": "2024-12-10",
     # --- output ---
     "report_root": "reports",
     "model_family": "global_mean_poisson",
@@ -179,6 +181,8 @@ def main(cfg: dict):
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
         split_strategy=cfg.get("split_strategy", "random_day"),
+        test_start_date=cfg.get("test_start_date"),
+        test_end_date=cfg.get("test_end_date"),
     )
 
     _, test_mask = make_day_split_masks(
@@ -186,6 +190,8 @@ def main(cfg: dict):
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
         split_strategy=cfg.get("split_strategy", "random_day"),
+        test_start_date=cfg.get("test_start_date"),
+        test_end_date=cfg.get("test_end_date"),
     )
 
     test_dates = df.loc[test_mask, "date"].values

@@ -45,10 +45,13 @@ DEFAULT_CONFIG = {
     "train_fraction": 0.9,
     "data_seed": 42,
     "split_strategy": "random_day",
+    "test_start_date": None,
+    "test_end_date": None,
     # --- output ---
     "report_root": "reports",
     "model_family": "last_available_poisson",
     "run_name": "debug",
+    "last_available_mode": "frozen_train",
 }
 
 
@@ -105,7 +108,10 @@ def load_config(config_path=None):
                 "train_fraction",
                 "data_seed",
                 "split_strategy",
+                "test_start_date",
+                "test_end_date",
                 "report_root",
+                "last_available_mode",
             ]:
                 if key in shared_cfg:
                     cfg[key] = shared_cfg[key]
@@ -125,38 +131,76 @@ def build_last_available_predictions(
     df: pd.DataFrame,
     train_mask: np.ndarray,
     test_mask: np.ndarray,
+    mode: str = "frozen_train",
 ) -> np.ndarray:
     """
     Build last-available predictions for the test set.
 
-    For each spatial cell, the prediction for date t is the previous observed
-    count in the same cell. If unavailable, use the global train mean.
+    Modes:
+    - frozen_train:
+        For each spatial cell, use the last observed training value.
+        The same value is used for the whole test window.
+        This does not use true observations inside the test set.
+
+    - one_step_ahead:
+        For each spatial cell, use the previous observed value.
+        Inside the test window, this means that Dec 2 can use true Dec 1,
+        Dec 3 can use true Dec 2, and so on.
     """
+
     df_work = df.copy()
     df_work["date"] = pd.to_datetime(df_work["date"])
 
-    global_train_mean = float(df_work.loc[train_mask, "ais_vessels_count"].mean())
+    target_col = "ais_vessels_count"
+    cell_cols = ["longitude", "latitude"]
 
-    # Sort by spatial cell and time, then shift within each cell.
-    df_work = df_work.sort_values(["longitude", "latitude", "date"]).copy()
+    global_train_mean = float(df_work.loc[train_mask, target_col].mean())
 
-    df_work["lambda_last_available"] = df_work.groupby(["longitude", "latitude"])[
-        "ais_vessels_count"
-    ].shift(1)
+    if mode == "one_step_ahead":
+        # Sort by spatial cell and time, then shift within each cell.
+        df_work = df_work.sort_values(["longitude", "latitude", "date"]).copy()
 
-    # Fallback for the first available date in each cell.
-    df_work["lambda_last_available"] = (
-        df_work["lambda_last_available"].fillna(global_train_mean).clip(lower=0)
+        df_work["lambda_last_available"] = df_work.groupby(cell_cols)[target_col].shift(
+            1
+        )
+
+        # Fallback for the first available date in each cell.
+        df_work["lambda_last_available"] = (
+            df_work["lambda_last_available"].fillna(global_train_mean).clip(lower=0)
+        )
+
+        # Restore original row order so it matches prepare_data() output order.
+        df_work = df_work.sort_index()
+
+        rate_mean_test = df_work.loc[test_mask, "lambda_last_available"].values.astype(
+            np.float32
+        )
+
+        return rate_mean_test
+
+    if mode == "frozen_train":
+        train_df = df_work.loc[train_mask].copy()
+        test_df = df_work.loc[test_mask].copy()
+
+        train_df = train_df.sort_values(["longitude", "latitude", "date"])
+
+        last_train_by_cell = train_df.groupby(cell_cols)[target_col].last()
+
+        lambda_test = []
+
+        for _, row in test_df.iterrows():
+            key = (row["longitude"], row["latitude"])
+            value = last_train_by_cell.get(key, global_train_mean)
+            lambda_test.append(value)
+
+        rate_mean_test = np.asarray(lambda_test, dtype=np.float32)
+        rate_mean_test = np.clip(rate_mean_test, a_min=0.0, a_max=None)
+
+        return rate_mean_test
+
+    raise ValueError(
+        f"Unknown last_available_mode: {mode}. Use 'frozen_train' or 'one_step_ahead'."
     )
-
-    # Restore original row order so it matches prepare_data() output order.
-    df_work = df_work.sort_index()
-
-    rate_mean_test = df_work.loc[test_mask, "lambda_last_available"].values.astype(
-        np.float32
-    )
-
-    return rate_mean_test
 
 
 def plot_daily_predictions(
@@ -235,6 +279,8 @@ def main(cfg: dict):
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
         split_strategy=cfg.get("split_strategy", "random_day"),
+        test_start_date=cfg.get("test_start_date"),
+        test_end_date=cfg.get("test_end_date"),
     )
 
     df["date"] = pd.to_datetime(df["date"])
@@ -244,6 +290,8 @@ def main(cfg: dict):
         train_fraction=cfg["train_fraction"],
         random_seed=cfg["data_seed"],
         split_strategy=cfg.get("split_strategy", "random_day"),
+        test_start_date=cfg.get("test_start_date"),
+        test_end_date=cfg.get("test_end_date"),
     )
 
     test_dates = df.loc[test_mask, "date"].values
@@ -251,10 +299,13 @@ def main(cfg: dict):
     print(f"  Train: {train_y.shape[0]:,} obs   Test: {test_y.shape[0]:,} obs")
 
     # ---- Baseline prediction -------------------------------------------------
+    print(f"Last available mode: {cfg.get('last_available_mode', 'frozen_train')}")
+
     rate_mean_test = build_last_available_predictions(
         df=df,
         train_mask=train_mask,
         test_mask=test_mask,
+        mode=cfg.get("last_available_mode", "frozen_train"),
     )
 
     print("Last-available predictions computed.")

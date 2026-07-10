@@ -32,10 +32,12 @@ def _is_leap_year(year: int) -> bool:
 
 
 def make_day_split_masks(
-    df: pd.DataFrame,
-    train_fraction: float = 0.9,
-    random_seed: int = 42,
-    split_strategy: str = "random_day",
+    df,
+    train_fraction=0.9,
+    random_seed=42,
+    split_strategy="random_day",
+    test_start_date=None,
+    test_end_date=None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """
     Create train/test masks at day level.
@@ -52,6 +54,22 @@ def make_day_split_masks(
     unique_dates = np.sort(dates.unique())
 
     n_train = int(train_fraction * len(unique_dates))
+
+    if split_strategy == "fixed_test_window":
+        if test_start_date is None or test_end_date is None:
+            raise ValueError(
+                "test_start_date and test_end_date must be provided when "
+                "split_strategy='fixed_test_window'."
+            )
+
+        dates = pd.to_datetime(df["date"]).dt.normalize()
+        test_start = pd.to_datetime(test_start_date).normalize()
+        test_end = pd.to_datetime(test_end_date).normalize()
+
+        train_mask = dates < test_start
+        test_mask = (dates >= test_start) & (dates <= test_end)
+
+        return train_mask.to_numpy(), test_mask.to_numpy()
 
     if split_strategy == "random_day":
         rng = np.random.default_rng(random_seed)
@@ -87,6 +105,8 @@ def prepare_data(
     random_seed: int = 42,
     split_strategy: str = "random_day",
     covariate_cols: list[str] | None = None,
+    test_start_date=None,
+    test_end_date=None,
 ) -> tuple:
     """
     Load a parquet file and return train/test tensors ready for SparseLGCP.
@@ -133,6 +153,8 @@ def prepare_data(
         train_fraction=train_fraction,
         random_seed=random_seed,
         split_strategy=split_strategy,
+        test_start_date=test_start_date,
+        test_end_date=test_end_date,
     )
 
     # ----- Raw arrays ---------------------------------------------------------
