@@ -35,7 +35,11 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
-from src.visualization.viz_lgcp import plot_loss, plot_pp_overview
+from src.visualization.viz_lgcp import (
+    plot_loss,
+    plot_pp_overview,
+    plot_test_window_daily_timeseries,
+)
 
 import pandas as pd
 
@@ -627,6 +631,19 @@ def main(cfg: dict):
     with open(metrics_path, "w") as f:
         yaml.dump(metrics, f)
     print(f"Metrics saved → {metrics_path}")
+
+    # window plot
+    test_window_plot_path = plots_dir / "daily_timeseries_test_window.png"
+
+    plot_test_window_daily_timeseries(
+        test_dates=test_dates,
+        test_y=test_y,
+        rate_mean_test=rate_mean_test,
+        save_path=test_window_plot_path,
+        title="LGCP daily totals — test window",
+    )
+
+    print(f"Test-window daily time-series plot saved → {test_window_plot_path}")
 
     # ---- Visualisation -------------------------------------------------------
     print("Generating overview plots …")

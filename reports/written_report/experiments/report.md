@@ -305,3 +305,26 @@ LGCP without lag_1
 LGCP with lag_1
 Window Poisson GLM W1
 ```
+
+## Fixed Test Window Evaluation: December 1–10, 2024
+
+We evaluated the models on a fixed contiguous test window corresponding to the first ten days of December 2024. The training set includes all observations from January 1 to November 30, 2024, while the test set includes only December 1–10, 2024. The remaining dates from December 11 to December 31 were excluded from both training and testing. This setup was designed to evaluate short-term predictive performance on a controlled future window, avoiding the use of the final part of December.
+
+Four models were compared: a Global Mean Poisson baseline, a Last Available Poisson baseline in frozen mode, a Last Available Poisson baseline in one-step-ahead mode, and the multi-kernel LGCP model.
+
+The Global Mean Poisson baseline predicts a constant daily level based on the average training intensity. As expected, it is too rigid: it cannot follow the temporal variation inside the test window. In particular, it underestimates the high-activity days between December 2 and December 6 and overestimates the zero-activity days from December 7 onward.
+
+The Last Available Poisson baseline was evaluated in two modes. In `frozen_train` mode, each cell uses the last observed value before the test window and keeps it fixed throughout December 1–10. This is directly comparable to the LGCP because it does not use any true observations inside the test window. In `one_step_ahead` mode, the model uses the previous observed value even when it belongs to the test set. This represents an online operational baseline, but it is less directly comparable to the LGCP because it uses fresh information from within the test window.
+
+The multi-kernel LGCP achieved the best overall performance. It obtained the best observation-level log-likelihood, observation-level RMSE, daily log-likelihood, daily MAE and daily RMSE. The only metric where it was not the best was observation-level MAE, where the one-step-ahead Last Available baseline performed better. However, this baseline uses previous true test observations and is therefore not a fully frozen multi-day prediction method.
+
+| Model | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily |
+|---|---:|---:|---:|---:|---:|---:|
+| Global Mean Poisson | -0.7501 | 0.4245 | 0.9057 | -10.1506 | 12.2000 | 13.0099 |
+| Last Available Poisson, frozen train | -5.0765 | 0.3837 | 1.1066 | -11.0331 | 12.2000 | 13.6162 |
+| Last Available Poisson, one-step-ahead | -2.3591 | **0.3020** | 0.9773 | -50.7814 | 9.2000 | 12.1491 |
+| Multi-kernel LGCP | **-0.5420** | 0.3320 | **0.8390** | **-5.6571** | **7.3979** | **9.1199** |
+
+The test-window daily plot confirms the numerical results. During December 1–6, the LGCP correctly predicts a period of positive activity, although it smooths the strongest observed peaks, especially around December 3. On December 7–8, where the observed daily total drops to zero, the LGCP prediction also becomes very low. The main visual error occurs on December 9–10, where the observations remain zero but the model predicts a renewed increase in activity.
+
+Overall, the fixed-window experiment shows that the multi-kernel LGCP adds clear predictive value compared with the baseline models. It is more flexible than the Global Mean baseline, more stable than the Last Available baselines in probabilistic terms, and provides the best daily-level accuracy among the tested models. At the same time, the plot highlights an important limitation: the model tends to smooth sharp peaks and does not always capture sudden drops to zero. This suggests that the LGCP captures the general temporal and spatial structure of the process, but additional information or model refinements may be needed to better predict abrupt changes in fishing activity.

@@ -19,6 +19,13 @@ test_end_date: "2024-12-10"
 train_fraction: 0.9
 data_seed: 42
 
+# --- model names ---
+last_available_mode: frozen_train  # frozen_train OR one_step_ahead  
+
+run_name: lgcp_multikernel_dec01_dec10 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
+last_available_run_name: dataseed42_npseed0_frozen_dec01_dec10
+global_mean_run_name: dataseed42_npseed0_dec01_dec10
+
 # --- model lgcp ---
 M_inducing: 300
 np_seed: 0
@@ -61,19 +68,13 @@ kernel_noise:
   value: 1.0e-3
   trainable: false
 
-# --- dummy models ---
-last_available_mode: frozen_train  # frozen_train OR one_step_ahead  
-
-last_available_run_name: dataseed42_npseed0_frozen_dec01_dec10
-global_mean_run_name: dataseed42_npseed0_dec01_dec10
-
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
 
 # --- training ---
 lr: 0.0005
-num_steps: 2000
+num_steps: 5000 # 5000 is the best 
 minibatch: 1024
 num_mc: 7
 grad_clip: 10.0
@@ -86,7 +87,6 @@ num_vis_samples: 500
 # --- output ---
 report_root: reports
 model_family: multi-kernel_lgcp
-run_name: debug # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono
 log_every: 100
 
 

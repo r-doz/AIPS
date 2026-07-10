@@ -271,6 +271,75 @@ def plot_pp_overview(
 # ---------------------------------------------------------------------------
 
 
+def plot_test_window_daily_timeseries(
+    test_dates,
+    test_y,
+    rate_mean_test,
+    save_path,
+    title="LGCP daily totals — test window",
+):
+    """
+    Plot observed vs predicted daily totals on the test window only.
+
+    Parameters
+    ----------
+    test_dates:
+        Date associated with each test observation.
+    test_y:
+        Observed test counts at observation/cell level.
+    rate_mean_test:
+        Predicted Poisson rates at observation/cell level.
+    save_path:
+        Path where the plot will be saved.
+    title:
+        Plot title.
+    """
+
+    plot_df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(test_dates),
+            "observed": np.asarray(test_y, dtype=float),
+            "predicted": np.asarray(rate_mean_test, dtype=float),
+        }
+    )
+
+    daily_df = (
+        plot_df.groupby("date", as_index=False)
+        .agg(
+            observed=("observed", "sum"),
+            predicted=("predicted", "sum"),
+        )
+        .sort_values("date")
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    ax.plot(
+        daily_df["date"],
+        daily_df["observed"],
+        marker="o",
+        label="Observed",
+    )
+
+    ax.plot(
+        daily_df["date"],
+        daily_df["predicted"],
+        marker="o",
+        label="Predicted",
+    )
+
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Daily total vessels")
+    ax.set_title(title)
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    fig.savefig(save_path, dpi=200)
+    plt.close(fig)
+
+
 def plot_loss(
     losses: list[float], title: str = "Training loss", save_path=None
 ) -> None:
