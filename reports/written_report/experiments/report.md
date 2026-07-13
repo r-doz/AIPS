@@ -337,3 +337,73 @@ Global Mean                  -0.7896     0.4389    0.9455     -9.4323    11.2683
 Last Available frozen        -5.4411     0.3973    1.1405    -10.5890    11.4667     13.6821
 Last Available one-step      -2.9455     0.3347    1.0169    -73.7131    11.4667     13.8756
 LGCP multi-kernel            -0.6305     0.3496    0.8967     -6.1605     7.6881     10.1395
+
+
+## Spatial Kernel Tuning on the Fixed Test Window: December 1–10, 2024
+
+We performed a spatial-kernel tuning analysis on the fixed test window from December 1 to December 10, 2024. The goal was to understand how the spatial component of the LGCP affects both daily-level prediction and observation-level spatial accuracy. In this setup, the model was trained on all observations before the test window, while the test set consisted of 49 spatial cells over 10 days, for a total of 490 observations.
+
+Throughout this tuning phase, the temporal kernel was kept fixed in structure. In particular, we used a temporal RBF kernel with lengthscale equal to `0.10`, corresponding to approximately 9–10 days in the original time scale. The kernel noise was fixed at `1e-3`. Therefore, the experiments focused only on the spatial kernel.
+
+The main question was whether the spatial structure should be represented by a single RBF kernel, a single Rational Quadratic kernel, or a combination of both. Since the objective of the project is not only to predict the total number of vessels per day, but also to predict their spatial distribution, both daily-level and observation-level metrics were considered.
+
+The tested spatial-kernel configurations are summarized below.
+
+| Spatial kernel | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily |
+|---|---:|---:|---:|---:|---:|---:|
+| RBF + RQ, original setting | -0.5420 | 0.3320 | 0.8390 | -5.6571 | 7.3979 | 9.1199 |
+| RQ only | -0.5327 | 0.3458 | 0.8288 | -5.6979 | 7.3698 | 9.1505 |
+| RBF only, lengthscale 0.25 | -0.5343 | 0.3315 | 0.8391 | -5.6424 | 7.4822 | 9.0701 |
+| RBF only, lengthscale 0.35 | **-0.5121** | **0.3180** | **0.8159** | -5.8175 | 7.7473 | 9.4042 |
+| RBF only, lengthscale 0.50 | -0.5267 | 0.3445 | 0.8596 | **-5.1884** | 6.4633 | 7.9756 |
+| RBF only, lengthscale 0.65 | -0.5604 | 0.3463 | 0.8516 | -6.0588 | 7.8488 | 9.6871 |
+| RBF only, lengthscale 0.75 | -0.5670 | 0.3626 | 0.8853 | -5.7166 | 7.2114 | 9.0522 |
+| RBF 0.35 + RQ, RBF lengthscale trainable | -0.5388 | 0.3501 | 0.8390 | -5.5115 | 6.5732 | 8.5262 |
+| RBF 0.35 fixed + RQ | -0.5219 | 0.3534 | 0.8226 | -5.3231 | **6.3511** | **7.9519** |
+
+The first important result is that a single RBF kernel with lengthscale initialized at `0.50` performed very well at the daily level. It achieved the best daily log-likelihood and strong daily error metrics. This suggests that an intermediate spatial lengthscale allows the model to capture the overall spatial distribution of intensity in a way that is useful for predicting daily totals.
+
+However, the RBF-only model with lengthscale `0.35` achieved the best observation-level metrics. It obtained the best observation-level log-likelihood, MAE and RMSE among the tested configurations. This indicates that a more local spatial kernel is beneficial for predicting the position of vessels at the cell level. At the same time, this configuration performed worse at the daily level, suggesting that a purely local spatial structure may fragment the intensity field and reduce the quality of aggregate daily predictions.
+
+This revealed a clear trade-off. Shorter spatial lengthscales improved spatial localization, while intermediate lengthscales improved daily totals. Since the final objective of the model is both to estimate the number of vessels and to locate them spatially, neither criterion should be considered alone.
+
+We then tested whether adding a Rational Quadratic kernel to a local RBF kernel could provide a better compromise. The intuition was that the local RBF component could preserve spatial localization, while the Rational Quadratic component could capture broader spatial variation and help recover daily-level accuracy.
+
+When the RBF lengthscale was initialized at `0.35` but left trainable, the model moved the RBF lengthscale from `0.35` to approximately `0.46`. This showed that the model naturally tends to move the RBF component toward the intermediate range around `0.45–0.50`, which is consistent with the strong daily performance of the RBF-only model with lengthscale `0.50`. In the same run, the Rational Quadratic component became relatively broad, with final lengthscale around `2.26`. This improved the daily metrics compared with the purely local RBF model, but did not provide the best overall compromise.
+
+The most promising result was obtained by fixing the RBF lengthscale at `0.35` and adding a trainable Rational Quadratic component. The final learned kernel parameters were:
+
+```yaml
+spatial:
+  - type: rbf
+    params:
+      lengthscale: 0.35
+      variance: 3.1523
+
+  - type: rational_quadratic
+    params:
+      alpha: 0.80
+      lengthscale: 1.1105
+      variance: 2.5845
+
+temporal:
+  - type: rbf
+    params:
+      lengthscale: 0.10
+      variance: 1.0699
+
+noise_var: 0.001
+
+## November 21-30 and robustness
+
+To assess whether the spatial-kernel tuning performed on December 1–10 was robust, we evaluated the two main candidate kernels on an additional fixed test window, November 21–30, 2024. This second window revealed an important difference between the two configurations. The combined kernel with fixed local RBF and Rational Quadratic components, which performed very well on December 1–10, degraded substantially on the November window. In particular, it strongly overestimated the daily totals between November 25 and November 29, leading to a daily RMSE of 19.72.
+
+By contrast, the simpler RBF-only kernel with initial lengthscale 0.50 remained much more stable. On the November 21–30 window, it achieved a daily MAE of 7.36 and a daily RMSE of 9.55, substantially improving over the combined kernel. It also outperformed the frozen Last Available baseline in observation-level log-likelihood, observation-level RMSE, daily log-likelihood and daily MAE, while remaining close in daily RMSE.
+
+This suggests that the combined RBF + Rational Quadratic kernel may have been partially tuned to the December 1–10 window and is not yet robust across different future periods. The RBF-only kernel with lengthscale 0.50 provides a better compromise between accuracy, robustness and model simplicity. Therefore, despite the strong December performance of the combined kernel, the current preferred spatial kernel is the simpler RBF-only configuration.
+
+Model                         LL obs     MAE obs   RMSE obs   LL daily    MAE daily   RMSE daily
+LGCP RBF0.35 fixed + RQ       -0.7250    0.5974    1.4888     -9.4859     16.0702     19.7201
+LGCP nuova run                -0.5729    0.4187    0.7874     -5.3659      7.3569      9.5475
+Last Poisson one-step         -2.6723    0.2857    0.8157    -16.3761      6.8000      9.1104
+Last Poisson frozen           -3.5322    0.3796    1.0361     -5.9212      7.8000      8.7636
