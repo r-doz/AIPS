@@ -12,23 +12,36 @@ covariate_cols:
   - is_holiday
   - is_weekend
 
+  - cell_lag_1
+  #- cell_lag_7
+  #- cell_roll_mean_7
+  #- daily_total_lag_1
+  #- daily_total_lag_7
+  #- daily_total_roll_mean_7
+
 # --- split ---
 split_strategy: fixed_test_window # fixed_test_window OR chronological OR random_day
-test_start_date: "2024-12-01"
-test_end_date: "2024-12-10"
+test_start_date: "2024-11-21"
+test_end_date: "2024-11-30"
 train_fraction: 0.9
 data_seed: 42
 
 # --- model names ---
-# multi-kernel_lgcp OR global_mean_poisson OR last_available_poisson
-model_family: global_mean_poisson
+# lagged_lgcp
+# multi-kernel_lgcp OR 
+# global_mean_poisson 
+# global_cell_mean_poisson 
+# last_available_poisson
+model_family: lagged_lgcp
 
-last_available_mode: frozen_train  # frozen_train OR one_step_ahead  
-global_cell_mean_mode: expanding # expanding OR frozen_train 
+# frozen_train OR one_step_ahead  
+last_available_mode: one_step_ahead  
+# expanding OR frozen_train 
+global_cell_mean_mode: expanding 
 
-run_name: lgcp_multikernel_dec01_dec10_rbfOnly # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
-last_available_run_name: dataseed42_npseed0_frozen_dec01_dec10 # onestep OR frozen
-global_mean_run_name: dataseed42_npseed0_dec01_dec10
+run_name: lgcp_nov21_nov30 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
+last_available_run_name: dataseed42_npseed0_onestep_nov21_nov30 # onestep OR frozen
+global_mean_run_name: dataseed42_npseed0_nov21_nov30
 global_cell_mean_run_name: dataseed42_npseed0_nov21_nov30_expanding
 
 # --- model lgcp ---
@@ -75,6 +88,31 @@ kernel_noise:
   value: 1.0e-3
   trainable: false
 
+# Autoregressive setting 
+lag_features:
+  enabled: true
+  mode: observed_past
+  target_col: ais_vessels_count
+  date_col: date
+  cell_cols:
+    - longitude
+    - latitude
+
+  cell_lags:
+    - 1
+    - 7
+
+  cell_rolling_windows:
+    - 7
+
+  daily_total_lags:
+    - 1
+    - 7
+
+  daily_total_rolling_windows:
+    - 7
+
+  fillna_value: 0.0
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.

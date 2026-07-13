@@ -99,6 +99,88 @@ def make_day_split_masks(
 # ---------------------------------------------------------------------------
 
 
+def add_lag_features(
+    df: pd.DataFrame,
+    lag_cfg: dict,
+) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Add observed-past lag features.
+
+    Important:
+    all features for date t use only observations from dates < t.
+    This is valid for online one-step / real-time evaluation.
+    """
+
+    if lag_cfg is None or not lag_cfg.get("enabled", False):
+        return df, []
+
+    mode = lag_cfg.get("mode", "observed_past")
+    if mode != "observed_past":
+        raise ValueError(
+            f"Unsupported lag_features.mode: {mode}. For now use 'observed_past'."
+        )
+
+    target_col = lag_cfg.get("target_col", "ais_vessels_count")
+    date_col = lag_cfg.get("date_col", "date")
+    cell_cols = lag_cfg.get("cell_cols", ["longitude", "latitude"])
+    fillna_value = float(lag_cfg.get("fillna_value", 0.0))
+
+    cell_lags = lag_cfg.get("cell_lags", [])
+    cell_rolling_windows = lag_cfg.get("cell_rolling_windows", [])
+    daily_total_lags = lag_cfg.get("daily_total_lags", [])
+    daily_total_rolling_windows = lag_cfg.get("daily_total_rolling_windows", [])
+
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col]).dt.normalize()
+    df["_original_order"] = np.arange(len(df))
+
+    generated_cols = []
+
+    # ------------------------------------------------------------------
+    # Cell-level lag features
+    # ------------------------------------------------------------------
+    df = df.sort_values(cell_cols + [date_col]).copy()
+
+    for lag in cell_lags:
+        col = f"cell_lag_{lag}"
+        df[col] = df.groupby(cell_cols)[target_col].shift(lag)
+        generated_cols.append(col)
+
+    for window in cell_rolling_windows:
+        col = f"cell_roll_mean_{window}"
+        df[col] = df.groupby(cell_cols, group_keys=False)[target_col].apply(
+            lambda s: s.shift(1).rolling(window, min_periods=1).mean()
+        )
+        generated_cols.append(col)
+
+    # ------------------------------------------------------------------
+    # Daily-total lag features
+    # ------------------------------------------------------------------
+    daily_total = df.groupby(date_col)[target_col].sum().sort_index()
+
+    for lag in daily_total_lags:
+        col = f"daily_total_lag_{lag}"
+        lagged_daily = daily_total.shift(lag)
+        df[col] = df[date_col].map(lagged_daily)
+        generated_cols.append(col)
+
+    for window in daily_total_rolling_windows:
+        col = f"daily_total_roll_mean_{window}"
+        rolling_daily = daily_total.shift(1).rolling(window, min_periods=1).mean()
+        df[col] = df[date_col].map(rolling_daily)
+        generated_cols.append(col)
+
+    # ------------------------------------------------------------------
+    # Fill initial missing values
+    # ------------------------------------------------------------------
+    for col in generated_cols:
+        df[col] = df[col].fillna(fillna_value).astype(float)
+
+    df = df.sort_values("_original_order").drop(columns=["_original_order"])
+
+    return df, generated_cols
+
+
 def prepare_data(
     parquet_path: str,
     train_fraction: float = 0.9,
@@ -107,6 +189,7 @@ def prepare_data(
     covariate_cols: list[str] | None = None,
     test_start_date=None,
     test_end_date=None,
+    lag_features: dict | None = None,
 ) -> tuple:
     """
     Load a parquet file and return train/test tensors ready for SparseLGCP.
@@ -131,6 +214,16 @@ def prepare_data(
     """
     df = pd.read_parquet(parquet_path)
     df["date"] = pd.to_datetime(df["date"])
+
+    if lag_features is not None and lag_features.get("enabled", False):
+        if split_strategy == "random_day":
+            raise ValueError(
+                "lag_features with observed_past mode should not be used with "
+                "split_strategy='random_day'. Use fixed_test_window or chronological."
+            )
+
+        df, generated_lag_cols = add_lag_features(df, lag_features)
+        print(f"Generated lag features: {generated_lag_cols}")
 
     if covariate_cols is None:
         covariate_cols = ["chl", "thetao"]

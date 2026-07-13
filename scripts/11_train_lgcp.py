@@ -104,6 +104,9 @@ DEFAULT_CONFIG = {
     "model_family": "basic_lgcp",
     "run_name": "lgcp_run_debug",
     "log_every": 50,
+    "lag_features": {
+        "enabled": False,
+    },
 }
 
 KERNEL_TYPE_MAP = {
@@ -540,6 +543,7 @@ def main(cfg: dict):
             covariate_cols=cfg.get("covariate_cols"),
             test_start_date=cfg.get("test_start_date"),
             test_end_date=cfg.get("test_end_date"),
+            lag_features=cfg.get("lag_features"),
         )
     )
     meta = compute_meta(df)
