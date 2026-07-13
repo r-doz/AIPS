@@ -393,6 +393,7 @@ temporal:
       variance: 1.0699
 
 noise_var: 0.001
+```
 
 ## November 21-30 and robustness
 
@@ -407,3 +408,106 @@ LGCP RBF0.35 fixed + RQ       -0.7250    0.5974    1.4888     -9.4859     16.070
 LGCP nuova run                -0.5729    0.4187    0.7874     -5.3659      7.3569      9.5475
 Last Poisson one-step         -2.6723    0.2857    0.8157    -16.3761      6.8000      9.1104
 Last Poisson frozen           -3.5322    0.3796    1.0361     -5.9212      7.8000      8.7636
+
+# Autoregressive LGCP
+
+## Lagged Vessel-Count Features
+
+After selecting a robust LGCP kernel configuration, we tested whether adding explicit information about past vessel activity could improve the model. This was motivated by the strong performance of the `Last Available Poisson` baseline, especially in the one-step-ahead setting.
+
+We added lagged vessel-count features as additional covariates in the LGCP. The tested features included the vessel count in the same cell on the previous day (`cell_lag_1`), the vessel count in the same cell seven days before (`cell_lag_7`), rolling means of previous vessel counts in the same cell, and lagged or rolling versions of the total daily vessel count. These features were constructed using only observations from days before the prediction date, so they represent an online observed-past setting.
+
+The first experiment was performed on the December 1–10 fixed test window. Adding all lagged vessel-count features improved the observation-level metrics, but worsened the daily-level metrics.
+
+| Model | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily |
+|---|---:|---:|---:|---:|---:|---:|
+| LGCP without vessel lags | -0.5267 | 0.3445 | 0.8596 | -5.1884 | 6.4633 | 7.9756 |
+| LGCP with vessel lags | **-0.5121** | 0.3131 | 0.8294 | -5.9638 | 7.7204 | 9.6503 |
+| Last Available Poisson, one-step | -2.3591 | **0.3020** | 0.9773 | -50.7814 | 9.2000 | 12.1491 |
+
+This suggests that vessel-count lags can help the model localize vessel presence at the cell level, but they do not necessarily improve the prediction of the aggregate daily total. In this window, the lagged LGCP improved observation-level log-likelihood, MAE and RMSE, but it produced worse daily-level errors than the non-lagged LGCP.
+
+We then evaluated the same idea on a second fixed test window, November 21–30. In this case, adding all vessel-count lag features substantially degraded the LGCP performance.
+
+| Model | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily |
+|---|---:|---:|---:|---:|---:|---:|
+| Global Cell Mean Poisson, expanding | -0.5831 | 0.3702 | **0.7838** | -5.9778 | 7.8187 | **8.8201** |
+| Last Available Poisson, one-step | -2.6723 | **0.2857** | 0.8157 | -16.3761 | **6.8000** | 9.1104 |
+| LGCP without vessel lags | **-0.5729** | 0.4187 | 0.7874 | **-5.3659** | 7.3569 | 9.5475 |
+| LGCP with vessel lags | -0.6650 | 0.5055 | 1.1411 | -7.5101 | 12.5979 | 15.7085 |
+
+This result shows that the lagged vessel-count features are not robust in their current form. While they helped observation-level performance in the December 1–10 window, they strongly worsened both observation-level and daily-level metrics in the November 21–30 window.
+
+To better understand this behaviour, we also tested a simpler lagged model using only `cell_lag_1`, i.e. the number of vessels in the same spatial cell on the previous day. This also failed to improve performance on the November 21–30 window.
+
+| Model | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily |
+|---|---:|---:|---:|---:|---:|---:|
+| LGCP without vessel lags | -0.5729 | 0.4187 | 0.7874 | -5.3659 | 7.3569 | 9.5475 |
+| LGCP with only `cell_lag_1` | -0.5979 | 0.4367 | 0.8738 | -5.4621 | 7.6500 | 9.9452 |
+
+Therefore, simply knowing the vessel count in the same cell on the previous day does not appear to be sufficient to improve the LGCP. This is likely related to the sparsity of the data: most cell-level observations are zero, so `cell_lag_1` is often zero and may be too noisy or too local to provide a stable predictive signal.
+
+The strong MAE performance of the `Last Available Poisson` baseline should therefore be interpreted carefully. Since the dataset is highly sparse, copying the previous observation can produce many correct zero predictions at the observation level. This explains why the one-step Last Available baseline can be competitive in MAE. However, its log-likelihood is very poor, especially at the daily level, indicating that it is not a well-calibrated probabilistic model. In particular, it performs badly when vessels appear after a zero observation or when the daily total changes abruptly.
+
+Overall, these experiments suggest that raw vessel-count lags should not be used as simple linear covariates in the LGCP, at least in their current form. A more promising future direction would be to use past vessel counts as an offset or baseline intensity, for example by modelling corrections around a `Last Available` or `Cell Mean` baseline, rather than treating past counts as ordinary covariates.
+
+# Chl / ais correlation analysis 
+
+## Chlorophyll–Vessel Correlation Analysis
+
+After the experiments with vessel-count lags, we investigated the relationship between chlorophyll concentration and AIS vessel activity. This analysis was motivated by visual comparisons between chlorophyll and vessel activity, which suggested that periods of higher chlorophyll often correspond to periods of higher fishing activity.
+
+We computed lagged correlations between the daily total number of AIS vessels and the daily mean chlorophyll concentration in the Gulf of Trieste. The convention used was:
+
+```text
+corr(vessels_t, chl_{t-lag})
+```
+
+With this convention, positive lags mean that chlorophyll precedes vessel activity, while negative lags mean that vessel activity precedes chlorophyll.
+
+The strongest positive correlations occurred at weekly multiples:
+
+| Lag | Interpretation             | Pearson correlation | Spearman correlation |
+| --: | -------------------------- | ------------------: | -------------------: |
+|   0 | same-day chlorophyll       |              0.4147 |               0.4598 |
+|   7 | chlorophyll 7 days before  |              0.4477 |               0.5032 |
+|  14 | chlorophyll 14 days before |              0.4759 |               0.5246 |
+|  21 | chlorophyll 21 days before |              0.4977 |               0.5219 |
+|  28 | chlorophyll 28 days before |              0.5130 |               0.5058 |
+
+These results show a clear positive association between chlorophyll concentration and AIS vessel activity. The association is not only contemporaneous: chlorophyll measured in previous weeks is also strongly associated with later vessel activity. This suggests that chlorophyll contains useful predictive information for fishing-vessel presence.
+
+We also analysed the relationship between daily changes in vessel activity and daily changes in chlorophyll. The correlations between changes were also strong:
+
+| Lag | Interpretation                    | Pearson correlation |
+| --: | --------------------------------- | ------------------: |
+|   0 | same-day changes                  |              0.5170 |
+|   7 | chlorophyll change 7 days before  |              0.5168 |
+|  14 | chlorophyll change 14 days before |              0.5200 |
+|  21 | chlorophyll change 21 days before |              0.5343 |
+|  28 | chlorophyll change 28 days before |              0.5213 |
+
+This suggests that not only the absolute level of chlorophyll, but also its temporal variation, may be related to changes in vessel activity.
+
+An additional ablation supported the importance of environmental covariates. When chlorophyll and temperature were removed from the LGCP and only cell_lag_1 was used as additional information, performance degraded substantially on the November 21–30 window.
+
+| Model                                                   | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily |
+| ------------------------------------------------------- | ----------: | ------: | -------: | ------------: | --------: | ---------: |
+| LGCP with chlorophyll and temperature                   |     -0.5729 |  0.4187 |   0.7874 |       -5.3659 |    7.3569 |     9.5475 |
+| LGCP with `cell_lag_1`, without chlorophyll/temperature |     -0.6863 |  0.5503 |   1.1394 |       -9.6284 |   16.0973 |    19.2581 |
+
+
+This indicates that chlorophyll and temperature are not marginal covariates: they provide substantial information for the LGCP. In contrast, raw vessel-count lag features alone were not able to recover good predictive performance.
+
+The current LGCP already uses cell-level chlorophyll chl(s,t) as a covariate. This provides local spatial information and can help the model decide where to place vessel intensity. However, the correlation analysis suggests that global daily chlorophyll summaries may also be useful, especially for calibrating the total daily level of fishing activity.
+
+Based on these diagnostics, the next modelling step is to enrich the chlorophyll representation by adding daily-scale chlorophyll features. The most natural candidates are:
+
+daily_mean_chl: mean chlorophyll over the whole Gulf at day t;
+daily_chl_diff: difference between daily mean chlorophyll at day t and day t-1;
+daily_mean_chl_lag_7: daily mean chlorophyll one week before;
+daily_mean_chl_lag_14: daily mean chlorophyll two weeks before.
+
+The rationale is that cell-level chlorophyll captures local spatial productivity, while daily mean chlorophyll captures the global environmental regime of the Gulf. The difference feature captures recent changes in chlorophyll, while the lagged features are motivated by the observed weekly-lag correlation structure.
+
+These correlations should not be interpreted as causal evidence, because chlorophyll and vessel activity may both be influenced by seasonal, weekly, meteorological or operational factors. However, they provide strong evidence that chlorophyll contains useful predictive information and is a more promising direction than raw vessel-count lags for improving the LGCP.
