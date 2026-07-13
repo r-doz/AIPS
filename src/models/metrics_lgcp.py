@@ -9,6 +9,102 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.special import gammaln
+from sklearn import metrics
+
+
+def _safe_corr(x, y):
+    """
+    Safe Pearson correlation.
+
+    Returns np.nan if the correlation is not defined, for example when
+    one of the two series is constant or too short.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+
+    mask = np.isfinite(x) & np.isfinite(y)
+    x = x[mask]
+    y = y[mask]
+
+    if len(x) < 3:
+        return np.nan
+
+    if np.std(x) == 0.0 or np.std(y) == 0.0:
+        return np.nan
+
+    return float(np.corrcoef(x, y)[0, 1])
+
+
+def evaluate_daily_trend_metrics(
+    y_true,
+    rate_mean,
+    dates,
+    eps_direction=1e-8,
+):
+    """
+    Evaluate whether the model captures the daily temporal trend.
+
+    Metrics:
+    - daily_delta_corr:
+        Pearson correlation between observed daily changes and predicted
+        daily changes.
+
+    - daily_direction_accuracy_moving:
+        Fraction of non-flat observed daily transitions for which the model
+        predicts the correct direction: up or down.
+    """
+
+    df = pd.DataFrame(
+        {
+            "date": pd.to_datetime(dates),
+            "y_true": np.asarray(y_true, dtype=float),
+            "rate_mean": np.asarray(rate_mean, dtype=float),
+        }
+    )
+
+    daily_df = (
+        df.groupby("date", as_index=False)
+        .agg(
+            y_true=("y_true", "sum"),
+            rate_mean=("rate_mean", "sum"),
+        )
+        .sort_values("date")
+    )
+
+    observed = daily_df["y_true"].values.astype(float)
+    predicted = daily_df["rate_mean"].values.astype(float)
+
+    observed_delta = np.diff(observed)
+    predicted_delta = np.diff(predicted)
+
+    daily_delta_corr = _safe_corr(observed_delta, predicted_delta)
+
+    observed_sign = np.where(
+        observed_delta > eps_direction,
+        1,
+        np.where(observed_delta < -eps_direction, -1, 0),
+    )
+
+    predicted_sign = np.where(
+        predicted_delta > eps_direction,
+        1,
+        np.where(predicted_delta < -eps_direction, -1, 0),
+    )
+
+    # We ignore days where the observed daily total did not move.
+    moving_mask = observed_sign != 0
+
+    if moving_mask.sum() > 0:
+        daily_direction_accuracy_moving = float(
+            np.mean(observed_sign[moving_mask] == predicted_sign[moving_mask])
+        )
+    else:
+        daily_direction_accuracy_moving = np.nan
+
+    return {
+        "daily_delta_corr": daily_delta_corr,
+        "daily_direction_accuracy_moving": daily_direction_accuracy_moving,
+    }
 
 
 def evaluate_metrics(
@@ -78,7 +174,13 @@ def evaluate_metrics(
     mae_daily = float(np.mean(np.abs(y_daily - lambda_daily)))
     rmse_daily = float(np.sqrt(np.mean((y_daily - lambda_daily) ** 2)))
 
-    return {
+    trend_metrics = evaluate_daily_trend_metrics(
+        y_true=y_true,
+        rate_mean=rate_mean,
+        dates=dates,
+    )
+
+    metrics = {
         # Observation-level metrics
         "mean_ll_obs": mean_ll_obs,
         "mae_obs": mae_obs,
@@ -88,3 +190,7 @@ def evaluate_metrics(
         "mae_daily": mae_daily,
         "rmse_daily": rmse_daily,
     }
+
+    metrics.update(trend_metrics)
+
+    return metrics

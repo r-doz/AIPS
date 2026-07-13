@@ -181,6 +181,78 @@ def add_lag_features(
     return df, generated_cols
 
 
+def add_daily_chl_features(
+    df,
+    chl_col="chl",
+    date_col="date",
+):
+    """
+    Add daily Gulf-level chlorophyll features.
+
+    Created features:
+    - daily_mean_chl:
+        mean chlorophyll over all grid cells at day t
+    - daily_chl_diff:
+        daily_mean_chl(t) - daily_mean_chl(t-1)
+    - daily_mean_chl_lag_7:
+        daily_mean_chl(t-7)
+    - daily_mean_chl_lag_14:
+        daily_mean_chl(t-14)
+    """
+
+    df = df.copy()
+    df[date_col] = pd.to_datetime(df[date_col]).dt.normalize()
+
+    daily_chl_feature_cols = [
+        "daily_mean_chl",
+        "daily_chl_diff",
+        "daily_mean_chl_lag_7",
+        "daily_mean_chl_lag_14",
+    ]
+
+    # Avoid duplicated columns if the function is called more than once.
+    existing_cols = [col for col in daily_chl_feature_cols if col in df.columns]
+    if existing_cols:
+        df = df.drop(columns=existing_cols)
+
+    daily = (
+        df.groupby(date_col, as_index=False)
+        .agg(daily_mean_chl=(chl_col, "mean"))
+        .sort_values(date_col)
+        .reset_index(drop=True)
+    )
+
+    daily["daily_chl_diff"] = daily["daily_mean_chl"].diff()
+
+    daily["daily_mean_chl_lag_7"] = daily["daily_mean_chl"].shift(7)
+    daily["daily_mean_chl_lag_14"] = daily["daily_mean_chl"].shift(14)
+
+    # Fill initial missing values.
+    # daily_chl_diff is zero on the first day.
+    daily["daily_chl_diff"] = daily["daily_chl_diff"].fillna(0.0)
+
+    # For lagged variables, the first days have no previous 7/14-day value.
+    # We fill them with the first available lagged value to avoid NaNs.
+    for col in ["daily_mean_chl_lag_7", "daily_mean_chl_lag_14"]:
+        daily[col] = daily[col].bfill().ffill()
+
+    df = df.merge(
+        daily[
+            [
+                date_col,
+                "daily_mean_chl",
+                "daily_chl_diff",
+                "daily_mean_chl_lag_7",
+                "daily_mean_chl_lag_14",
+            ]
+        ],
+        on=date_col,
+        how="left",
+    )
+
+    return df
+
+
 def prepare_data(
     parquet_path: str,
     train_fraction: float = 0.9,
@@ -214,6 +286,12 @@ def prepare_data(
     """
     df = pd.read_parquet(parquet_path)
     df["date"] = pd.to_datetime(df["date"])
+
+    df = add_daily_chl_features(
+        df,
+        chl_col="chl",
+        date_col="date",
+    )
 
     if lag_features is not None and lag_features.get("enabled", False):
         if split_strategy == "random_day":

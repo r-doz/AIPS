@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from prometheus_client import metrics
 import torch
 import yaml
 
@@ -629,6 +630,13 @@ def main(cfg: dict):
     print(f"  Mean log-likelihood daily:   {metrics['mean_ll_daily']:.4f}")
     print(f"  MAE daily:                   {metrics['mae_daily']:.4f}")
     print(f"  RMSE daily:                  {metrics['rmse_daily']:.4f}")
+
+    print("Daily trend metrics:")
+    print(f"  Daily delta correlation:     {metrics['daily_delta_corr']:.4f}")
+    print(
+        f"  Direction accuracy moving:   "
+        f"{metrics['daily_direction_accuracy_moving']:.4f}"
+    )
 
     # Save metrics
     metrics_path = out_dir / "metrics.yaml"

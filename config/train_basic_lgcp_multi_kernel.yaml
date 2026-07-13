@@ -12,7 +12,12 @@ covariate_cols:
   - is_holiday
   - is_weekend
 
-  - cell_lag_1
+  #- daily_mean_chl
+  #- daily_chl_diff
+  #- daily_mean_chl_lag_7
+  #- daily_mean_chl_lag_14
+
+  #- cell_lag_1
   #- cell_lag_7
   #- cell_roll_mean_7
   #- daily_total_lag_1
@@ -28,18 +33,18 @@ data_seed: 42
 
 # --- model names ---
 # lagged_lgcp
-# multi-kernel_lgcp OR 
+# multi-kernel_lgcp 
 # global_mean_poisson 
 # global_cell_mean_poisson 
 # last_available_poisson
-model_family: lagged_lgcp
+model_family: multi-kernel_lgcp  
 
 # frozen_train OR one_step_ahead  
 last_available_mode: one_step_ahead  
 # expanding OR frozen_train 
 global_cell_mean_mode: expanding 
 
-run_name: lgcp_nov21_nov30 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
+run_name: lgcp_multikernel_nov21_nov30 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
 last_available_run_name: dataseed42_npseed0_onestep_nov21_nov30 # onestep OR frozen
 global_mean_run_name: dataseed42_npseed0_nov21_nov30
 global_cell_mean_run_name: dataseed42_npseed0_nov21_nov30_expanding
