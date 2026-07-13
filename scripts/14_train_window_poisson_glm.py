@@ -51,6 +51,8 @@ DEFAULT_CONFIG = {
     "split_strategy": "random_day",  # "random_day" or "chronological"
     "train_fraction": 0.9,
     "data_seed": 42,
+    "test_start_date": None,
+    "test_end_date": None,
     # --- window features ---
     "window_size": 7,
     "drop_incomplete_windows": True,
@@ -254,48 +256,67 @@ def build_window_dataframe(
 
 
 def make_split_masks(
-    df_windowed: pd.DataFrame,
-    cfg: dict,
-    reference_dates: np.ndarray | pd.Series | None = None,
-) -> tuple[np.ndarray, np.ndarray]:
+    dates,
+    split_strategy="chronological",
+    train_fraction=0.9,
+    random_seed=42,
+    test_start_date=None,
+    test_end_date=None,
+):
     """
-    Create train/test masks at day level.
+    Create train/test masks using the target date of each sample.
 
-    If reference_dates is provided, the split is created using those dates
-    instead of the dates available after window construction. This is useful
-    to keep the same split as the LGCP/baseline models even after dropping
-    the first W days due to incomplete windows.
+    dates must be the date column of the final modelling dataframe,
+    i.e. after window features have been created.
     """
-    split_strategy = cfg["split_strategy"]
-    train_fraction = float(cfg["train_fraction"])
 
-    if reference_dates is None:
-        unique_dates = np.sort(pd.to_datetime(df_windowed["date"].unique()))
-    else:
-        unique_dates = np.sort(pd.to_datetime(reference_dates).unique())
+    dates = pd.Series(pd.to_datetime(dates)).dt.normalize()
 
-    n_train = int(train_fraction * len(unique_dates))
+    if split_strategy == "fixed_test_window":
+        if test_start_date is None or test_end_date is None:
+            raise ValueError(
+                "For split_strategy='fixed_test_window', both "
+                "'test_start_date' and 'test_end_date' must be provided."
+            )
+
+        test_start = pd.to_datetime(test_start_date).normalize()
+        test_end = pd.to_datetime(test_end_date).normalize()
+
+        train_mask = dates < test_start
+        test_mask = (dates >= test_start) & (dates <= test_end)
+
+        return train_mask.to_numpy(), test_mask.to_numpy()
+
+    unique_dates = np.array(sorted(dates.unique()))
+
+    if split_strategy == "chronological":
+        n_train_days = int(len(unique_dates) * train_fraction)
+
+        train_dates = unique_dates[:n_train_days]
+        test_dates = unique_dates[n_train_days:]
+
+        train_mask = dates.isin(train_dates)
+        test_mask = dates.isin(test_dates)
+
+        return train_mask.to_numpy(), test_mask.to_numpy()
 
     if split_strategy == "random_day":
-        rng = np.random.default_rng(cfg["data_seed"])
-        shuffled = rng.permutation(unique_dates)
-        train_dates = set(shuffled[:n_train])
-        test_dates = set(shuffled[n_train:])
+        rng = np.random.default_rng(random_seed)
 
-    elif split_strategy == "chronological":
-        train_dates = set(unique_dates[:n_train])
-        test_dates = set(unique_dates[n_train:])
+        shuffled_dates = unique_dates.copy()
+        rng.shuffle(shuffled_dates)
 
-    else:
-        raise ValueError(
-            f"Unknown split_strategy: {split_strategy}. "
-            "Use 'random_day' or 'chronological'."
-        )
+        n_train_days = int(len(shuffled_dates) * train_fraction)
 
-    train_mask = df_windowed["date"].isin(train_dates).values
-    test_mask = df_windowed["date"].isin(test_dates).values
+        train_dates = shuffled_dates[:n_train_days]
+        test_dates = shuffled_dates[n_train_days:]
 
-    return train_mask, test_mask
+        train_mask = dates.isin(train_dates)
+        test_mask = dates.isin(test_dates)
+
+        return train_mask.to_numpy(), test_mask.to_numpy()
+
+    raise ValueError(f"Unknown split_strategy: {split_strategy}")
 
 
 # ---------------------------------------------------------------------------
@@ -371,9 +392,12 @@ def main(cfg: dict):
 
     reference_dates = df["date"].unique()
     train_mask, test_mask = make_split_masks(
-        df_windowed=df_win,
-        cfg=cfg,
-        reference_dates=reference_dates,
+        dates=df_win["date"],
+        split_strategy=cfg.get("split_strategy", "chronological"),
+        train_fraction=cfg.get("train_fraction", 0.9),
+        random_seed=cfg.get("data_seed", 42),
+        test_start_date=cfg.get("test_start_date"),
+        test_end_date=cfg.get("test_end_date"),
     )
 
     target_col = cfg["target_col"]

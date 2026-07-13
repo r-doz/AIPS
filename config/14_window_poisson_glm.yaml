@@ -7,11 +7,15 @@ target_col: ais_vessels_count
 
 # --- split ---
 # Options:
-#   random_day     -> same style as current LGCP split
-#   chronological  -> train first part of the year, test final part
-split_strategy: chronological
+#   random_day         -> random split by whole days
+#   chronological      -> train first part of the year, test final part
+#   fixed_test_window  -> train before test_start_date, test selected window
+split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
+
+test_start_date: "2024-12-01"
+test_end_date: "2024-12-10"
 
 # --- window features ---
 window_size: 1
@@ -35,4 +39,4 @@ standardize_features: true
 # --- output ---
 report_root: reports
 model_family: window_poisson_glm
-run_name: window_poisson_glm_W1_alpha005_chronological
+run_name: window_poisson_glm_W1_alpha005_dec01_dec10

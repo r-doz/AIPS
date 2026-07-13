@@ -511,3 +511,51 @@ daily_mean_chl_lag_14: daily mean chlorophyll two weeks before.
 The rationale is that cell-level chlorophyll captures local spatial productivity, while daily mean chlorophyll captures the global environmental regime of the Gulf. The difference feature captures recent changes in chlorophyll, while the lagged features are motivated by the observed weekly-lag correlation structure.
 
 These correlations should not be interpreted as causal evidence, because chlorophyll and vessel activity may both be influenced by seasonal, weekly, meteorological or operational factors. However, they provide strong evidence that chlorophyll contains useful predictive information and is a more promising direction than raw vessel-count lags for improving the LGCP.
+
+
+# LCGP + Chlorophyll Features
+
+After the analysis of lagged vessel-count features, we investigated whether a richer representation of chlorophyll could improve the LGCP. The standard model already includes cell-level chlorophyll, `chl(s,t)`, which provides local environmental information for each spatial cell and day. However, the correlation analysis between daily AIS vessel counts and daily mean chlorophyll suggested that chlorophyll may also contain useful information at the Gulf-wide daily scale.
+
+For this reason, we introduced additional daily chlorophyll features:
+
+- `daily_mean_chl`: mean chlorophyll over the whole Gulf at day `t`;
+- `daily_mean_chl_lag_7`: mean chlorophyll over the whole Gulf seven days before;
+- `daily_mean_chl_lag_14`: mean chlorophyll over the whole Gulf fourteen days before.
+
+We also tested `daily_chl_diff`, defined as the difference between daily mean chlorophyll at day `t` and day `t-1`. However, this feature did not improve performance and appeared to introduce additional noise. Therefore, the most relevant enriched chlorophyll configuration is the one using `daily_mean_chl`, `daily_mean_chl_lag_7`, and `daily_mean_chl_lag_14`.
+
+The purpose of these features is different from the local `chl(s,t)` covariate. While cell-level chlorophyll provides spatially local information, daily mean chlorophyll provides a global environmental signal for the whole Gulf. The lagged daily chlorophyll features are motivated by the observed positive correlations between vessel activity and chlorophyll measured one or two weeks before.
+
+We compared two main modelling options:
+
+1. **Standard LGCP**, using the usual covariates:
+   `chl`, `thetao`, `fishing_block`, `is_holiday`, and `is_weekend`.
+
+2. **LGCP with enriched chlorophyll**, using the standard covariates plus:
+   `daily_mean_chl`, `daily_mean_chl_lag_7`, and `daily_mean_chl_lag_14`.
+
+On the December 1–10 test window, the enriched chlorophyll model improved the observation-level metrics, but slightly worsened the daily-level metrics.
+
+| Model | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily | Delta corr | Direction acc. |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Standard LGCP | -0.5267 | 0.3445 | 0.8596 | -5.1884 | 6.4633 | 7.9756 | 0.7485 | 0.8333 |
+| LGCP + enriched chlorophyll | **-0.5186** | **0.3297** | **0.8338** | -5.2482 | 6.6134 | 8.2674 | 0.7439 | 0.8333 |
+
+This suggests that the enriched chlorophyll features helped the model improve local cell-level predictions, but did not improve the aggregate daily total on this window.
+
+On the November 21–30 test window, the enriched chlorophyll model improved almost all metrics compared with the standard LGCP.
+
+| Model | Mean LL obs | MAE obs | RMSE obs | Mean LL daily | MAE daily | RMSE daily | Delta corr | Direction acc. |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Standard LGCP | -0.5729 | 0.4187 | 0.7874 | -5.3659 | 7.3569 | 9.5475 | 0.4750 | 0.5000 |
+| LGCP + enriched chlorophyll | **-0.5690** | **0.4134** | **0.7664** | **-5.1970** | **6.8745** | **9.0519** | 0.4738 | 0.5000 |
+
+In this case, the enriched chlorophyll representation improved both observation-level and daily-level performance, while leaving the trend metrics essentially unchanged.
+
+Overall, these results indicate that the enriched chlorophyll variables are more promising than raw vessel-count lag features. Their effect is not uniformly positive across all windows and metrics: the standard LGCP remains slightly better for daily aggregate prediction on December 1–10, while the enriched chlorophyll model is better on November 21–30 and consistently improves observation-level metrics. Therefore, two reasonable modelling choices remain:
+
+- keep the **standard LGCP** as the most conservative and stable configuration;
+- use the **LGCP with enriched chlorophyll** as a more informative environmental model, especially if local cell-level prediction is important.
+
+At the current stage, the enriched chlorophyll model should remain a serious candidate, but it should be validated on additional test windows before being selected as the final configuration.
