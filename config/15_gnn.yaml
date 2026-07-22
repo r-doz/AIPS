@@ -24,12 +24,12 @@ covariate_cols:
   - fishing_block
   - is_holiday
   - is_weekend
-  - cell_lag_1
-  - cell_lag_7
-  - cell_roll_mean_7
-  - daily_total_lag_1
-  - daily_total_lag_7
-  - daily_total_roll_mean_7
+  #- cell_lag_1
+  #- cell_lag_7
+  #- cell_roll_mean_7
+  #- daily_total_lag_1
+  #- daily_total_lag_7
+  #- daily_total_roll_mean_7
 
 include_coords: true
 include_time: true
