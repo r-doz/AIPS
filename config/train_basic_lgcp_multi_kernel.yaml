@@ -25,29 +25,36 @@ covariate_cols:
   #- daily_total_roll_mean_7
 
 # --- split ---
-split_strategy: fixed_test_window # fixed_test_window OR chronological OR random_day
-test_start_date: "2024-04-21"
-test_end_date: "2024-04-30"
+#split_strategy: fixed_test_window 
+#split_strategy: chronological 
+split_strategy: random_day 
+#test_start_date: "2024-04-21"
+#test_end_date: "2024-04-30"
 train_fraction: 0.9
 data_seed: 42
 
-# --- model names ---
-# lagged_lgcp
-# multi-kernel_lgcp 
-# global_mean_poisson 
-# global_cell_mean_poisson 
-# last_available_poisson
-model_family: last_available_poisson  
+# --- model output names ---
+model_family: new_tests
+#model_family: multi_kernel_lgcp
+#model_family: multi_kernel_lgcp_lagged
+#model_family: basic_lgcp
+#model_family: global_mean_poisson
+#model_family: global_cell_mean_poisson
+#model_family: last_available_onestep
+#model_family: last_available_frozen
 
-# frozen_train OR one_step_ahead  
+# --- model selection ---
 last_available_mode: one_step_ahead  
-# expanding OR frozen_train 
-global_cell_mean_mode: expanding 
+#last_available_mode: frozen_train
 
-run_name: lgcp_multikernel_apr21_apr30 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
-last_available_run_name: dataseed42_npseed0_onestep_apr21_apr30 # onestep OR frozen
-global_mean_run_name: dataseed42_npseed0_nov21_nov30
-global_cell_mean_run_name: dataseed42_npseed0_nov21_nov30_expanding
+global_cell_mean_mode: expanding 
+#global_cell_mean_mode: frozen_train
+
+run_name: lgcp_multikernel 
+last_available_run_name: dataseed42_npseed0_onestep
+#last_available_run_name: dataseed42_npseed0_frozen
+global_mean_run_name: dataseed42_npseed0
+global_cell_mean_run_name: dataseed42_npseed0
 
 # --- model lgcp ---
 num_steps: 5000 # 5000 is the standard
@@ -88,6 +95,7 @@ model:
         variance: 0.20 # 0.20
       trainable:
         lengthscale: false
+        #lengthscale: true
         variance: true
 kernel_noise:
   value: 1.0e-3
@@ -123,7 +131,7 @@ lag_features:
 # Within each dimension, kernels are summed.
 
 # --- training ---
-lr: 0.0005
+lr: 0.0001
 minibatch: 1024
 num_mc: 7
 grad_clip: 10.0
@@ -134,7 +142,7 @@ num_pred_samples: 300
 num_vis_samples: 500
 
 # --- output ---
-report_root: reports
+report_root: reports/experiments
 log_every: 100
 
 

@@ -37,6 +37,6 @@ max_iter: 1000
 standardize_features: true
 
 # --- output ---
-report_root: reports
+report_root: reports/experiments
 model_family: window_poisson_glm
-run_name: window_poisson_glm_W1_alpha005_apr21_apr30
+run_name: window_poisson_glm
