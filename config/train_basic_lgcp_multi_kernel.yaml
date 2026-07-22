@@ -26,8 +26,8 @@ covariate_cols:
 
 # --- split ---
 split_strategy: fixed_test_window # fixed_test_window OR chronological OR random_day
-test_start_date: "2024-11-21"
-test_end_date: "2024-11-30"
+test_start_date: "2024-04-21"
+test_end_date: "2024-04-30"
 train_fraction: 0.9
 data_seed: 42
 
@@ -37,15 +37,15 @@ data_seed: 42
 # global_mean_poisson 
 # global_cell_mean_poisson 
 # last_available_poisson
-model_family: multi-kernel_lgcp  
+model_family: last_available_poisson  
 
 # frozen_train OR one_step_ahead  
 last_available_mode: one_step_ahead  
 # expanding OR frozen_train 
 global_cell_mean_mode: expanding 
 
-run_name: lgcp_multikernel_nov21_nov30 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
-last_available_run_name: dataseed42_npseed0_onestep_nov21_nov30 # onestep OR frozen
+run_name: lgcp_multikernel_apr21_apr30 # lgcp_M300_steps5000_multi_kernel_COVcthwf_chrono / lgcp_multikernel_dec01_dec10
+last_available_run_name: dataseed42_npseed0_onestep_apr21_apr30 # onestep OR frozen
 global_mean_run_name: dataseed42_npseed0_nov21_nov30
 global_cell_mean_run_name: dataseed42_npseed0_nov21_nov30_expanding
 
@@ -95,7 +95,7 @@ kernel_noise:
 
 # Autoregressive setting 
 lag_features:
-  enabled: true
+  enabled: false 
   mode: observed_past
   target_col: ais_vessels_count
   date_col: date
