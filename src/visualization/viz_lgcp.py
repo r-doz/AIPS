@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import Rbf
 from scipy import ndimage
 from matplotlib.path import Path
+from pathlib import Path as FilePath
 
 import torch
 
@@ -356,3 +357,137 @@ def plot_loss(
         plt.close(fig)
     else:
         plt.show()
+
+
+def plot_daily_observed_vs_predicted_maps(
+    df_test,
+    y_true,
+    rate_mean,
+    out_path,
+    date_col="date",
+    lon_col="longitude",
+    lat_col="latitude",
+    gulf_coords=None,
+    max_days=None,
+):
+    """
+    Plot observed vs predicted spatial maps for each test day.
+
+    Left column  : observed counts per grid cell
+    Right column : predicted Poisson rate per grid cell
+
+    Parameters
+    ----------
+    df_test : pd.DataFrame
+        Test dataframe with at least date, longitude, latitude.
+    y_true : array-like
+        Observed test counts.
+    rate_mean : array-like
+        Predicted Poisson rates.
+    out_path : str or Path
+        Output figure path.
+    gulf_coords : pd.DataFrame or None
+        Optional dataframe with longitude/latitude columns for Gulf boundary.
+    max_days : int or None
+        If not None, plot only the first max_days test days.
+    """
+    df_plot = df_test.copy()
+    df_plot[date_col] = pd.to_datetime(df_plot[date_col]).dt.normalize()
+    df_plot["observed"] = np.asarray(y_true, dtype=float)
+    df_plot["predicted"] = np.asarray(rate_mean, dtype=float)
+
+    test_dates = sorted(df_plot[date_col].unique())
+    if max_days is not None:
+        test_dates = test_dates[:max_days]
+
+    n_days = len(test_dates)
+    if n_days == 0:
+        raise ValueError("No test dates available for plotting.")
+
+    vmax = max(
+        float(df_plot["observed"].max()),
+        float(df_plot["predicted"].max()),
+    )
+
+    fig, axes = plt.subplots(
+        n_days,
+        2,
+        figsize=(11, 3.2 * n_days),
+        squeeze=False,
+        sharex=True,
+        sharey=True,
+    )
+
+    for row, day in enumerate(test_dates):
+        day_df = df_plot[df_plot[date_col] == day]
+
+        for col, value_col, title in [
+            (0, "observed", "Observed"),
+            (1, "predicted", "Predicted"),
+        ]:
+            ax = axes[row, col]
+
+            sc = ax.scatter(
+                day_df[lon_col],
+                day_df[lat_col],
+                c=day_df[value_col],
+                s=90,
+                vmin=0.0,
+                vmax=vmax,
+                edgecolor="black",
+                linewidth=0.3,
+            )
+
+            if gulf_coords is not None:
+                ax.plot(
+                    gulf_coords[lon_col],
+                    gulf_coords[lat_col],
+                    linewidth=1.0,
+                    color="black",
+                )
+
+            ax.set_title(f"{pd.Timestamp(day).date()} — {title}")
+            ax.set_xlabel("Longitude")
+            ax.set_ylabel("Latitude")
+            ax.grid(alpha=0.3)
+
+        obs_total = day_df["observed"].sum()
+        pred_total = day_df["predicted"].sum()
+
+        axes[row, 0].text(
+            0.02,
+            0.95,
+            f"total = {obs_total:.1f}",
+            transform=axes[row, 0].transAxes,
+            va="top",
+            bbox=dict(facecolor="white", alpha=0.8, edgecolor="none"),
+        )
+
+        axes[row, 1].text(
+            0.02,
+            0.95,
+            f"total = {pred_total:.1f}",
+            transform=axes[row, 1].transAxes,
+            va="top",
+            bbox=dict(facecolor="white", alpha=0.8, edgecolor="none"),
+        )
+
+    cbar = fig.colorbar(sc, ax=axes.ravel().tolist(), shrink=0.7)
+    cbar.set_label("Count / predicted rate")
+
+    fig.suptitle("Observed vs predicted spatial intensity by test day", y=0.995)
+    fig.subplots_adjust(
+        left=0.08,
+        right=0.90,
+        top=0.96,
+        bottom=0.04,
+        hspace=0.45,
+        wspace=0.20,
+    )
+
+    out_path = FilePath(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+    return out_path

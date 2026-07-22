@@ -33,6 +33,9 @@ CANONICAL_KERNEL_NAMES = {
     "rationalquadratic": "rational_quadratic",
     "rational_quadratic": "rational_quadratic",
     "rq": "rational_quadratic",
+    "quasiperiodic": "quasi_periodic",
+    "quasi_periodic": "quasi_periodic",
+    "quasi-periodic": "quasi_periodic",
 }
 
 
@@ -78,6 +81,39 @@ def periodic_kernel(
     return variance * torch.exp(-2.0 * arg**2 / lengthscale**2)
 
 
+def quasi_periodic_kernel(
+    x: torch.Tensor,
+    y: torch.Tensor,
+    envelope_lengthscale: torch.Tensor,
+    periodic_lengthscale: torch.Tensor,
+    period: torch.Tensor,
+    variance: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Quasi-periodic kernel.
+
+    k(x,y) = σ²
+             exp(-||x-y||² / (2 l_env²))
+             exp(-2 sin²(pi ||x-y|| / p) / l_per²)
+
+    This represents a periodic pattern whose amplitude/similarity can
+    change smoothly over time.
+    """
+    x2 = (x**2).sum(dim=1, keepdim=True)
+    y2 = (y**2).sum(dim=1, keepdim=True)
+    d2 = x2 + y2.T - 2.0 * (x @ y.T)
+    d2 = d2.clamp(min=0.0)
+
+    dist = torch.sqrt(d2 + 1e-12)
+
+    envelope_part = torch.exp(-0.5 * d2 / envelope_lengthscale**2)
+
+    periodic_arg = torch.sin(math.pi * dist / period)
+    periodic_part = torch.exp(-2.0 * periodic_arg**2 / periodic_lengthscale**2)
+
+    return variance * envelope_part * periodic_part
+
+
 def rational_quadratic_kernel(
     x: torch.Tensor,
     y: torch.Tensor,
@@ -112,8 +148,15 @@ def _apply_kernel(
     x: torch.Tensor, y: torch.Tensor, kernel_type: str, params: dict
 ) -> torch.Tensor:
     kind = _canonical_kernel_name(kernel_type)
+
     if kind == "rbf":
-        return rbf_kernel(x, y, params["lengthscale"], params["variance"])
+        return rbf_kernel(
+            x,
+            y,
+            params["lengthscale"],
+            params["variance"],
+        )
+
     if kind == "periodic":
         return periodic_kernel(
             x,
@@ -122,28 +165,70 @@ def _apply_kernel(
             params["lengthscale"],
             params["variance"],
         )
-    return rational_quadratic_kernel(
-        x,
-        y,
-        params["lengthscale"],
-        params["variance"],
-        params["alpha"],
-    )
+
+    if kind == "quasi_periodic":
+        return quasi_periodic_kernel(
+            x,
+            y,
+            params["envelope_lengthscale"],
+            params["periodic_lengthscale"],
+            params["period"],
+            params["variance"],
+        )
+
+    if kind == "rational_quadratic":
+        return rational_quadratic_kernel(
+            x,
+            y,
+            params["lengthscale"],
+            params["variance"],
+            params["alpha"],
+        )
+
+    raise ValueError(f"Unsupported canonical kernel kind: {kind}")
 
 
-def _sum_kernel_components(
-    x: torch.Tensor, y: torch.Tensor, components: list[dict], component_name: str
+def _combine_kernel_components(
+    x: torch.Tensor,
+    y: torch.Tensor,
+    components: list[dict],
+    component_name: str,
+    composition: str = "sum",
 ) -> torch.Tensor:
+    """
+    Combine kernel components either by summation or elementwise product.
+
+    composition:
+        - "sum":     K = K_1 + K_2 + ...
+        - "product": K = K_1 * K_2 * ...
+    """
     if len(components) == 0:
         raise ValueError(f"Kernel component list '{component_name}' cannot be empty.")
 
-    kernel_sum = None
+    composition = str(composition).strip().lower()
+
+    if composition not in {"sum", "product"}:
+        raise ValueError(
+            f"Unknown {component_name}_composition='{composition}'. "
+            "Allowed values are: 'sum', 'product'."
+        )
+
+    kernel_out = None
+
     for comp in components:
         current = _apply_kernel(x, y, comp["type"], comp["params"])
-        kernel_sum = current if kernel_sum is None else kernel_sum + current
-    if kernel_sum is None:
+
+        if kernel_out is None:
+            kernel_out = current
+        elif composition == "sum":
+            kernel_out = kernel_out + current
+        elif composition == "product":
+            kernel_out = kernel_out * current
+
+    if kernel_out is None:
         raise ValueError(f"Kernel component list '{component_name}' cannot be empty.")
-    return kernel_sum
+
+    return kernel_out
 
 
 # ---------------------------------------------------------------------------
@@ -155,18 +240,26 @@ def _kern_matrices(
     X: torch.Tensor, Z: torch.Tensor, kern: dict
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Return (Ks [Nx, M], Kt [Nx, M]) for data points X and inducing Z."""
-    Ks = _sum_kernel_components(
+
+    spatial_composition = kern.get("spatial_composition", "sum")
+    temporal_composition = kern.get("temporal_composition", "sum")
+
+    Ks = _combine_kernel_components(
         X[:, :2],
         Z[:, :2],
         kern["spatial"],
         "spatial",
+        composition=spatial_composition,
     )
-    Kt = _sum_kernel_components(
+
+    Kt = _combine_kernel_components(
         X[:, 2:3],
         Z[:, 2:3],
         kern["temporal"],
         "temporal",
+        composition=temporal_composition,
     )
+
     return Ks, Kt
 
 
@@ -347,6 +440,8 @@ class SparseLGCP(nn.Module):
         return {
             "spatial": _component_params("spatial"),
             "temporal": _component_params("temporal"),
+            "spatial_composition": self._kernel_cfg.get("spatial_composition", "sum"),
+            "temporal_composition": self._kernel_cfg.get("temporal_composition", "sum"),
             "noise_var": torch.exp(self.log_noise),
         }
 

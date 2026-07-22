@@ -24,7 +24,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from prometheus_client import metrics
 import torch
 import yaml
 
@@ -40,6 +39,7 @@ from src.visualization.viz_lgcp import (
     plot_loss,
     plot_pp_overview,
     plot_test_window_daily_timeseries,
+    plot_daily_observed_vs_predicted_maps,
 )
 
 import pandas as pd
@@ -116,12 +116,21 @@ KERNEL_TYPE_MAP = {
     "rationalquadratic": "rational_quadratic",
     "rational_quadratic": "rational_quadratic",
     "rq": "rational_quadratic",
+    "quasiperiodic": "quasi_periodic",
+    "quasi_periodic": "quasi_periodic",
+    "quasi-periodic": "quasi_periodic",
 }
 
 REQUIRED_HYPERPARAMETERS = {
     "rbf": {"lengthscale", "variance"},
     "periodic": {"lengthscale", "variance", "period"},
     "rational_quadratic": {"lengthscale", "variance", "alpha"},
+    "quasi_periodic": {
+        "envelope_lengthscale",
+        "periodic_lengthscale",
+        "period",
+        "variance",
+    },
 }
 
 
@@ -323,12 +332,39 @@ def normalize_kernel_config(cfg: dict) -> dict:
         default_type="periodic",
     )
 
+    spatial_composition = (
+        str(model_cfg.get("spatial_composition", "sum")).strip().lower()
+    )
+    temporal_composition = (
+        str(model_cfg.get("temporal_composition", "sum")).strip().lower()
+    )
+
+    allowed_compositions = {"sum", "product"}
+
+    if spatial_composition not in allowed_compositions:
+        raise ValueError(
+            f"model.spatial_composition must be one of {allowed_compositions}, "
+            f"got '{spatial_composition}'."
+        )
+
+    if temporal_composition not in allowed_compositions:
+        raise ValueError(
+            f"model.temporal_composition must be one of {allowed_compositions}, "
+            f"got '{temporal_composition}'."
+        )
+
     normalized = {
         "spatial": spatial,
         "temporal": temporal,
+        "spatial_composition": spatial_composition,
+        "temporal_composition": temporal_composition,
     }
+
     cfg["model"]["spatial_kernels"] = spatial
     cfg["model"]["temporal_kernels"] = temporal
+    cfg["model"]["spatial_composition"] = spatial_composition
+    cfg["model"]["temporal_composition"] = temporal_composition
+
     return normalized
 
 
@@ -617,6 +653,24 @@ def main(cfg: dict):
     print("Evaluating on test set …")
     rate_mean_test, rate_p05_test, rate_p95_test = model.predict_rate(
         test_coords, test_covs, num_samples=cfg["num_pred_samples"]
+    )
+
+    df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
+
+    assert len(df_test_plot) == len(test_y) == len(rate_mean_test), (
+        f"Plot length mismatch: "
+        f"df_test_plot={len(df_test_plot)}, "
+        f"test_y={len(test_y)}, "
+        f"rate_mean_test={len(rate_mean_test)}"
+    )
+
+    plot_daily_observed_vs_predicted_maps(
+        df_test=df_test_plot,
+        y_true=test_y,
+        rate_mean=rate_mean_test,
+        out_path=plots_dir / "observed_vs_predicted_spatial_test_days.png",
+        gulf_coords=None,
+        max_days=None,
     )
 
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)
