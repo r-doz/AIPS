@@ -29,10 +29,19 @@ model:
     trainable:
       lengthscale: false
       variance: true
+  - type: periodic
+    hyperparameters:
+      lengthscale: 0.3
+      period: 0.074
+      variance: 0.2
+    trainable:
+      lengthscale: true
+      period: true
+      variance: true
   spatial_composition: sum
   temporal_composition: sum
-lr: 0.0001
-num_steps: 200
+lr: 0.0005
+num_steps: 5000
 minibatch: 1024
 num_mc: 7
 grad_clip: 10.0
