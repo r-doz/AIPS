@@ -73,8 +73,8 @@ lag_features:
   daily_total_rolling_windows:
   - 7
   fillna_value: 0.0
-test_start_date: '2024-11-21'
-test_end_date: '2024-11-30'
+test_start_date: '2024-04-21'
+test_end_date: '2024-04-30'
 last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 last_available_run_name: dataseed42_npseed0_onestep
