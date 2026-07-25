@@ -1,4 +1,4 @@
-year: 2025
+year: 2024
 
 area:
   minimum_longitude: 13.141159647873394
@@ -31,8 +31,8 @@ copernicus:
   min_depth: 0.0
   max_depth: 1.5
   remove_nc_after_conversion: true
-  overwrite: false
-  overwrite_clean: false
+  overwrite: true
+  overwrite_clean: true
 
 gfw_ais:
   product_name: public-global-fishing-effort:latest
@@ -40,15 +40,15 @@ gfw_ais:
   temporal_resolution: DAILY
   group_by: VESSEL_ID
   token_file: secrets/gfw_token.txt
-  overwrite: false
-  overwrite_clean: false
+  overwrite: true
+  overwrite_clean: true
 
 gfw_sar:
   table: global-fishing-watch.pipe_sentinel2_v1_published.detect_scene_match_pipe_v3
   output_name: s2_vessel_detections
   key_file: secrets/gcp_bigquery_key.json
-  overwrite: false
-  overwrite_clean: false
+  overwrite: true
+  overwrite_clean: true
 
 processed:
-  overwrite: false
+  overwrite: true

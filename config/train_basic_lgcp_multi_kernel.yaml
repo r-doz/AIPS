@@ -17,8 +17,8 @@ covariate_cols:
   #- daily_mean_chl_lag_7
   #- daily_mean_chl_lag_14
 
-  #- cell_lag_1
-  #- cell_lag_7
+  - cell_lag_1 # best: use it
+  - cell_lag_7 # best: use it
   #- cell_roll_mean_7
   #- daily_total_lag_1
   #- daily_total_lag_7
@@ -28,8 +28,8 @@ covariate_cols:
 split_strategy: fixed_test_window 
 #split_strategy: chronological 
 #split_strategy: random_day 
-test_start_date: "2024-12-01"
-test_end_date: "2024-12-10"
+test_start_date: "2024-04-21"
+test_end_date: "2024-04-30"
 train_fraction: 0.9
 data_seed: 42
 
@@ -69,9 +69,9 @@ model:
     - type: RBF
       hyperparameters:
         lengthscale: 0.5 # 0.5 best
-        variance: 7.0 # 1.0 best
+        variance: 1.0 # 1.0 best
       trainable:
-        lengthscale: true
+        lengthscale: false
         variance: true
     #- type: RationalQuadratic
     #  hyperparameters:
@@ -85,30 +85,30 @@ model:
   temporal_kernels:
   - type: RBF
     hyperparameters:
-        lengthscale: 0.10 # 0.1 best
-        variance: 1.4 # 0.20 best
+        lengthscale: 0.1 # 0.1 best
+        variance: 0.2 # 0.20 best
     trainable:
         lengthscale: false # false best
         variance: true
-  #- type: periodic
-  #  hyperparameters:
-  #      lengthscale: 0.30
-  #      variance: 0.20
-  #      period: 0.074  # is a week
-  #  trainable:
-  #      lengthscale: true
-  #      variance: true
-  #      period: true
+  - type: periodic
+    hyperparameters:
+        lengthscale: 0.50
+        variance: 0.20
+        period: 0.074  # is a week
+    trainable:
+        lengthscale: true
+        variance: true
+        period: false
   #- type: quasi_periodic
   #  hyperparameters:
   #      envelope_lengthscale: 0.30
-  #      periodic_lengthscale: 0.50
+  #      periodic_lengthscale: 0.10
   #      period: 0.074
-  #      variance: 1.0
+  #      variance: 0.20
   #  trainable:
-  #      envelope_lengthscale: false
+  #      envelope_lengthscale: true
   #      periodic_lengthscale: true
-  #      period: false
+  #      period: true
   #      variance: true
     
 kernel_noise:
@@ -117,7 +117,7 @@ kernel_noise:
 
 # Autoregressive setting 
 lag_features:
-  enabled: false 
+  enabled: true
   mode: observed_past
   target_col: ais_vessels_count
   date_col: date
@@ -145,9 +145,9 @@ lag_features:
 # Within each dimension, kernels are summed.
 
 # --- training ---
-lr: 0.0005 # 0.0005 is best
-minibatch: 1024
-num_mc: 16 # 7
+lr: 0.001 # 0.0005 is best
+minibatch: 1024 # 1024
+num_mc: 32 # 7
 grad_clip: 10.0
 device: cpu
 
