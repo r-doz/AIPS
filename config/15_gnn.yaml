@@ -24,12 +24,12 @@ covariate_cols:
   - fishing_block
   - is_holiday
   - is_weekend
-  #- cell_lag_1
-  #- cell_lag_7
-  #- cell_roll_mean_7
-  #- daily_total_lag_1
-  #- daily_total_lag_7
-  #- daily_total_roll_mean_7
+  - cell_lag_1
+  - cell_lag_7
+  - cell_roll_mean_7
+  - daily_total_lag_1
+  - daily_total_lag_7
+  - daily_total_roll_mean_7
 
 include_coords: true
 include_time: true
@@ -53,19 +53,19 @@ lag_features:
 adjacency: queen  # "rook" or "queen"
 
 # --- model ---
-hidden_dim: 32
-num_layers: 2
-dropout: 0.1
+hidden_dim: 32 #64
+num_layers: 2 # 3
+dropout: 0.10
 
 # --- training ---
 lr: 0.001
-weight_decay: 0.00001
-num_epochs: 300
+weight_decay: 1.0e-5
+num_epochs: 300 # 500
 torch_seed: 0
 device: cpu
 log_every: 25
 
 # --- output ---
-report_root: reports
+report_root: reports/experiments/new_tests
 model_family: gnn
 run_name: gnn_apr21_apr30

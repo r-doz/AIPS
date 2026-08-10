@@ -491,3 +491,156 @@ def plot_daily_observed_vs_predicted_maps(
     plt.close(fig)
 
     return out_path
+
+
+def plot_daily_interpolated_spatial_maps_separate(
+    test_coords,
+    test_dates,
+    y_true,
+    rate_mean,
+    meta,
+    gulf_csv_path,
+    out_dir,
+    cmap="viridis",
+    max_days=None,
+    nx=150,
+    ny=100,
+):
+    """
+    Save one interpolated observed-vs-predicted spatial map per test day.
+
+    Same style as plot_pp_overview spatial_map.png:
+      - standardized longitude/latitude axes
+      - RBF interpolation
+      - Gulf polygon mask
+      - red Gulf boundary
+      - separate colorbar for predicted and observed
+    """
+
+    out_dir = FilePath(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    test_coords = np.asarray(test_coords, dtype=float)
+    y_true = np.asarray(y_true, dtype=float)
+    rate_mean = np.asarray(rate_mean, dtype=float)
+    test_dates = pd.to_datetime(test_dates).normalize()
+
+    if len(test_coords) != len(y_true) or len(test_coords) != len(rate_mean):
+        raise ValueError(
+            "Length mismatch: test_coords, y_true and rate_mean must have the same length."
+        )
+
+    # Gulf boundary in standardized coordinates
+    gulf_df = pd.read_csv(gulf_csv_path)
+
+    lon_mean, lon_std = meta["lon_mean"], meta["lon_std"]
+    lat_mean, lat_std = meta["lat_mean"], meta["lat_std"]
+
+    gulf_x = (gulf_df["longitude"].values - lon_mean) / lon_std
+    gulf_y = (gulf_df["latitude"].values - lat_mean) / lat_std
+
+    xi = np.linspace(gulf_x.min(), gulf_x.max(), nx)
+    yi = np.linspace(gulf_y.min(), gulf_y.max(), ny)
+    Xi, Yi = np.meshgrid(xi, yi)
+
+    gulf_poly = Path(np.column_stack([gulf_x, gulf_y]))
+    pts_flat = np.column_stack([Xi.ravel(), Yi.ravel()])
+    inside = gulf_poly.contains_points(pts_flat).reshape(Xi.shape)
+
+    global_vmax = max(
+        float(np.nanmax(y_true)),
+        float(np.nanmax(rate_mean)),
+        1e-8,
+    )
+
+    print(f"Using shared color scale: vmin=0, vmax={global_vmax:.4f}")
+
+    unique_dates = sorted(pd.unique(test_dates))
+
+    if max_days is not None:
+        unique_dates = unique_dates[:max_days]
+
+    saved_paths = []
+
+    for day in unique_dates:
+        mask = test_dates == day
+
+        x_sl = test_coords[mask, 0]
+        y_sl = test_coords[mask, 1]
+        rm_sl = rate_mean[mask]
+        yt_sl = y_true[mask]
+
+        valid = (
+            np.isfinite(x_sl)
+            & np.isfinite(y_sl)
+            & np.isfinite(rm_sl)
+            & np.isfinite(yt_sl)
+        )
+
+        x_sl = x_sl[valid]
+        y_sl = y_sl[valid]
+        rm_sl = rm_sl[valid]
+        yt_sl = yt_sl[valid]
+
+        n_unique_points = len(np.unique(np.column_stack([x_sl, y_sl]), axis=0))
+
+        if len(x_sl) < 3 or n_unique_points < 3:
+            print(
+                f"Skipping {pd.Timestamp(day).date()}: only {len(x_sl)} valid points "
+                f"and {n_unique_points} unique spatial points."
+            )
+            continue
+
+        rbf_rm = Rbf(x_sl, y_sl, rm_sl, function="gaussian")
+        rbf_yt = Rbf(x_sl, y_sl, yt_sl, function="gaussian")
+
+        rm_grid = np.clip(rbf_rm(Xi, Yi), 0, None)
+        yt_grid = np.clip(rbf_yt(Xi, Yi), 0, None)
+
+        for grid in (rm_grid, yt_grid):
+            nan_mask = np.isnan(grid)
+            if nan_mask.any():
+                grid[nan_mask] = ndimage.generic_filter(grid, np.nanmean, size=3)[
+                    nan_mask
+                ]
+
+        rm_masked = np.where(inside, rm_grid, np.nan)
+        yt_masked = np.where(inside, yt_grid, np.nan)
+
+        day_str = pd.Timestamp(day).strftime("%Y-%m-%d")
+
+        fig, axs = plt.subplots(1, 2, figsize=(13, 6))
+
+        for ax, grid, title in zip(
+            axs,
+            [rm_masked, yt_masked],
+            [
+                f"Predicted intensity ({day_str})",
+                f"Observed counts ({day_str})",
+            ],
+        ):
+            im = ax.imshow(
+                grid,
+                origin="lower",
+                extent=[xi.min(), xi.max(), yi.min(), yi.max()],
+                cmap=cmap,
+                aspect="auto",
+                vmin=0.0,
+                vmax=global_vmax,
+            )
+
+            ax.plot(gulf_x, gulf_y, color="red", lw=1.2, label="Gulf boundary")
+            ax.set_title(title)
+            ax.set_xlabel("Longitude (standardized)")
+            ax.set_ylabel("Latitude (standardized)")
+            plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+        plt.tight_layout()
+
+        out_path = out_dir / f"spatial_map_{day_str}.png"
+        fig.savefig(out_path, dpi=200, bbox_inches="tight")
+        plt.close(fig)
+
+        saved_paths.append(out_path)
+
+    return saved_paths

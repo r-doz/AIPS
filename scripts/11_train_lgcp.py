@@ -40,6 +40,7 @@ from src.visualization.viz_lgcp import (
     plot_pp_overview,
     plot_test_window_daily_timeseries,
     plot_daily_observed_vs_predicted_maps,
+    plot_daily_interpolated_spatial_maps_separate,
 )
 
 import pandas as pd
@@ -657,19 +658,17 @@ def main(cfg: dict):
 
     df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
 
-    assert len(df_test_plot) == len(test_y) == len(rate_mean_test), (
-        f"Plot length mismatch: "
-        f"df_test_plot={len(df_test_plot)}, "
-        f"test_y={len(test_y)}, "
-        f"rate_mean_test={len(rate_mean_test)}"
-    )
+    assert len(df_test_plot) == len(test_y) == len(rate_mean_test)
 
-    plot_daily_observed_vs_predicted_maps(
-        df_test=df_test_plot,
+    plot_daily_interpolated_spatial_maps_separate(
+        test_coords=test_coords,
+        test_dates=test_dates,
         y_true=test_y,
         rate_mean=rate_mean_test,
-        out_path=plots_dir / "observed_vs_predicted_spatial_test_days.png",
-        gulf_coords=None,
+        meta=meta,
+        gulf_csv_path=cfg["gulf_csv_path"],
+        out_dir=plots_dir / "spatial_interpolated_test_days",
+        cmap="viridis",
         max_days=None,
     )
 
