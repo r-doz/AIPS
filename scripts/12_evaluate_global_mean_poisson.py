@@ -27,6 +27,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
+from src.data.multi_year import years_label
 from src.models.data_pp_lgcp import prepare_data, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 
@@ -48,32 +49,6 @@ DEFAULT_CONFIG = {
     "model_family": "global_mean_poisson",
     "run_name": "debug",
 }
-
-
-def resolve_parquet_path(cfg: dict) -> dict:
-    if "years" not in cfg or cfg["years"] is None:
-        return cfg
-
-    year = cfg["years"]
-
-    if isinstance(year, list):
-        if len(year) != 1:
-            raise NotImplementedError(
-                "Multiple years are not supported yet. "
-                "For now, use a single year, e.g. years: 2024."
-            )
-        year = year[0]
-
-    path = Path(cfg["parquet_path"])
-
-    if f"_{year}" not in path.stem:
-        resolved_path = path.with_name(f"{path.stem}_{year}{path.suffix}")
-    else:
-        resolved_path = path
-
-    cfg["parquet_path"] = str(resolved_path)
-
-    return cfg
 
 
 def load_config(config_path=None):
@@ -104,7 +79,6 @@ def load_config(config_path=None):
 
             # Keep track of the source config for reproducibility.
             cfg["data_config_path"] = config_path
-            cfg = resolve_parquet_path(cfg)
 
     return cfg
 
@@ -152,7 +126,7 @@ def main(cfg: dict):
     out_dir = (
         Path(cfg["report_root"])
         / cfg["model_family"]
-        / f"{cfg['years']}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}"
+        / f"{years_label(cfg.get('years'))}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}"
     )
 
     plots_dir = out_dir / "plots"
@@ -185,6 +159,7 @@ def main(cfg: dict):
         split_strategy=cfg.get("split_strategy", "random_day"),
         test_start_date=cfg.get("test_start_date"),
         test_end_date=cfg.get("test_end_date"),
+        years=cfg.get("years"),
     )
 
     _, test_mask = make_day_split_masks(

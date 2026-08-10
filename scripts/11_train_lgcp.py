@@ -32,6 +32,7 @@ import yaml
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.data.multi_year import years_label
 from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
@@ -135,45 +136,12 @@ REQUIRED_HYPERPARAMETERS = {
 }
 
 
-def resolve_parquet_path(cfg: dict) -> dict:
-    """
-    Resolve year-specific parquet path.
-
-    Example
-    -------
-    years: 2024
-    parquet_path: data/processed/cpr_gfw.parquet
-
-    becomes:
-
-    parquet_path: data/processed/cpr_gfw_2024.parquet
-    """
-    if "years" not in cfg or cfg["years"] is None:
-        return cfg
-
-    year = cfg["years"]
-
-    if isinstance(year, list):
-        if len(year) != 1:
-            raise NotImplementedError(
-                "Multiple years are not supported yet. "
-                "For now, use a single year, e.g. years: 2024."
-            )
-        year = year[0]
-
-    path = Path(cfg["parquet_path"])
-
-    if f"_{year}" not in path.stem:
-        resolved_path = path.with_name(f"{path.stem}_{year}{path.suffix}")
-    else:
-        resolved_path = path
-
-    cfg["parquet_path"] = str(resolved_path)
-
-    return cfg
-
-
 def load_config(config_path=None):
+    """
+    `years` may be a single year (2024) or a list of years ([2024, 2025]).
+    The actual per-year parquet file (e.g. cpr_gfw_2024.parquet) is resolved
+    lazily by prepare_data(), so `parquet_path` here stays the base path.
+    """
     cfg = copy.deepcopy(DEFAULT_CONFIG)
 
     if config_path is not None:
@@ -185,7 +153,6 @@ def load_config(config_path=None):
                 raise ValueError("Top-level YAML config must be a mapping.")
             cfg = _deep_merge(cfg, user_cfg)
 
-    cfg = resolve_parquet_path(cfg)
     cfg["kernel_config"] = normalize_kernel_config(cfg)
 
     return cfg
@@ -552,11 +519,10 @@ def main(cfg: dict):
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
-    # out_dir = Path(cfg["report_root"]) / cfg["model_family"] / str(cfg["run_name"]) + "_" + str(cfg["year"]) + "_" + time.strftime("%Y%m%d-%H%M%S")
     out_dir = (
         Path(cfg["report_root"])
         / cfg["model_family"]
-        / f"{cfg['years']}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}"
+        / f"{years_label(cfg.get('years'))}_{cfg['run_name']}_{time.strftime('%Y%m%d-%H%M%S')}"
     )
     plots_dir = out_dir / "plots"
 
@@ -582,6 +548,7 @@ def main(cfg: dict):
             test_start_date=cfg.get("test_start_date"),
             test_end_date=cfg.get("test_end_date"),
             lag_features=cfg.get("lag_features"),
+            years=cfg.get("years"),
         )
     )
     meta = compute_meta(df)

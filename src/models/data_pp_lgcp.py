@@ -21,14 +21,7 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _is_leap_year(year: int) -> bool:
-    return (year % 4 == 0) and ((year % 100 != 0) or (year % 400 == 0))
+from src.data.multi_year import load_parquet_years
 
 
 def make_day_split_masks(
@@ -262,9 +255,10 @@ def prepare_data(
     test_start_date=None,
     test_end_date=None,
     lag_features: dict | None = None,
+    years=None,
 ) -> tuple:
     """
-    Load a parquet file and return train/test tensors ready for SparseLGCP.
+    Load one or more parquet files and return train/test tensors ready for SparseLGCP.
 
     Expected columns
     ----------------
@@ -272,6 +266,12 @@ def prepare_data(
     latitude, longitude : float
     chl, thetao       : float covariates
     ais_vessels_count : int-like count
+
+    Parameters
+    ----------
+    years : None, a single year, or a list of years. When it names more than
+        one year, the corresponding per-year parquet files (sibling to
+        `parquet_path`, e.g. cpr_gfw_2024.parquet) are concatenated.
 
     Returns
     -------
@@ -284,7 +284,7 @@ def prepare_data(
     scalers      : dict  {coord_scaler, cov_scaler, t_scaler}
     df           : original DataFrame (with t_norm column added)
     """
-    df = pd.read_parquet(parquet_path)
+    df = load_parquet_years(parquet_path, years)
     df["date"] = pd.to_datetime(df["date"])
 
     df = add_daily_chl_features(
@@ -313,10 +313,21 @@ def prepare_data(
             f"Available columns are: {list(df.columns)}"
         )
 
-    # ----- Compute fractional day-of-year ∈ (0, 1] ---------------------------
-    year = int(df["date"].dt.year.iloc[0])
-    days_in_year = 366.0 if _is_leap_year(year) else 365.0
-    df["t_norm"] = df["date"].dt.dayofyear.astype(float) / days_in_year
+    # ----- Compute normalized time t_norm ∈ [0, 1] -----------------------------
+    # This is the GP's temporal coordinate, so it must increase monotonically
+    # across the *entire* loaded span (t_min..t_max), not reset every calendar
+    # year — a per-year reset (e.g. dayofyear/days_in_year) would make the
+    # smooth temporal kernel treat Dec 31 and Jan 1 as maximally distant while
+    # treating the same calendar day in different years as adjacent, and would
+    # also break date reconstruction in plot_pp_overview (which inverts t_norm
+    # back to a date assuming this exact linear mapping).
+    t_min = df["date"].min()
+    t_max = df["date"].max()
+    span_days = (t_max - t_min).days
+    if span_days == 0:
+        df["t_norm"] = 0.0
+    else:
+        df["t_norm"] = (df["date"] - t_min).dt.days.astype(float) / span_days
 
     # ----- Day-level train/test split (no leakage between days) ---------------
     train_mask, test_mask = make_day_split_masks(

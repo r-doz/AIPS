@@ -15,6 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.special import gammaln
 
+from src.data.multi_year import load_parquet_years, years_label
 from src.models.data_pp_lgcp import make_day_split_masks
 
 
@@ -78,7 +79,9 @@ def load_config(config_path):
     if cfg["run_name"] is None:
         mode = cfg["cell_mean_mode"]
         split = cfg["split_strategy"]
-        cfg["run_name"] = f"{mode}_{split}_dataseed{cfg['data_seed']}"
+        year_prefix = years_label(cfg.get("years"))
+        prefix = f"{year_prefix}_" if year_prefix else ""
+        cfg["run_name"] = f"{prefix}{mode}_{split}_dataseed{cfg['data_seed']}"
 
     return cfg
 
@@ -267,45 +270,6 @@ def plot_daily_timeseries(daily_df, save_path, title):
     plt.close(fig)
 
 
-def resolve_parquet_path_from_years(parquet_path, years=None):
-    """
-    Resolve parquet path using the project convention:
-
-    data/processed/cpr_gfw.parquet + years: [2024]
-    -> data/processed/cpr_gfw_2024.parquet
-
-    If the original parquet_path already exists, it is used directly.
-    """
-
-    path = Path(parquet_path)
-
-    if path.exists():
-        return path
-
-    if years is None:
-        raise FileNotFoundError(
-            f"Parquet file not found: {path}. "
-            "No 'years' field was provided to build the year-specific path."
-        )
-
-    if isinstance(years, (int, str)):
-        years = [years]
-
-    years_suffix = "_".join(str(y) for y in years)
-
-    candidate = path.with_name(f"{path.stem}_{years_suffix}{path.suffix}")
-
-    if candidate.exists():
-        return candidate
-
-    raise FileNotFoundError(
-        "Could not find parquet file.\n"
-        f"Base path: {path}\n"
-        f"Year-specific candidate: {candidate}\n"
-        f"years: {years}"
-    )
-
-
 # ---------------MAIN------------
 
 
@@ -321,10 +285,7 @@ def main():
 
     cfg = load_config(args.config)
 
-    parquet_path = resolve_parquet_path_from_years(
-        cfg["parquet_path"],
-        years=cfg.get("years"),
-    )
+    parquet_path = cfg["parquet_path"]
     target_col = cfg["target_col"]
     date_col = cfg["date_col"]
     cell_cols = cfg["cell_cols"]
@@ -334,6 +295,7 @@ def main():
     print("Global Cell Mean Poisson baseline")
     print("=" * 80)
     print(f"Parquet path: {parquet_path}")
+    print(f"Years: {cfg.get('years')}")
     print(f"Target column: {target_col}")
     print(f"Cell columns: {cell_cols}")
     print(f"Mode: {mode}")
@@ -341,7 +303,7 @@ def main():
     print(f"Test start date: {cfg.get('test_start_date')}")
     print(f"Test end date: {cfg.get('test_end_date')}")
 
-    df = pd.read_parquet(parquet_path)
+    df = load_parquet_years(parquet_path, cfg.get("years"))
     df[date_col] = pd.to_datetime(df[date_col]).dt.normalize()
 
     train_mask, test_mask = make_day_split_masks(
