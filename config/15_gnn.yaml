@@ -14,8 +14,8 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2024-12-01"
-test_end_date: "2024-12-10"
+test_start_date: "2024-04-21"
+test_end_date: "2024-04-30"
 
 # --- features ---
 covariate_cols:
@@ -68,4 +68,4 @@ log_every: 25
 # --- output ---
 report_root: reports
 model_family: gnn
-run_name: gnn_dec01_dec10
+run_name: gnn_apr21_apr30
