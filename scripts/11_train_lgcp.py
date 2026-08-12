@@ -36,6 +36,7 @@ from src.data.multi_year import years_label
 from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
+from src.models.zero_gate import train_zero_gate, apply_zero_gate
 from src.visualization.viz_lgcp import (
     plot_loss,
     plot_pp_overview,
@@ -109,6 +110,18 @@ DEFAULT_CONFIG = {
     "log_every": 50,
     "lag_features": {
         "enabled": False,
+    },
+    # Zero-inflation gate: a small MLP classifier (y > 0) trained on the
+    # same standardized features as the LGCP. When enabled, test predictions
+    # the classifier calls "zero" are forced to 0, correcting the LGCP's
+    # tendency to smooth a small positive rate into always-zero cells/dates.
+    "zero_gate": {
+        "enabled": False,
+        "hidden_layer_sizes": [32],
+        "activation": "relu",
+        "alpha": 1e-4,
+        "max_iter": 500,
+        "threshold": 0.5,
     },
 }
 
@@ -623,6 +636,19 @@ def main(cfg: dict):
         test_coords, test_covs, num_samples=cfg["num_pred_samples"]
     )
 
+    zero_gate_cfg = cfg.get("zero_gate") or {}
+    if zero_gate_cfg.get("enabled", False):
+        print("Training zero-inflation gate classifier …")
+        zero_gate_clf = train_zero_gate(
+            train_coords, train_covs, train_y, zero_gate_cfg, seed=cfg.get("np_seed", 0)
+        )
+        rate_mean_test = apply_zero_gate(
+            zero_gate_clf, test_coords, test_covs, rate_mean_test,
+            threshold=float(zero_gate_cfg.get("threshold", 0.5)),
+        )
+        n_gated = int((rate_mean_test == 0).sum())
+        print(f"  Zero-gate forced {n_gated}/{len(rate_mean_test)} test predictions to 0.")
+
     df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
 
     assert len(df_test_plot) == len(test_y) == len(rate_mean_test)
@@ -712,6 +738,9 @@ def main(cfg: dict):
 
     # Check how many rows in all_coords correspond to target_date via t-scaler logic
 
+    # Note: plot_pp_overview() recomputes its own rate predictions internally
+    # and is not passed through the zero-inflation gate above -- it stays a
+    # raw-LGCP visualization even when zero_gate.enabled is true.
     plot_pp_overview(
         model=model,
         df=df,
