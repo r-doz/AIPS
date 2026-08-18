@@ -1,7 +1,7 @@
 # config/14_window_poisson_glm.yaml
 
 # --- data ---
-years: 2024
+years: [2024,2025]
 parquet_path: data/processed/cpr_gfw.parquet
 target_col: ais_vessels_count
 
@@ -14,11 +14,11 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2024-04-21"
-test_end_date: "2024-04-30"
+test_start_date: "2025-11-01"
+test_end_date: "2025-11-07"
 
 # --- window features ---
-window_size: 1
+window_size: 7 # 7 or 14
 drop_incomplete_windows: true
 
 covariate_cols:
@@ -27,16 +27,18 @@ covariate_cols:
   - is_holiday
   - is_weekend
   - fishing_block
+  - cell_lag_1
+  - cell_lag_7
 
 include_coords: true
 include_time: true
 
 # --- model ---
-poisson_alpha: 0.05
+poisson_alpha: 0.0001
 max_iter: 1000
 standardize_features: true
 
 # --- output ---
 report_root: reports/experiments
-model_family: window_poisson_glm
+model_family: new_tests
 run_name: window_poisson_glm

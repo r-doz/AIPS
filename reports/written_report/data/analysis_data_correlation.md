@@ -1,4 +1,4 @@
-## Exploratory Spatio-Temporal Dependence Analysis
+# Exploratory Spatio-Temporal Dependence Analysis
 
 We performed an exploratory spatio-temporal dependence analysis on the full 2024 dataset in order to better understand the empirical structure of the target variable before further modifying the LGCP kernel. This analysis was not used as a test-set evaluation, but as a diagnostic step to characterize the temporal, spatial and spatio-temporal dependence of `ais_vessels_count`.
 
