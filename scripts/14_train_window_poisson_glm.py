@@ -36,6 +36,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.multi_year import load_parquet_years, years_label
+from src.models.data_pp_lgcp import add_lag_features
 from src.models.metrics_lgcp import evaluate_metrics
 
 
@@ -64,6 +65,9 @@ DEFAULT_CONFIG = {
     "poisson_alpha": 0.001,
     "max_iter": 1000,
     "standardize_features": True,
+    "lag_features": {
+        "enabled": False,
+    },
     # --- output ---
     "report_root": "reports",
     "model_family": "window_poisson_glm",
@@ -159,6 +163,16 @@ def build_window_dataframe(
     target_col = cfg["target_col"]
     covariate_cols = cfg["covariate_cols"]
     window_size = int(cfg["window_size"])
+
+    lag_cfg = cfg.get("lag_features")
+    if lag_cfg is not None and lag_cfg.get("enabled", False):
+        if cfg.get("split_strategy") == "random_day":
+            raise ValueError(
+                "lag_features with observed_past mode should not be used with "
+                "split_strategy='random_day'. Use fixed_test_window or chronological."
+            )
+        df, generated_lag_cols = add_lag_features(df, lag_cfg)
+        print(f"Generated lag features: {generated_lag_cols}")
 
     required_cols = ["date", "longitude", "latitude", target_col] + covariate_cols
 
