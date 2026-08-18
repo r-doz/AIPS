@@ -19,6 +19,7 @@ Results are saved under:
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -157,10 +158,23 @@ def build_window_dataframe(
     df["date"] = pd.to_datetime(df["date"])
 
     target_col = cfg["target_col"]
-    covariate_cols = cfg["covariate_cols"]
+    covariate_cols = list(cfg["covariate_cols"])
     window_size = int(cfg["window_size"])
 
-    required_cols = ["date", "longitude", "latitude", target_col] + covariate_cols
+    # cell_lag_N is a generated feature, rather than a column expected in the
+    # input parquet.  Keep this naming compatible with the LGCP/GNN configs.
+    requested_cell_lags = {}
+    input_covariate_cols = []
+    for col in covariate_cols:
+        match = re.fullmatch(r"cell_lag_([1-9]\d*)", col)
+        if match:
+            requested_cell_lags[int(match.group(1))] = col
+        else:
+            input_covariate_cols.append(col)
+
+    required_cols = (
+        ["date", "longitude", "latitude", target_col] + input_covariate_cols
+    )
 
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
@@ -174,17 +188,25 @@ def build_window_dataframe(
 
     # Sort by spatial cell and date before constructing lags.
     df = df.sort_values(["longitude", "latitude", "date"]).copy()
+    grouped_target = df.groupby(["longitude", "latitude"])[target_col]
+
+    for lag, col in requested_cell_lags.items():
+        df[col] = grouped_target.shift(lag)
 
     lag_cols = []
     for k in range(1, window_size + 1):
+        # Do not add the same predictor twice under two different names.
+        if k in requested_cell_lags:
+            continue
         col = f"{target_col}_lag_{k}"
-        df[col] = df.groupby(["longitude", "latitude"])[target_col].shift(k)
+        df[col] = grouped_target.shift(k)
         lag_cols.append(col)
 
     if cfg.get("drop_incomplete_windows", True):
-        df = df.dropna(subset=lag_cols).copy()
+        df = df.dropna(subset=lag_cols + list(requested_cell_lags.values())).copy()
     else:
-        df[lag_cols] = df[lag_cols].fillna(0.0)
+        generated_lag_cols = lag_cols + list(requested_cell_lags.values())
+        df[generated_lag_cols] = df[generated_lag_cols].fillna(0.0)
 
     feature_cols = []
 
