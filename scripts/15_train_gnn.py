@@ -44,6 +44,7 @@ from src.data.multi_year import load_parquet_years, years_label
 from src.models.data_pp_lgcp import (
     add_daily_chl_features,
     add_lag_features,
+    compute_meta,
     make_day_split_masks,
 )
 from src.models.metrics_lgcp import evaluate_metrics
@@ -53,6 +54,7 @@ from src.models.gnn import (
     normalize_adjacency,
     poisson_nll,
 )
+from src.visualization.viz_lgcp import plot_daily_interpolated_spatial_maps_separate
 
 
 # ---------------------------------------------------------------------------
@@ -63,6 +65,7 @@ DEFAULT_CONFIG = {
     # --- data ---
     "years": 2024,
     "parquet_path": "data/processed/cpr_gfw.parquet",
+    "gulf_csv_path": "data/raw/ts_gulf_coords.csv",
     "target_col": "ais_vessels_count",
     # --- split ---
     "split_strategy": "fixed_test_window",  # "random_day" | "chronological" | "fixed_test_window"
@@ -513,6 +516,30 @@ def main(cfg: dict):
         y_true=y_test_flat,
         rate_mean=rate_test_flat,
         save_path=plots_dir / "daily_timeseries.png",
+    )
+
+    # Match the LGCP overview's spatial_map.png: select one reproducible test
+    # date and use the same RBF interpolation, Gulf mask and two-panel style.
+    rng = np.random.default_rng(int(cfg.get("torch_seed", 0)))
+    target_date = pd.Timestamp(rng.choice(dates_test)).normalize()
+    target_mask = pd.to_datetime(test_dates_flat).normalize() == target_date
+
+    meta = compute_meta(df_feat)
+    lon_std = (cell_coords["longitude"].to_numpy() - meta["lon_mean"]) / meta["lon_std"]
+    lat_std = (cell_coords["latitude"].to_numpy() - meta["lat_mean"]) / meta["lat_std"]
+    spatial_coords = np.tile(np.column_stack([lon_std, lat_std]), (len(dates_test), 1))
+
+    print(f"  Spatial map target date: {target_date.date()}")
+    plot_daily_interpolated_spatial_maps_separate(
+        test_coords=spatial_coords[target_mask],
+        test_dates=test_dates_flat[target_mask],
+        y_true=y_test_flat[target_mask],
+        rate_mean=rate_test_flat[target_mask],
+        meta=meta,
+        gulf_csv_path=cfg["gulf_csv_path"],
+        out_dir=plots_dir,
+        cmap="viridis",
+        filename_template="spatial_map.png",
     )
 
     print(f"Plots saved → {plots_dir}")

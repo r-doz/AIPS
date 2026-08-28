@@ -234,6 +234,15 @@ def plot_pp_overview(
     rm_masked = np.where(inside, rm_grid, np.nan)
     yt_masked = np.where(inside, yt_grid, np.nan)
 
+    # Use one color range for both panels so equal colors represent equal
+    # count/rate values in the predicted and observed maps.
+    shared_vmax = max(
+        float(np.nanmax(rm_masked)),
+        float(np.nanmax(yt_masked)),
+        1e-8,
+    )
+    print(f"Using shared spatial-map color scale: vmin=0, vmax={shared_vmax:.4f}")
+
     # ---- Plot ---------------------------------------------------------------
     fig2, axs = plt.subplots(1, 2, figsize=(13, 6))
 
@@ -251,6 +260,8 @@ def plot_pp_overview(
             extent=[xi.min(), xi.max(), yi.min(), yi.max()],
             cmap=cmap,
             aspect="auto",
+            vmin=0.0,
+            vmax=shared_vmax,
         )
         ax.plot(gulf_x, gulf_y, color="red", lw=1.2, label="Gulf boundary")
         ax.set_title(title)
@@ -505,6 +516,7 @@ def plot_daily_interpolated_spatial_maps_separate(
     max_days=None,
     nx=150,
     ny=100,
+    filename_template="spatial_map_{date}.png",
 ):
     """
     Save one interpolated observed-vs-predicted spatial map per test day.
@@ -637,7 +649,7 @@ def plot_daily_interpolated_spatial_maps_separate(
 
         plt.tight_layout()
 
-        out_path = out_dir / f"spatial_map_{day_str}.png"
+        out_path = out_dir / filename_template.format(date=day_str)
         fig.savefig(out_path, dpi=200, bbox_inches="tight")
         plt.close(fig)
 
