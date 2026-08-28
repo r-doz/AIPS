@@ -263,14 +263,38 @@ def _kern_matrices(
     return Ks, Kt
 
 
+def _combine_spacetime(Ks: torch.Tensor, Kt: torch.Tensor, kern: dict) -> torch.Tensor:
+    """
+    Combine the spatial and temporal kernel matrices into the joint
+    space-time kernel.
+
+    "product" (default): K = Ks ⊙ Kt -- the standard *separable* covariance.
+    Correlation factors into a spatial part times a temporal part, so the
+    spatial dependence structure is the same at every time point (and vice
+    versa); it cannot represent genuine space-time interaction in the
+    covariance, but is still coupled (overall correlation strength depends
+    jointly on spatial and temporal distance).
+
+    "sum": K = Ks + Kt -- a purely additive covariance, corresponding to
+    f(s, t) = f_spatial(s) + f_temporal(t). This has LESS coupling than the
+    product form, not more (zero space-time interaction at all) -- it is
+    not a fix for separability, just a different (more restrictive)
+    structure, included for comparison.
+    """
+    composition = kern.get("spacetime_composition", "product")
+    if composition == "product":
+        return Ks * Kt
+    if composition == "sum":
+        return Ks + Kt
+    raise ValueError(
+        f"Unknown spacetime_composition: {composition!r}. Use 'product' or 'sum'."
+    )
+
+
 def build_Kuu(Z: torch.Tensor, kern: dict, jitter: float = 1e-6) -> torch.Tensor:
-    """
-    Prior covariance at inducing points: K_uu = K_s ⊙ K_t   [M, M].
-    Separable space-time kernel (Hadamard product = product of kernels
-    applied to decoupled inputs).
-    """
+    """Prior covariance at inducing points: K_uu [M, M]."""
     Ks, Kt = _kern_matrices(Z, Z, kern)
-    Kuu = Ks * Kt
+    Kuu = _combine_spacetime(Ks, Kt, kern)
     noise = kern.get("noise_var", 0.0)
     Kuu = Kuu + (noise + jitter) * torch.eye(Z.shape[0], device=Z.device, dtype=Z.dtype)
     return Kuu
@@ -279,7 +303,7 @@ def build_Kuu(Z: torch.Tensor, kern: dict, jitter: float = 1e-6) -> torch.Tensor
 def build_Kfu(X: torch.Tensor, Z: torch.Tensor, kern: dict) -> torch.Tensor:
     """Cross-covariance between data and inducing points: K_fu [N, M]."""
     Ks, Kt = _kern_matrices(X, Z, kern)
-    return Ks * Kt
+    return _combine_spacetime(Ks, Kt, kern)
 
 
 # ---------------------------------------------------------------------------
@@ -442,6 +466,7 @@ class SparseLGCP(nn.Module):
             "temporal": _component_params("temporal"),
             "spatial_composition": self._kernel_cfg.get("spatial_composition", "sum"),
             "temporal_composition": self._kernel_cfg.get("temporal_composition", "sum"),
+            "spacetime_composition": self._kernel_cfg.get("spacetime_composition", "product"),
             "noise_var": torch.exp(self.log_noise),
         }
 

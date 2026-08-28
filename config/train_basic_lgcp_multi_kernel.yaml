@@ -19,19 +19,19 @@ covariate_cols:
 
   - cell_lag_1 # best: use it
   - cell_lag_7 # best: use it
-  #- cell_roll_mean_7
-  #- daily_total_lag_1
-  #- daily_total_lag_7
-  #- daily_total_roll_mean_7
+  - cell_roll_mean_7
+  - daily_total_lag_1
+  - daily_total_lag_7
+  - daily_total_roll_mean_7
 
 # --- split ---
 split_strategy: fixed_test_window 
 #split_strategy: chronological 
 #split_strategy: random_day 
-test_start_date: "2025-11-01"
-test_end_date: "2025-11-07"
+test_start_date: "2025-05-01"
+test_end_date: "2025-05-07"
 train_fraction: 0.9
-data_seed: 42
+data_seed: 1
 
 # --- model output names ---
 model_family: new_tests
@@ -57,7 +57,7 @@ global_mean_run_name: dataseed42_npseed0
 global_cell_mean_run_name: dataseed42_npseed0
 
 # --- model lgcp ---
-num_steps: 5000 # 5000 is the standard
+num_steps: 10000 # 5000 is the standard
 M_inducing: 300 # 300 is the standard
 
 np_seed: 0
@@ -68,10 +68,10 @@ model:
   spatial_kernels:
     - type: RBF
       hyperparameters:
-        lengthscale: 0.1 # 0.5 best
+        lengthscale: 0.35 # 0.5 best
         variance: 2.0 # 1.0 best
       trainable:
-        lengthscale: false
+        lengthscale: true
         variance: true
     #- type: RationalQuadratic
     #  hyperparameters:
@@ -86,7 +86,7 @@ model:
   - type: RBF
     hyperparameters:
         lengthscale: 0.01 # 0.01 best 
-        variance: 0.5 # 0.20 best
+        variance: 0.2 # 0.20 best
     trainable:
         lengthscale: false # false best
         variance: true
@@ -98,7 +98,16 @@ model:
     trainable:
         lengthscale: true
         variance: true
-        period: false
+        period: true
+  - type: periodic
+    hyperparameters:
+        lengthscale: 0.50
+        variance: 0.2
+        period: 1
+    trainable:
+        lengthscale: true
+        variance: true
+        period: true
   #- type: quasi_periodic
   #  hyperparameters:
   #      envelope_lengthscale: 0.30
@@ -159,7 +168,7 @@ zero_gate:
 # --- training ---
 lr: 0.001
 minibatch: 1024
-num_mc: 32
+num_mc: 64
 grad_clip: 10.0
 device: cpu
 
