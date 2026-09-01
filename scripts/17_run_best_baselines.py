@@ -1,17 +1,21 @@
 """
-Run all three baselines (last-available Poisson, window Poisson GLM, GNN)
-at their best hyperparameters -- as found via the grid searches in
-notebooks/51_paper_lgcp_window_selection_baselines.ipynb -- on both paper
-test weeks (2025-05-01..07 and 2025-11-01..07), and save every method's
-metrics for both weeks to a single CSV.
+Run all four baselines (last-available Poisson, global cell mean Poisson,
+window Poisson GLM, GNN) at their best hyperparameters -- as found via the
+grid searches in notebooks/51_paper_baseline_hyperparameter_selection.ipynb
+(evaluated on 2025-04-17..30 and 2025-10-18..31), and (for global cell
+mean, which has no notebook search) by comparing its two modes directly
+here -- on the paper's reporting weeks (2025-05-01..07 and
+2025-11-01..07). Hyperparameter selection and final reporting deliberately
+use disjoint weeks.
+
+For each method and week, predictions are computed once for the full
+7-day test window, then scored at three forecast horizons to see how
+prediction quality degrades with lead time: the full week, the first 3
+days only, and the first day only. Three CSVs are saved, one per horizon.
 
 Usage
 -----
-    python scripts/17_run_best_baselines.py [--output-csv PATH]
-
-Each baseline is trained fresh here (not loaded from a checkpoint), on
-years=[2024, 2025] data, using the same train/test split and evaluation
-protocol as the notebook.
+    python scripts/17_run_best_baselines.py [--output-dir DIR]
 """
 
 from __future__ import annotations
@@ -33,24 +37,53 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.models.metrics_lgcp import evaluate_metrics
 
 # ---------------------------------------------------------------------------
-# Config: best hyperparameters found in notebooks/51_paper_lgcp_window_selection_baselines.ipynb
+# Config: best hyperparameters found in
+# notebooks/51_paper_baseline_hyperparameter_selection.ipynb (GLM, GNN) and
+# by direct comparison here (last-available mode fixed; global cell mean
+# mode chosen below).
 # ---------------------------------------------------------------------------
 
 YEARS = [2024, 2025]
 SEED = 0
 
+# Reporting weeks for the final tables -- deliberately NOT the weeks used
+# to choose hyperparameters (2025-04-17..30 and 2025-10-18..31, see the
+# notebook), so hyperparameter selection and final reporting use disjoint
+# data.
 TEST_WEEKS = [
     {"label": "may", "test_start": "2025-05-01", "test_end": "2025-05-07"},
     {"label": "november", "test_start": "2025-11-01", "test_end": "2025-11-07"},
 ]
 
+# Forecast horizons: metrics are computed on the first `n_days` of each
+# test week (predictions are generated once for the full week and then
+# sliced -- not retrained per horizon), to see how prediction quality
+# degrades with lead time.
+HORIZONS = [
+    ("full_week", 7),
+    ("first_3_days", 3),
+    ("first_day", 1),
+]
+
+# Covariates used by every baseline that takes covariates (GLM, GNN).
+BASELINE_COVARIATE_COLS = [
+    "chl", "thetao", "fishing_block", "is_holiday", "is_weekend",
+    "cell_lag_1", "cell_lag_7",
+]
+
 LAST_AVAILABLE_BEST_MODE = "one_step_ahead"
 
-GLM_BEST_WINDOW_SIZE = 14
-GLM_BEST_ALPHA = 0.0001
+# No notebook search exists for this baseline -- it only has two discrete
+# modes, both compared directly in run_global_cell_mean() below.
+GLOBAL_CELL_MEAN_MODES = ["frozen_train", "expanding"]
 
-GNN_BEST_HIDDEN_DIM = 32
-GNN_BEST_NUM_LAYERS = 2
+# From notebooks/51_paper_baseline_hyperparameter_selection.ipynb
+# (selected on 2025-04-17..30 and 2025-10-18..31, week-by-week then averaged)
+GLM_BEST_WINDOW_SIZE = 14
+GLM_BEST_ALPHA = 0.01
+
+GNN_BEST_HIDDEN_DIM = 64
+GNN_BEST_NUM_LAYERS = 3
 GNN_BEST_LR = 0.01
 
 BASE_GLM_CONFIG = PROJECT_ROOT / "config/14_window_poisson_glm.yaml"
@@ -62,16 +95,39 @@ METRIC_KEYS = [
     "daily_delta_corr", "daily_direction_accuracy_moving",
 ]
 
-DEFAULT_OUTPUT_CSV = PROJECT_ROOT / "reports/paper/lgcp_two_week_2025_05_11/best_baselines_metrics.csv"
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "reports/paper/lgcp_two_week_2025_05_11"
 
 
 def load_script_module(name: str, relpath: str):
-    """scripts/13_..., 14_..., 15_... start with a digit, so they can't be
-    imported with a normal `import` statement."""
+    """scripts/12b_..., 13_..., 14_..., 15_... start with a digit (or, for
+    12b, a digit+letter), so they can't be imported with a normal `import`
+    statement."""
     spec = importlib.util.spec_from_file_location(name, PROJECT_ROOT / relpath)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def horizon_rows(method: str, week_label: str, test_dates, y_true, preds, test_start: str) -> list[dict]:
+    """Slices already-computed full-week predictions into each forecast
+    horizon and scores them -- no retraining/re-predicting per horizon."""
+    test_dates = pd.to_datetime(np.asarray(test_dates))
+    y_true = np.asarray(y_true)
+    preds = np.asarray(preds)
+
+    rows = []
+    for horizon_label, horizon_days in HORIZONS:
+        cutoff = pd.Timestamp(test_start) + pd.Timedelta(days=horizon_days - 1)
+        mask = test_dates <= cutoff
+        metrics = evaluate_metrics(y_true[mask], preds[mask], test_dates[mask])
+        rows.append({
+            "method": method,
+            "week": week_label,
+            "horizon": horizon_label,
+            "horizon_days": horizon_days,
+            **{k: metrics[k] for k in METRIC_KEYS},
+        })
+    return rows
 
 
 # ---------------------------------------------------------------------------
@@ -102,9 +158,71 @@ def run_last_available(last_avail) -> list[dict]:
         preds = last_avail.build_last_available_predictions(
             df=df_la, train_mask=train_mask, test_mask=test_mask, mode=LAST_AVAILABLE_BEST_MODE
         )
-        metrics = evaluate_metrics(test_y, preds, test_dates)
-        print(f"[Last Available Poisson | {label}] mean_ll_obs={metrics['mean_ll_obs']:.4f}  rmse_daily={metrics['rmse_daily']:.4f}")
-        rows.append({"method": "Last Available Poisson", "week": label, **{k: metrics[k] for k in METRIC_KEYS}})
+        week_rows = horizon_rows("Last Available Poisson", label, test_dates, test_y, preds, test_start)
+        for r in week_rows:
+            print(f"[Last Available Poisson | {label} | {r['horizon']}] mean_ll_obs={r['mean_ll_obs']:.4f}  rmse_daily={r['rmse_daily']:.4f}")
+        rows += week_rows
+    return rows
+
+
+def run_global_cell_mean(global_cell_mean) -> list[dict]:
+    """
+    Both modes are evaluated on the full week to pick the better one (by
+    mean_ll_obs averaged across weeks, as before); the winning mode's
+    already-computed full-week predictions are then sliced into the three
+    forecast horizons for reporting.
+    """
+    target_col = "ais_vessels_count"
+    date_col = "date"
+    cell_cols = ["longitude", "latitude"]
+    parquet_path = str(PROJECT_ROOT / "data/processed/cpr_gfw.parquet")
+
+    df = global_cell_mean.load_parquet_years(parquet_path, YEARS)
+    df[date_col] = pd.to_datetime(df[date_col]).dt.normalize()
+
+    per_week_preds = {mode: {} for mode in GLOBAL_CELL_MEAN_MODES}
+    avg_ll_scores = {mode: [] for mode in GLOBAL_CELL_MEAN_MODES}
+
+    for week in TEST_WEEKS:
+        label, test_start, test_end = week["label"], week["test_start"], week["test_end"]
+
+        train_mask, test_mask = global_cell_mean.make_day_split_masks(
+            df=df, train_fraction=0.9, random_seed=42,
+            split_strategy="fixed_test_window", test_start_date=test_start, test_end_date=test_end,
+        )
+        test_df = df.loc[test_mask]
+        y_test = test_df[target_col].values.astype(float)
+        test_dates = test_df[date_col].values
+
+        for mode in GLOBAL_CELL_MEAN_MODES:
+            if mode == "frozen_train":
+                preds = global_cell_mean.build_frozen_train_cell_mean_predictions(
+                    df=df, train_mask=train_mask, test_mask=test_mask,
+                    target_col=target_col, cell_cols=cell_cols,
+                )
+            else:
+                preds = global_cell_mean.build_expanding_cell_mean_predictions(
+                    df=df, train_mask=train_mask, test_mask=test_mask,
+                    target_col=target_col, date_col=date_col, cell_cols=cell_cols,
+                )
+            metrics = evaluate_metrics(y_test, preds, test_dates)
+            print(f"[Global Cell Mean ({mode}) | {label} | full_week] mean_ll_obs={metrics['mean_ll_obs']:.4f}  rmse_daily={metrics['rmse_daily']:.4f}")
+            per_week_preds[mode][label] = (test_dates, y_test, preds, test_start)
+            avg_ll_scores[mode].append(metrics["mean_ll_obs"])
+
+    avg_ll = {mode: float(np.mean(scores)) for mode, scores in avg_ll_scores.items()}
+    best_mode = max(avg_ll.items(), key=lambda item: item[1])[0]
+    print(
+        "[Global Cell Mean] selected mode="
+        + best_mode
+        + "  (avg mean_ll_obs: "
+        + ", ".join(f"{m}={v:.4f}" for m, v in avg_ll.items())
+        + ")"
+    )
+
+    rows = []
+    for label, (test_dates, y_test, preds, test_start) in per_week_preds[best_mode].items():
+        rows += horizon_rows("Global Cell Mean Poisson", label, test_dates, y_test, preds, test_start)
     return rows
 
 
@@ -113,6 +231,7 @@ def run_window_glm(window_glm) -> list[dict]:
     glm_cfg["years"] = YEARS
     glm_cfg["parquet_path"] = str(PROJECT_ROOT / glm_cfg["parquet_path"])
     glm_cfg["window_size"] = GLM_BEST_WINDOW_SIZE
+    glm_cfg["covariate_cols"] = BASELINE_COVARIATE_COLS
 
     df_glm_raw = window_glm.load_parquet_years(glm_cfg["parquet_path"], YEARS)
     df_glm_raw["date"] = pd.to_datetime(df_glm_raw["date"])
@@ -141,9 +260,11 @@ def run_window_glm(window_glm) -> list[dict]:
         model = PoissonRegressor(alpha=GLM_BEST_ALPHA, max_iter=glm_cfg["max_iter"])
         model.fit(X_train_s, y_train)
         preds = np.clip(model.predict(X_test_s), 0, None)
-        metrics = evaluate_metrics(y_test, preds, test_dates)
-        print(f"[Window Poisson GLM | {label}] mean_ll_obs={metrics['mean_ll_obs']:.4f}  rmse_daily={metrics['rmse_daily']:.4f}")
-        rows.append({"method": "Window Poisson GLM", "week": label, **{k: metrics[k] for k in METRIC_KEYS}})
+
+        week_rows = horizon_rows("Window Poisson GLM", label, test_dates, y_test, preds, test_start)
+        for r in week_rows:
+            print(f"[Window Poisson GLM | {label} | {r['horizon']}] mean_ll_obs={r['mean_ll_obs']:.4f}  rmse_daily={r['rmse_daily']:.4f}")
+        rows += week_rows
     return rows
 
 
@@ -151,6 +272,7 @@ def run_gnn(gnn_mod) -> list[dict]:
     gnn_cfg = gnn_mod.load_config(str(BASE_GNN_CONFIG))
     gnn_cfg["years"] = YEARS
     gnn_cfg["parquet_path"] = str(PROJECT_ROOT / gnn_cfg["parquet_path"])
+    gnn_cfg["covariate_cols"] = BASELINE_COVARIATE_COLS
     device = torch.device(gnn_cfg.get("device", "cpu"))
 
     df_gnn = gnn_mod.load_parquet_years(gnn_cfg["parquet_path"], YEARS)
@@ -208,9 +330,11 @@ def run_gnn(gnn_mod) -> list[dict]:
         y_test_flat = Y_test.reshape(-1)
         rate_test_flat = rate_test.reshape(-1)
         test_dates_flat = np.repeat(dates_test, n_cells)
-        metrics = evaluate_metrics(y_test_flat, rate_test_flat, test_dates_flat)
-        print(f"[GNN | {label}] mean_ll_obs={metrics['mean_ll_obs']:.4f}  rmse_daily={metrics['rmse_daily']:.4f}")
-        rows.append({"method": "GNN", "week": label, **{k: metrics[k] for k in METRIC_KEYS}})
+
+        week_rows = horizon_rows("GNN", label, test_dates_flat, y_test_flat, rate_test_flat, test_start)
+        for r in week_rows:
+            print(f"[GNN | {label} | {r['horizon']}] mean_ll_obs={r['mean_ll_obs']:.4f}  rmse_daily={r['rmse_daily']:.4f}")
+        rows += week_rows
     return rows
 
 
@@ -219,40 +343,49 @@ def run_gnn(gnn_mod) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def main(output_csv: Path):
+def main(output_dir: Path):
     last_avail = load_script_module("last_avail", "scripts/13_evaluate_last_available_poisson.py")
+    global_cell_mean = load_script_module("global_cell_mean", "scripts/12b_global_cell_mean.py")
     window_glm = load_script_module("window_glm", "scripts/14_train_window_poisson_glm.py")
     gnn_mod = load_script_module("gnn_mod", "scripts/15_train_gnn.py")
 
     print("=" * 80)
     print("Running baselines at their best hyperparameters (see notebook 51)")
     print("=" * 80)
-    print(f"Last Available Poisson: mode={LAST_AVAILABLE_BEST_MODE}")
+    print(f"Last Available Poisson:  mode={LAST_AVAILABLE_BEST_MODE}")
+    print(f"Global Cell Mean Poisson: mode selected below (compares {GLOBAL_CELL_MEAN_MODES})")
     print(f"Window Poisson GLM:      window_size={GLM_BEST_WINDOW_SIZE}, poisson_alpha={GLM_BEST_ALPHA}")
     print(f"GNN:                     hidden_dim={GNN_BEST_HIDDEN_DIM}, num_layers={GNN_BEST_NUM_LAYERS}, lr={GNN_BEST_LR}")
+    print(f"Covariates (GLM/GNN):    {BASELINE_COVARIATE_COLS}")
+    print(f"Horizons:                {[h[0] for h in HORIZONS]}")
     print()
 
     rows = []
     rows += run_last_available(last_avail)
+    rows += run_global_cell_mean(global_cell_mean)
     rows += run_window_glm(window_glm)
     rows += run_gnn(gnn_mod)
 
     results_df = pd.DataFrame(rows)
-    output_csv.parent.mkdir(parents=True, exist_ok=True)
-    results_df.to_csv(output_csv, index=False)
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("\nPer-week metrics:")
-    print(results_df.set_index(["method", "week"]))
-    print(f"\nSaved → {output_csv}")
+    for horizon_label, _ in HORIZONS:
+        horizon_df = results_df[results_df["horizon"] == horizon_label].drop(columns=["horizon", "horizon_days"])
+        out_path = output_dir / f"best_baselines_metrics_{horizon_label}.csv"
+        horizon_df.to_csv(out_path, index=False)
+        print(f"\n[{horizon_label}] saved -> {out_path}")
+        print(horizon_df.set_index(["method", "week"]))
+
+    print(f"\nAll 3 tables saved under {output_dir}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--output-csv",
+        "--output-dir",
         type=str,
-        default=str(DEFAULT_OUTPUT_CSV),
-        help="Path to save the metrics CSV.",
+        default=str(DEFAULT_OUTPUT_DIR),
+        help="Directory to save the three metrics CSVs (one per forecast horizon).",
     )
     args = parser.parse_args()
-    main(Path(args.output_csv))
+    main(Path(args.output_dir))
