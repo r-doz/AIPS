@@ -72,6 +72,16 @@ Conclusion:
 - NC, 2 spatial RBF has a good plot 
 - Classifier t = 0.1 is interesting because it is strong both on correlation and MAE-OBS (the plot is good moreover)
 
+## Tune the 2 spatial RBF 
+Since the model with 2 spatial RBFs seems to be the stronger on all metrics but MAE-OBS, i tried different configurations:
+- lgcp_spat_2rbf_l0.10_l0.03
+- lgcp_spat_2rbf_l0.30_l0.03
+- lgcp_spat_2rbf_l0.20_l0.01
+- lgcp_spat_2rbf_l0.20_l0.06
+- lgcp_spat_2rbf_trainable_ls 
+
+Results:
+
 
 
 

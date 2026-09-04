@@ -50,7 +50,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding 
 #global_cell_mean_mode: frozen_train
 
-run_name: lgcp_spat_rbf_l0.1_var4
+run_name: lgcp_spat_2rbf_l0.20_l0.01
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -68,11 +68,11 @@ model:
   spatial_kernels:
     - type: RBF
       hyperparameters:
-        lengthscale: 0.1 # 0.1 best
-        variance: 4.0 # 
+        lengthscale: 0.2 # 0.1 best
+        variance: 2.0 # 
       trainable:
         lengthscale: false
-        variance: false
+        variance: true
     #- type: RationalQuadratic
     #  hyperparameters:
     #    lengthscale: 1.2
@@ -82,6 +82,14 @@ model:
     #    lengthscale: true
     #    variance: true
     #    alpha: false
+    - type: RBF
+      hyperparameters:
+        lengthscale: 0.01 # 0.1 best
+        variance: 0.5 # 
+      trainable:
+        lengthscale: false
+        variance: true
+        
   temporal_kernels:
   - type: RBF
     hyperparameters:

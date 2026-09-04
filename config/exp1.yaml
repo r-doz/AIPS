@@ -50,7 +50,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding 
 #global_cell_mean_mode: frozen_train
 
-run_name: lgcp_temp_rbf_l0.01_spatial_rbf_l0.1_classifc_t02
+run_name: lgcp_spat_2rbf_l0.10_l0.03
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -73,15 +73,14 @@ model:
       trainable:
         lengthscale: false
         variance: true
-    #- type: RationalQuadratic
-    #  hyperparameters:
-    #    lengthscale: 1.2
-    #    variance: 0.35
-    #    alpha: 0.8
-    #  trainable:
-    #    lengthscale: true
-    #    variance: true
-    #    alpha: false
+    - type: RBF
+      hyperparameters:
+        lengthscale: 0.03 # 0.1 best
+        variance: 0.5 # 
+      trainable:
+        lengthscale: false
+        variance: true
+        
   temporal_kernels:
   - type: RBF
     hyperparameters:
@@ -155,12 +154,12 @@ lag_features:
 # classifier calls "zero" are forced to 0, correcting the LGCP's tendency
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
-  enabled: true
+  enabled: false
   hidden_layer_sizes: [32]
   activation: relu
   alpha: 1.0e-4
   max_iter: 500
-  threshold: 0.2
+  threshold: 0.3
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
