@@ -32,12 +32,48 @@ I tried 3 classifier, the first with the previous setting and threshold = 0.03 a
 - The best overall (apart from a little decrease in correlation) is threshold 0.03 and spatial rbf l = 0.1, temporal rbf l = 0.01.
 - In general, adding the classifier become weaker overall but super strong on MAE OBS, by far better than even the GNN. So, it interesting to consider this model, but is not the best one.
 
-## New tests to do 
-Since decreasing the threshold means improvement for the classifier, another test could be done by decreasing the trheshold from 0.03.  
+## Different classifier and spatial kernels
+Since decreasing the threshold means improvement for the classifier, another test could be done by decreasing the trheshold from 0.3.  
 
-Another class of test regards the space intensity. One visual problem is that our model is prudent, the forcast tend to be wide but with small values. So, 3 tests have to be done:
+Another class of test regards the space intensity. One visual problem is that our model is prudent, the forcast tend to be wide but with small values. So, some tests have to be done:
 - same setting, without classifier, with space lengscale 0.1, variance = 4, false, false
-- add a further spatial RBF, so: RBF(0.2, 2, F, T) + RBF(0.03, 0.5, F, T)
-- add a further spatial RQ: so, RBF(0.1, 2, F, T) + RQ(0.05, 0.5, 1, F, T, T) 
+- same setting, classifier, with space lengscale 0.1, variance = 6, false, false
+- add a further spatial RBF, so: RBF(0.2, 2, F, T) + RBF(0.03, 0.5, F, T) + classifier
+- add a further spatial RQ: so, RBF(0.1, 2, F, T) + RQ(0.05, 0.5, 1, F, T, T) + classifier
+- same setting, NC, with space lengscale 0.1, variance = 6, false, false
+- add a further spatial RBF, so: RBF(0.2, 2, F, T) + RBF(0.03, 0.5, F, T), NC 
+- add a further spatial RQ: so, RBF(0.1, 2, F, T) + RQ(0.05, 0.5, 1, F, T, T), NC 
+
+Results:
+
+In terms of all metrics but the MAE-OBS the best models are
+- Non-classifier 2 spatial RBF (slightly better than the one below on all metrics)
+- NC, rbf l = 0.1, temporal rbf l = 0.01 
+- NC, 2 spatial kernels: RBF + RQ
+
+In terms of MAE-OBS, the best models are 
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01
+- Classifier var = 6 and false
+- Classifier 2 spatial RBF
+- Classifier Spatial RBF + RQ
+- (a bit worse than the other above) Classifier with threshold = 0.1
+
+In terms of correlation, the best model are 
+- NC, rbf l = 0.1, temporal rbf l = 0.01 
+- NC, var = 4 and false
+- NC, 2 spatial RBF
+- NC var = 6
+- NC spatial RBF + RQ
+- Classifier with t = 0.1 
+
+Conclusion: 
+- The best model overall is NC, 2 spatial RBF, it follows simple NC rbf l = 0.1, temporal rbf l = 0.01 
+- Only classifiers are strong on MAE-OBS, with classifier 2 spatial RBF slightly better  
+- NC, 2 spatial RBF has a good plot 
+- Classifier t = 0.1 is interesting because it is strong both on correlation and MAE-OBS (the plot is good moreover)
+
+
+
+
 
 
