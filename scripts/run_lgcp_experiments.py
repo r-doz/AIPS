@@ -1,4 +1,4 @@
-"""Run LGCP training sequentially for experiment configs 4 through 6."""
+"""Run LGCP training sequentially for experiment configs 1 through 4."""
 
 import subprocess
 import sys
@@ -10,7 +10,8 @@ TRAIN_SCRIPT = PROJECT_ROOT / "scripts" / "11_train_lgcp.py"
 
 
 def main() -> None:
-    for experiment_number in range(1, 6):
+    # range(x, y): x is inclusive, y is exclusive
+    for experiment_number in range(1, 5):
         config = PROJECT_ROOT / "config" / f"exp{experiment_number}.yaml"
         print(f"\nRunning {config.name}...", flush=True)
         subprocess.run(

@@ -117,6 +117,7 @@ DEFAULT_CONFIG = {
     # tendency to smooth a small positive rate into always-zero cells/dates.
     "zero_gate": {
         "enabled": False,
+        "mode": "hard",  # soft multiplies rates by P(nonzero); ignores threshold
         "hidden_layer_sizes": [32],
         "activation": "relu",
         "alpha": 1e-4,
@@ -529,6 +530,9 @@ def configure_log_noise(model, cfg):
 # Main
 # ---------------------------------------------------------------------------
 def main(cfg: dict):
+    gate_cfg = cfg.get("zero_gate") or {}
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft"}:
+        raise ValueError("zero_gate.mode must be 'hard' or 'soft'.")
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
@@ -645,9 +649,11 @@ def main(cfg: dict):
         rate_mean_test = apply_zero_gate(
             zero_gate_clf, test_coords, test_covs, rate_mean_test,
             threshold=float(zero_gate_cfg.get("threshold", 0.5)),
+            mode=zero_gate_cfg.get("mode", "hard"),
         )
         n_gated = int((rate_mean_test == 0).sum())
-        print(f"  Zero-gate forced {n_gated}/{len(rate_mean_test)} test predictions to 0.")
+        print(f"  Zero-gate ({zero_gate_cfg.get('mode', 'hard')}): "
+              f"{n_gated}/{len(rate_mean_test)} test predictions are zero.")
 
     df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
 

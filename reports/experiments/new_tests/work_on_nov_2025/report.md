@@ -74,6 +74,7 @@ Conclusion:
 
 ## Tune the 2 spatial RBF 
 Since the model with 2 spatial RBFs seems to be the stronger on all metrics but MAE-OBS, i tried different configurations:
+- lgcp_spat_2rbf_l0.20_l0.03 (original one)
 - lgcp_spat_2rbf_l0.10_l0.03
 - lgcp_spat_2rbf_l0.30_l0.03
 - lgcp_spat_2rbf_l0.20_l0.01
@@ -81,6 +82,55 @@ Since the model with 2 spatial RBFs seems to be the stronger on all metrics but 
 - lgcp_spat_2rbf_trainable_ls 
 
 Results:
+There are 3 models which are superior on all the other. These are 
+- lgcp_spat_2rbf_l0.20_l0.01 (by a little the best)
+- lgcp_spat_2rbf_l0.20_l0.03 (original one)
+- lgcp_spat_2rbf_l0.20_l0.06
+
+All the other models are worse, especially the one with lenghscale trianable 
+
+## Tune the singol spatial RBF again
+After discovering the best 2 spatial RBF is 
+- lgcp_spat_2rbf_l0.20_l0.01
+I tried the singol spatial RBF with 
+- lgcp_spat_2rbf_l0.20_l0.01 (best 2 spatial RBF)
+- lgcp_spat_rbf_l0.10 (best 1 spatial RBF)
+- lgcp_spat_rbf_l0.20_lr0001 (original lr)
+- lgcp_spat_rbf_l0.20_lr001 (new lr)
+
+Results: 
+There are two dominant models 
+- lgcp_spat_2rbf_l0.20_l0.01 (by a little better)
+- lgcp_spat_rbf_l0.10
+
+## Soft classifier 
+The studied classifier was of the HARD version. The best found so far is 
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01
+The best threshold are t = 0.1 and 0.3. With 
+- t = 0.3 
+Is the best in terms of MAE-OBS
+while t = 0.1, is better overall but weaker in MAE compared to t=0.3 (so I chose t = 0.3 since the goal of the classifier is to perform on MAE-OBS).
+
+Tests:
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01, t = 0.3
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01, t = 0.1
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01, SOFT
+
+Results 
+The two HARD classifiers 
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01, t = 0.3
+- Classifier, rbf l = 0.1, temporal rbf l = 0.01, t = 0.1
+remains stronger compared to the soft one, so i would discard it.
+
+## Try to make the model "better recovery of observed peaks"
+The best model so far is 
+- 2 RBF spatial 0.2, 0.01 and temporal 0.01
+The candidate models are 
+- Strengthen the local component: short spatial variance fixed at 0.5: 500 inducing points
+- Increase spatial resolution of the approximation
+- Allow faster temporal changes: temporal lengthscale fixed at 0.003
+
+
 
 
 

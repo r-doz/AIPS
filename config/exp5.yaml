@@ -50,7 +50,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding 
 #global_cell_mean_mode: frozen_train
 
-run_name: lgcp_spat_2rbf_trainable_ls
+run_name: lgcp_spat_rbf_l0.20
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -68,17 +68,10 @@ model:
   spatial_kernels:
     - type: RBF
       hyperparameters:
-        lengthscale: 0.2 # 0.1 best
+        lengthscale: 0.2
         variance: 2.0 # 
       trainable:
-        lengthscale: true
-        variance: true
-    - type: RBF
-      hyperparameters:
-        lengthscale: 0.03 # 0.1 best
-        variance: 0.5 # 
-      trainable:
-        lengthscale: true
+        lengthscale: false
         variance: true
         
   temporal_kernels:
@@ -155,6 +148,7 @@ lag_features:
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
   enabled: false
+  mode: hard # hard: threshold cutoff; soft: rate * P(active), ignores threshold
   hidden_layer_sizes: [32]
   activation: relu
   alpha: 1.0e-4
@@ -178,5 +172,4 @@ num_vis_samples: 500
 # --- output ---
 report_root: reports/experiments
 log_every: 100
-
 

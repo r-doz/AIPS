@@ -1,3 +1,4 @@
+# Experiment 2: spatial RBF(0.2) + RationalQuadratic(0.3); fixed lengthscales.
 # config/train_basic_lgcp_multi_kernel.yaml
 years: [2024, 2025]
 
@@ -25,9 +26,9 @@ covariate_cols:
   #- daily_total_roll_mean_7
 
 # --- split ---
-split_strategy: fixed_test_window 
-#split_strategy: chronological 
-#split_strategy: random_day 
+split_strategy: fixed_test_window
+#split_strategy: chronological
+#split_strategy: random_day
 test_start_date: "2025-11-01"
 test_end_date: "2025-11-07"
 train_fraction: 0.9
@@ -44,13 +45,13 @@ model_family: new_tests
 #model_family: last_available_frozen
 
 # --- model selection ---
-last_available_mode: one_step_ahead  
+last_available_mode: one_step_ahead
 #last_available_mode: frozen_train
 
-global_cell_mean_mode: expanding 
+global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: lgcp_spat_2rbf_l0.30_l0.03
+run_name: lgcp_spat_rbf_l0.20_rq_l0.30
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -66,35 +67,28 @@ model:
   temporal_composition: sum
 
   spatial_kernels:
-    - type: RBF
-      hyperparameters:
-        lengthscale: 0.3 # 0.1 best
-        variance: 2.0 # 
-      trainable:
-        lengthscale: false
-        variance: true
-    #- type: RationalQuadratic
-    #  hyperparameters:
-    #    lengthscale: 1.2
-    #    variance: 0.35
-    #    alpha: 0.8
-    #  trainable:
-    #    lengthscale: true
-    #    variance: true
-    #    alpha: false
-    - type: RBF
-      hyperparameters:
-        lengthscale: 0.03 # 0.1 best
-        variance: 0.5 # 
-      trainable:
-        lengthscale: false
-        variance: true
-        
+  - type: RBF
+    hyperparameters:
+      lengthscale: 0.2
+      variance: 2.0
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: RationalQuadratic
+    hyperparameters:
+      lengthscale: 0.3
+      variance: 0.5
+      alpha: 0.8
+    trainable:
+      lengthscale: false
+      variance: true
+      alpha: false
+
   temporal_kernels:
   - type: RBF
     hyperparameters:
-        lengthscale: 0.01 # 0.01 best 
-        variance: 0.5 # 
+        lengthscale: 0.01 # 0.01 best
+        variance: 0.5 #
     trainable:
         lengthscale: false # false best
         variance: true
@@ -127,12 +121,12 @@ model:
   #      periodic_lengthscale: true
   #      period: true
   #      variance: true
-    
+
 kernel_noise:
   value: 1.0e-3
   trainable: false
 
-# Autoregressive setting 
+# Autoregressive setting
 lag_features:
   enabled: true
   mode: observed_past
@@ -187,5 +181,3 @@ num_vis_samples: 500
 # --- output ---
 report_root: reports/experiments
 log_every: 100
-
-

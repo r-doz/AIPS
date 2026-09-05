@@ -4,7 +4,9 @@ Zero-inflation gate for count models (e.g. the LGCP).
 A small binary classifier (nonzero vs. zero) trained on the same
 standardized coordinate + covariate features already used by the base
 count model. At evaluation time, wherever the classifier predicts "zero",
-the base model's predicted rate is forced to 0.
+the base model's predicted rate is forced to 0 (hard mode), or multiplied
+by P(nonzero) (soft mode). This is post-processing of the base rate, not
+a jointly trained hurdle model.
 
 This corrects a known failure mode of a smooth process model like the
 LGCP: it can still predict a small positive rate in a cell/date that is
@@ -74,16 +76,25 @@ def apply_zero_gate(
     covs: np.ndarray,
     rate_mean: np.ndarray,
     threshold: float = 0.5,
+    mode: str = "hard",
 ) -> np.ndarray:
     """
-    Returns a copy of rate_mean with entries the classifier predicts as
-    "zero" (P(nonzero) < threshold) forced to 0.
+    Return a new array of gated rates. Hard mode zeros entries where
+    P(nonzero) < threshold. Soft mode multiplies by P(nonzero) and ignores
+    threshold. The first rate dimension must match the feature rows.
     """
+    if mode not in {"hard", "soft"}:
+        raise ValueError("zero_gate.mode must be 'hard' or 'soft'.")
     X = build_zero_gate_features(coords, covs)
     nonzero_class_idx = list(clf.classes_).index(1)
     proba_nonzero = clf.predict_proba(X)[:, nonzero_class_idx]
     is_nonzero_pred = proba_nonzero >= threshold
 
     gated = np.asarray(rate_mean, dtype=float).copy()
+    if gated.ndim == 0 or gated.shape[0] != len(proba_nonzero):
+        raise ValueError("rate_mean must have one entry per classifier feature row.")
+    if mode == "soft":
+        weights = proba_nonzero.reshape((-1,) + (1,) * (gated.ndim - 1))
+        return gated * weights
     gated[~is_nonzero_pred] = 0.0
     return gated
