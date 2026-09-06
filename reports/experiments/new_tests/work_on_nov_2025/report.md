@@ -123,12 +123,62 @@ The two HARD classifiers
 remains stronger compared to the soft one, so i would discard it.
 
 ## Try to make the model "better recovery of observed peaks"
+### First trial
 The best model so far is 
 - 2 RBF spatial 0.2, 0.01 and temporal 0.01
 The candidate models are 
-- Strengthen the local component: short spatial variance fixed at 0.5: 500 inducing points
-- Increase spatial resolution of the approximation
+- Strengthen the local component: short spatial variance fixed at 0.5
+- Increase spatial resolution of the approximation: M = 500
 - Allow faster temporal changes: temporal lengthscale fixed at 0.003
+
+Results:
+The best model is still 
+- 2 RBF spatial 0.2, 0.01 and temporal 0.01
+A bit worse but still good is 
+- M = 500
+The only model that seems to better recover the peaks is 
+- M = 500
+but nothing special. 
+
+### Second trial 
+The best model so far is 
+- 2 RBF spatial 0.2, 0.01 and temporal 0.01
+I tried 
+- Sp 2 RBF l 0.35, l 0.01
+- Sp RBF + RQ, RBF l = 0.20, RQ l = 0.30, alpha = 0.8
+- Sp RBF + RQ, RBF l = 0.20, RQ l = 1.20, alpha = 0.8  
+- Sp RBF + RQ, RBF l = 0.35, RQ l = 1.20, alpha = 0.8  
+
+Results:
+There isn't a model with a visible peak-recovery from the plots.
+The best model all the metrics is still 
+- 2 RBF spatial 0.2, 0.01 and temporal 0.01
+Two mention are for 
+- Sp 2 RBF l 0.35, l 0.01 
+which is very similar but worse, and 
+- Sp RBF + RQ, RBF l = 0.20, RQ l = 0.30, alpha = 0.8
+whichi is the onlu with the same MAE-OBS equal to 2 RBF spatial 0.2, 0.01 and temporal 0.01
+
+## Improve the spatial 2 RBF 
+I tried the best model 
+- 2 RBF spatial 0.2, 0.01 and temporal 0.01
+against two models with the same setting, but 
+- lr 0.005 (instead of 0.001)
+- temporal periodic RBF with lengthscale NON-trainbale 
+
+Results:
+- The model "temporal periodic RBF with lengthscale NON-trainbale" is better or equal to "2 RBF spatial 0.2, 0.01 and temporal 0.01" on all metrics, but MAE-OBS (0.30 vs 0.32). Moreover, the plot shows more peak predictions.
+- The lr 0.005 makes a worse results on all the metrics 
+
+Comment:
+The temporal periodic lengthscale controls how similar two times within a cycle must be. In other words, if l is high two days within the week (the period) should be similar, while with l low, two days within the week could be really different. 
+
+
+## Combine the spatial 2 RBF + GNN
+The idea is to have the GNN to forecast the number of ships. Then, the LGCP split them on the most likely cells. 
+The gamma parameter controls the forecasting-concentration. With gamma = 1 is the same would be the standard LGCP. With gamma greater than 1 concentrates activity into higher-rate cells. 
+
+
 
 
 

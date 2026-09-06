@@ -51,6 +51,6 @@ device: cpu
 log_every: 25
 report_root: reports/experiments
 model_family: new_tests
-run_name: 2024+2025_gnn_apr21_apr30_20260828-150450
+run_name: 2024+2025_gnn_apr21_apr30_20260906-194216
 run_name_base: gnn_apr21_apr30
-run_id: 20260828-150450
+run_id: 20260906-194216

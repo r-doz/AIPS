@@ -181,3 +181,9 @@ report_root: reports/experiments
 log_every: 100
 
 
+# Optional GNN daily total + normalized LGCP spatial allocation.
+# Use predictions from a GNN with matching dates, region and forecast information.
+daily_allocation:
+  enabled: false
+  totals_csv: null # path to a GNN run's daily_predictions.csv
+  gamma: 1.0 # 1 preserves spatial proportions; >1 concentrates activity

@@ -481,6 +481,12 @@ def main(cfg: dict):
 
     rate_test = np.clip(rate_test, 0, None)
 
+    # Export predictions, never observed totals, for optional LGCP allocation.
+    pd.DataFrame({
+        "date": dates_test,
+        "predicted_total": rate_test.sum(axis=1),
+    }).to_csv(out_dir / "daily_predictions.csv", index=False)
+
     y_test_flat = Y_test.reshape(-1)
     rate_test_flat = rate_test.reshape(-1)
     test_dates_flat = np.repeat(dates_test, n_cells)

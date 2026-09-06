@@ -37,6 +37,7 @@ from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_m
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
 from src.models.zero_gate import train_zero_gate, apply_zero_gate
+from src.models.daily_allocation import load_daily_totals, allocate_daily_totals
 from src.visualization.viz_lgcp import (
     plot_loss,
     plot_pp_overview,
@@ -530,6 +531,12 @@ def configure_log_noise(model, cfg):
 # Main
 # ---------------------------------------------------------------------------
 def main(cfg: dict):
+    allocation_cfg = cfg.get("daily_allocation") or {}
+    allocation_totals = None
+    if allocation_cfg.get("enabled", False):
+        allocation_totals = load_daily_totals(
+            allocation_cfg["totals_csv"], float(allocation_cfg.get("gamma", 1.0))
+        )
     gate_cfg = cfg.get("zero_gate") or {}
     if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft"}:
         raise ValueError("zero_gate.mode must be 'hard' or 'soft'.")
@@ -654,6 +661,22 @@ def main(cfg: dict):
         n_gated = int((rate_mean_test == 0).sum())
         print(f"  Zero-gate ({zero_gate_cfg.get('mode', 'hard')}): "
               f"{n_gated}/{len(rate_mean_test)} test predictions are zero.")
+
+    if allocation_totals is not None:
+        raw_allocation_rates = rate_mean_test.copy()
+        rate_mean_test = allocate_daily_totals(
+            rate_mean_test, test_dates, allocation_totals,
+            gamma=float(allocation_cfg.get("gamma", 1.0)),
+        )
+        pd.DataFrame({
+            "date": test_dates,
+            "rate_before_allocation": raw_allocation_rates,
+            "allocated_rate": rate_mean_test,
+        }).to_csv(out_dir / "allocation_predictions.csv", index=False)
+        allocation_totals.rename("predicted_total").rename_axis("date").to_csv(
+            out_dir / "allocation_daily_totals.csv"
+        )
+        print("Applied external daily totals with normalized spatial allocation.")
 
     df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
 

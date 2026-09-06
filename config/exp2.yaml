@@ -1,4 +1,4 @@
-# Experiment 2: spatial RBF(0.2) + RationalQuadratic(0.3); fixed lengthscales.
+# Experiment 1: spatial RBF(0.35) + RBF(0.01); fixed lengthscales.
 # config/train_basic_lgcp_multi_kernel.yaml
 years: [2024, 2025]
 
@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: lgcp_spat_rbf_l0.20_rq_l0.30
+run_name: lgcp_spat_rbf_l0.2_rbf_l0.01_lr0.005
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -74,15 +74,13 @@ model:
     trainable:
       lengthscale: false
       variance: true
-  - type: RationalQuadratic
+  - type: RBF
     hyperparameters:
-      lengthscale: 0.3
+      lengthscale: 0.01
       variance: 0.5
-      alpha: 0.8
     trainable:
       lengthscale: false
       variance: true
-      alpha: false
 
   temporal_kernels:
   - type: RBF
@@ -168,7 +166,7 @@ zero_gate:
 # Within each dimension, kernels are summed.
 
 # --- training ---
-lr: 0.001
+lr: 0.005
 minibatch: 1024
 num_mc: 32
 grad_clip: 10.0
