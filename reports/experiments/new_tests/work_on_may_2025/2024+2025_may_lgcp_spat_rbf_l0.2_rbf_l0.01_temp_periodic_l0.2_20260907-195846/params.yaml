@@ -1,4 +1,3 @@
-# Best two-RBF baseline. Set totals_csv and enabled: true to use GNN totals.
 years:
 - 2024
 - 2025
@@ -18,7 +17,7 @@ covariate_cols:
 M_inducing: 300
 np_seed: 0
 model:
-  spatial_kernels:
+  spatial_kernels: &id001
   - type: rbf
     hyperparameters:
       lengthscale: 0.2
@@ -33,7 +32,7 @@ model:
     trainable:
       lengthscale: false
       variance: true
-  temporal_kernels:
+  temporal_kernels: &id002
   - type: rbf
     hyperparameters:
       lengthscale: 0.01
@@ -43,7 +42,7 @@ model:
       variance: true
   - type: periodic
     hyperparameters:
-      lengthscale: 0.8
+      lengthscale: 0.2
       period: 0.074
       variance: 0.2
     trainable:
@@ -62,7 +61,7 @@ num_pred_samples: 300
 num_vis_samples: 500
 report_root: reports/experiments
 model_family: new_tests
-run_name: lgcp_2rbf_gnn_daily_allocation_gamma1.0_periodic_l0.8
+run_name: may_lgcp_spat_rbf_l0.2_rbf_l0.01_temp_periodic_l0.2
 log_every: 100
 lag_features:
   enabled: true
@@ -85,14 +84,15 @@ lag_features:
   fillna_value: 0.0
 zero_gate:
   enabled: false
+  mode: hard
   hidden_layer_sizes:
   - 32
   activation: relu
   alpha: 0.0001
   max_iter: 500
   threshold: 0.3
-test_start_date: '2025-11-01'
-test_end_date: '2025-11-07'
+test_start_date: '2025-05-01'
+test_end_date: '2025-05-07'
 last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 last_available_run_name: dataseed42_npseed0_onestep
@@ -101,7 +101,8 @@ global_cell_mean_run_name: dataseed42_npseed0
 kernel_noise:
   value: 0.001
   trainable: false
-daily_allocation:
-  enabled: true 
-  totals_csv: /home/samuele/projects/AIPS/reports/experiments/new_tests/work_on_nov_2025/1_gnn/daily_predictions.csv
-  gamma: 1.0
+kernel_config:
+  spatial: *id001
+  temporal: *id002
+  spatial_composition: sum
+  temporal_composition: sum

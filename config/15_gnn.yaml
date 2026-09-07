@@ -15,8 +15,8 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2025-11-01"
-test_end_date: "2025-11-07"
+test_start_date: "2025-05-01"
+test_end_date: "2025-05-07"
 
 # --- features ---
 covariate_cols:

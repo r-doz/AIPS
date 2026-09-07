@@ -169,7 +169,9 @@ def _deep_merge(base: dict, updates: dict) -> dict:
 
 
 def load_config(config_path=None):
-    cfg = {k: (dict(v) if isinstance(v, dict) else v) for k, v in DEFAULT_CONFIG.items()}
+    cfg = {
+        k: (dict(v) if isinstance(v, dict) else v) for k, v in DEFAULT_CONFIG.items()
+    }
 
     if config_path is not None:
         with open(config_path, "r") as f:
@@ -406,7 +408,9 @@ def main(cfg: dict):
     adj_norm = normalize_adjacency(adj)
     adj_norm_t = torch.tensor(adj_norm, dtype=torch.float32, device=device)
 
-    print(f"  Adjacency ({cfg.get('adjacency', 'queen')}): {int(adj.sum())} directed edges")
+    print(
+        f"  Adjacency ({cfg.get('adjacency', 'queen')}): {int(adj.sum())} directed edges"
+    )
 
     # ---- Split -------------------------------------------------------------
     train_mask, test_mask = make_day_split_masks(
@@ -472,7 +476,9 @@ def main(cfg: dict):
         losses.append(float(loss.item()))
 
         if epoch == 1 or epoch % log_every == 0 or epoch == num_epochs:
-            print(f"  epoch {epoch:5d}/{num_epochs}   train Poisson NLL = {loss.item():.4f}")
+            print(
+                f"  epoch {epoch:5d}/{num_epochs}   train Poisson NLL = {loss.item():.4f}"
+            )
 
     # ---- Predict ---------------------------------------------------------------
     model.eval()
@@ -482,10 +488,12 @@ def main(cfg: dict):
     rate_test = np.clip(rate_test, 0, None)
 
     # Export predictions, never observed totals, for optional LGCP allocation.
-    pd.DataFrame({
-        "date": dates_test,
-        "predicted_total": rate_test.sum(axis=1),
-    }).to_csv(out_dir / "daily_predictions.csv", index=False)
+    pd.DataFrame(
+        {
+            "date": dates_test,
+            "predicted_total": rate_test.sum(axis=1),
+        }
+    ).to_csv(out_dir / "daily_predictions.csv", index=False)
 
     y_test_flat = Y_test.reshape(-1)
     rate_test_flat = rate_test.reshape(-1)
@@ -507,7 +515,7 @@ def main(cfg: dict):
 
     metrics_path = out_dir / "metrics.yaml"
     with open(metrics_path, "w") as f:
-        yaml.dump(metrics, f, sort_keys=False)
+        yaml.dump(metrics, f, sort_keys=True)
 
     print(f"Metrics saved → {metrics_path}")
 

@@ -167,16 +167,84 @@ against two models with the same setting, but
 - temporal periodic RBF with lengthscale NON-trainbale 
 
 Results:
-- The model "temporal periodic RBF with lengthscale NON-trainbale" is better or equal to "2 RBF spatial 0.2, 0.01 and temporal 0.01" on all metrics, but MAE-OBS (0.30 vs 0.32). Moreover, the plot shows more peak predictions.
+- The model "temporal periodic RBF with lengthscale NON-trainbale fixed at 0.2" is better or equal to "2 RBF spatial 0.2, 0.01 and temporal 0.01" on all metrics, but MAE-OBS (0.30 vs 0.32). Moreover, the plot shows more peak predictions.
 - The lr 0.005 makes a worse results on all the metrics 
 
 Comment:
 The temporal periodic lengthscale controls how similar two times within a cycle must be. In other words, if l is high two days within the week (the period) should be similar, while with l low, two days within the week could be really different. 
 
+## Tune the periodic lengthscale 
+
+### First experiment 
+
+We discovered the "spatial 2 RBF, temporal periodic lengthscale fixed at l0.2" outperforms "spatial 2 RBF" across all metrics except for MAE-OBS. 
+So, we tried to tune the fixed temporal periodic lengthscale. 
+We compared 6 models:
+- spatial 2 RBF 0.2, 0.01, periodic l trianable (it reaches 1.6) 
+- spatial 2 RBF 0.2, 0.01, periodic l 0.05
+- spatial 2 RBF 0.2, 0.01, periodic l 0.1
+- spatial 2 RBF 0.2, 0.01, periodic l 0.2
+- spatial 2 RBF 0.2, 0.01, periodic l 0.4
+- spatial 2 RBF 0.2, 0.01, periodic l 0.8
+
+Results:
+- l 0.4 outperforms all the models across all metrics, except for correlation (at 0.93 with other models around 0.97)
+- l 0.8 and l trainable perform very strongly on correlation, MAE-OBS, LL OBS.
+- l 0.2 is everytime the second-best model on every metrics
+
+Comment:
+- Keep 0.2, 0.4 and 0.8
+- Test them on another window and see the results 
+
+### Second experiment 
+I run 
+- spatial 2 RBF 0.2, 0.01, periodic l 0.2
+- spatial 2 RBF 0.2, 0.01, periodic l 0.4
+- spatial 2 RBF 0.2, 0.01, periodic l 0.8
+on the first week of may 2025 (rather then the first week of november 2025).
+
+Results: 
+- periodic l0.8 outperforms the other models across all metrics 
+
+### Final decision 
+It seems reasonable to use as best model 
+- spatial 2 RBF 0.2, 0.01, periodic l 0.8 
+
+
+
+
 
 ## Combine the spatial 2 RBF + GNN
 The idea is to have the GNN to forecast the number of ships. Then, the LGCP split them on the most likely cells. 
 The gamma parameter controls the forecasting-concentration. With gamma = 1 is the same would be the standard LGCP. With gamma greater than 1 concentrates activity into higher-rate cells. 
+
+I compared the following models
+- spatial 2 RBF 0.2, 0.01, periodic l trianable (it reaches 1.6) 
+- spatial 2 RBF 0.2, 0.01, periodic l 0.2
+- spatial 2 RBF 0.2, 0.01, periodic l trianable + GNN gamma 1
+- spatial 2 RBF 0.2, 0.01, periodic l trianable + GNN gamma 1.5
+- spatial 2 RBF 0.2, 0.01, periodic l trianable + GNN gamma 2
+- Pure GNN
+- spatial 2 RBF 0.2, 0.01, periodic l 0.8 + GNN gamma 1
+
+Results:
+
+The strongest models are 
+- spatial 2 RBF 0.2, 0.01, periodic l 0.8 + GNN gamma 1
+- Pure GNN
+- spatial 2 RBF 0.2, 0.01, periodic l trianable + GNN gamma 1
+- spatial 2 RBF 0.2, 0.01, periodic l trianable + GNN gamma 1.5
+They outperform all the other models across all metrics, except for MAE-OBS (0.32/0.31 vs 0.30 of the standard 2 spatial RBF)
+The best overall is 
+- spatial 2 RBF 0.2, 0.01, periodic l 0.8 + GNN gamma 1
+
+In terms of MAE-OBS the best is 
+- spatial 2 RBF 0.2, 0.01, periodic l trianable (it reaches 1.6) 
+However, we saw that for this purpose, the classifier is even better. 
+
+
+
+
 
 
 
