@@ -103,5 +103,5 @@ kernel_noise:
   trainable: false
 daily_allocation:
   enabled: true 
-  totals_csv: /home/samuele/projects/AIPS/reports/experiments/new_tests/work_on_nov_2025/1_gnn/daily_predictions.csv
+  totals_csv: /home/samuele/projects/AIPS/reports/experiments/new_tests/nov_first_week_2025/1_gnn/daily_predictions.csv
   gamma: 1.0

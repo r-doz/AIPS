@@ -29,8 +29,8 @@ covariate_cols:
 split_strategy: fixed_test_window
 #split_strategy: chronological
 #split_strategy: random_day
-test_start_date: "2025-11-01"
-test_end_date: "2025-11-07"
+test_start_date: "2025-11-03"
+test_end_date: "2025-11-09"
 train_fraction: 0.9
 data_seed: 42
 
@@ -51,14 +51,14 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: lgcp_spat_rbf_l0.2_rbf_l0.01
+run_name: test # nov_3_9_lgcp_spat_rbf_l0.2_rbf_l0.01
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
 global_cell_mean_run_name: dataseed42_npseed0
 
 # --- model lgcp ---
-num_steps: 5000 # 5000 is the standard
+num_steps: 300 # 5000 is the standard
 M_inducing: 300 # 300 is the standard
 
 np_seed: 0

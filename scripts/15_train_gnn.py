@@ -532,28 +532,23 @@ def main(cfg: dict):
         save_path=plots_dir / "daily_timeseries.png",
     )
 
-    # Match the LGCP overview's spatial_map.png: select one reproducible test
-    # date and use the same RBF interpolation, Gulf mask and two-panel style.
-    rng = np.random.default_rng(int(cfg.get("torch_seed", 0)))
-    target_date = pd.Timestamp(rng.choice(dates_test)).normalize()
-    target_mask = pd.to_datetime(test_dates_flat).normalize() == target_date
-
+    # Spatial comparisons for every forecast day, using a shared color scale.
     meta = compute_meta(df_feat)
     lon_std = (cell_coords["longitude"].to_numpy() - meta["lon_mean"]) / meta["lon_std"]
     lat_std = (cell_coords["latitude"].to_numpy() - meta["lat_mean"]) / meta["lat_std"]
     spatial_coords = np.tile(np.column_stack([lon_std, lat_std]), (len(dates_test), 1))
 
-    print(f"  Spatial map target date: {target_date.date()}")
+    print(f"  Saving observed vs predicted spatial maps for all {len(dates_test)} test days …")
     plot_daily_interpolated_spatial_maps_separate(
-        test_coords=spatial_coords[target_mask],
-        test_dates=test_dates_flat[target_mask],
-        y_true=y_test_flat[target_mask],
-        rate_mean=rate_test_flat[target_mask],
+        test_coords=spatial_coords,
+        test_dates=test_dates_flat,
+        y_true=y_test_flat,
+        rate_mean=rate_test_flat,
         meta=meta,
         gulf_csv_path=cfg["gulf_csv_path"],
-        out_dir=plots_dir,
+        out_dir=plots_dir / "spatial_interpolated_test_days",
         cmap="viridis",
-        filename_template="spatial_map.png",
+        **(cfg.get("spatial_plot") or {}),
     )
 
     print(f"Plots saved → {plots_dir}")

@@ -37,7 +37,7 @@ from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_m
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
 from src.models.zero_gate import train_zero_gate, apply_zero_gate
-from src.models.daily_allocation import load_daily_totals, allocate_daily_totals
+from src.models.daily_allocation import load_daily_totals, allocate_daily_totals, validate_conflict_policy
 from src.visualization.viz_lgcp import (
     plot_loss,
     plot_pp_overview,
@@ -534,6 +534,7 @@ def main(cfg: dict):
     allocation_cfg = cfg.get("daily_allocation") or {}
     allocation_totals = None
     if allocation_cfg.get("enabled", False):
+        validate_conflict_policy(allocation_cfg.get("conflict_policy", "error"))
         allocation_totals = load_daily_totals(
             allocation_cfg["totals_csv"], float(allocation_cfg.get("gamma", 1.0))
         )
@@ -647,6 +648,7 @@ def main(cfg: dict):
         test_coords, test_covs, num_samples=cfg["num_pred_samples"]
     )
 
+    ungated_rate_mean_test = rate_mean_test.copy()
     zero_gate_cfg = cfg.get("zero_gate") or {}
     if zero_gate_cfg.get("enabled", False):
         print("Training zero-inflation gate classifier …")
@@ -667,6 +669,8 @@ def main(cfg: dict):
         rate_mean_test = allocate_daily_totals(
             rate_mean_test, test_dates, allocation_totals,
             gamma=float(allocation_cfg.get("gamma", 1.0)),
+            conflict_policy=allocation_cfg.get("conflict_policy", "error"),
+            fallback_rates=ungated_rate_mean_test,
         )
         pd.DataFrame({
             "date": test_dates,
@@ -692,6 +696,7 @@ def main(cfg: dict):
         out_dir=plots_dir / "spatial_interpolated_test_days",
         cmap="viridis",
         max_days=None,
+        **(cfg.get("spatial_plot") or {}),
     )
 
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)
@@ -744,32 +749,7 @@ def main(cfg: dict):
     all_covs = all_covs[sort_idx]
     all_y = all_y[sort_idx]
 
-    # Pick a random test date for the spatial map
-    rng = np.random.default_rng(cfg.get("np_seed", 0))
-    target_date = str(pd.to_datetime(rng.choice(test_dates)).date())
-    print(f"  Spatial map target date: {target_date}")
-
-    # print("\n=== DEBUG spatial dates ===")
-    # print("df shape:", df.shape)
-    # print("df date min/max:", df["date"].min(), df["date"].max())
-
-    # daily_counts = df.groupby("date").size().sort_values(ascending=False)
-    # print("Top 10 dates by number of rows:")
-    # print(daily_counts.head(10))
-
-    # print("Target date:", target_date)
-    # print(
-    #    "Rows in df for target_date:",
-    #    (
-    #        pd.to_datetime(df["date"]).dt.date == pd.to_datetime(target_date).date()
-    #    ).sum(),
-    # )
-
-    # Check how many rows in all_coords correspond to target_date via t-scaler logic
-
-    # Note: plot_pp_overview() recomputes its own rate predictions internally
-    # and is not passed through the zero-inflation gate above -- it stays a
-    # raw-LGCP visualization even when zero_gate.enabled is true.
+    # Keep the full-period raw-LGCP time series; daily maps above show final predictions.
     plot_pp_overview(
         model=model,
         df=df,
@@ -780,9 +760,9 @@ def main(cfg: dict):
         scalers=scalers,
         gulf_csv_path=cfg["gulf_csv_path"],
         num_samples=cfg["num_vis_samples"],
-        target_date=target_date,
         test_coords=test_coords,
         save_dir=plots_dir,
+        include_spatial_map=False,
     )
 
     print("Done.")

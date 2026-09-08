@@ -22,8 +22,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.interpolate import Rbf
-from scipy import ndimage
+from src.visualization.grid_surface import complete_grid_surface
 from matplotlib.path import Path
 from pathlib import Path as FilePath
 
@@ -49,12 +48,14 @@ def plot_pp_overview(
     test_coords: np.ndarray | None = None,
     cmap: str = "viridis",
     save_dir=None,
+    spatial_plot=None,
+    include_spatial_map=True,
 ) -> None:
     """
     Two-panel figure:
       1. Time series of daily total ships (predicted vs. observed).
       2. Spatial maps of predicted intensity and observed counts for
-         one selected date.
+         one selected date (when include_spatial_map=True).
 
     Parameters
     ----------
@@ -148,6 +149,9 @@ def plot_pp_overview(
     # =========================================================================
     # 2. Spatial map for one date
     # =========================================================================
+    if not include_spatial_map:
+        return
+
     dates_meta = pd.to_datetime(meta["dates"])
 
     if target_date is None:
@@ -189,7 +193,10 @@ def plot_pp_overview(
     gulf_y = (gulf_df["latitude"].values - lat_mean) / lat_std
 
     # ---- Regular grid for interpolation ------------------------------------
-    nx, ny = 150, 100
+    nx, ny = 900, 600
+    spatial_plot = spatial_plot or {}
+    nx = spatial_plot.get('nx', 900)
+    ny = spatial_plot.get('ny', 600)
     xi = np.linspace(gulf_x.min(), gulf_x.max(), nx)
     yi = np.linspace(gulf_y.min(), gulf_y.max(), ny)
     Xi, Yi = np.meshgrid(xi, yi)
@@ -211,21 +218,15 @@ def plot_pp_overview(
 
     if len(x_sl) < 3 or n_unique_points < 3:
         print(
-            f"Skipping spatial RBF interpolation: only {len(x_sl)} valid points "
+            f"Skipping spatial complete-grid diffusion and shape-preserving display interpolation: only {len(x_sl)} valid points "
             f"and {n_unique_points} unique spatial points available."
         )
         return
 
-    rbf_rm = Rbf(x_sl, y_sl, rm_sl, function="gaussian")
-    rbf_yt = Rbf(x_sl, y_sl, yt_sl, function="gaussian")
-    rm_grid = np.clip(rbf_rm(Xi, Yi), 0, None)
-    yt_grid = np.clip(rbf_yt(Xi, Yi), 0, None)
-
-    # Fill remaining NaNs with local mean
-    for grid in (rm_grid, yt_grid):
-        nan_mask = np.isnan(grid)
-        if nan_mask.any():
-            grid[nan_mask] = ndimage.generic_filter(grid, np.nanmean, size=3)[nan_mask]
+    surface_options = {k: spatial_plot[k] for k in
+                       ('radius_cells', 'diffusion_strength', 'display_method') if k in spatial_plot}
+    rm_grid = complete_grid_surface(x_sl, y_sl, rm_sl, xi, yi, **surface_options)
+    yt_grid = complete_grid_surface(x_sl, y_sl, yt_sl, xi, yi, **surface_options)
 
     # ---- Mask outside Gulf polygon -----------------------------------------
     gulf_poly = Path(np.column_stack([gulf_x, gulf_y]))
@@ -514,8 +515,11 @@ def plot_daily_interpolated_spatial_maps_separate(
     out_dir,
     cmap="viridis",
     max_days=None,
-    nx=150,
-    ny=100,
+    nx=900,
+    ny=600,
+    radius_cells=1,
+    diffusion_strength=0.25,
+    display_method="pchip",
     filename_template="spatial_map_{date}.png",
 ):
     """
@@ -523,7 +527,7 @@ def plot_daily_interpolated_spatial_maps_separate(
 
     Same style as plot_pp_overview spatial_map.png:
       - standardized longitude/latitude axes
-      - RBF interpolation
+      - complete-grid diffusion and shape-preserving display interpolation
       - Gulf polygon mask
       - red Gulf boundary
       - separate colorbar for predicted and observed
@@ -535,7 +539,7 @@ def plot_daily_interpolated_spatial_maps_separate(
     test_coords = np.asarray(test_coords, dtype=float)
     y_true = np.asarray(y_true, dtype=float)
     rate_mean = np.asarray(rate_mean, dtype=float)
-    test_dates = pd.to_datetime(test_dates).normalize()
+    test_dates = pd.DatetimeIndex(pd.to_datetime(test_dates)).normalize()
 
     if len(test_coords) != len(y_true) or len(test_coords) != len(rate_mean):
         raise ValueError(
@@ -603,18 +607,11 @@ def plot_daily_interpolated_spatial_maps_separate(
             )
             continue
 
-        rbf_rm = Rbf(x_sl, y_sl, rm_sl, function="gaussian")
-        rbf_yt = Rbf(x_sl, y_sl, yt_sl, function="gaussian")
-
-        rm_grid = np.clip(rbf_rm(Xi, Yi), 0, None)
-        yt_grid = np.clip(rbf_yt(Xi, Yi), 0, None)
-
-        for grid in (rm_grid, yt_grid):
-            nan_mask = np.isnan(grid)
-            if nan_mask.any():
-                grid[nan_mask] = ndimage.generic_filter(grid, np.nanmean, size=3)[
-                    nan_mask
-                ]
+        surface_options = dict(radius_cells=radius_cells,
+                               diffusion_strength=diffusion_strength,
+                               display_method=display_method)
+        rm_grid = complete_grid_surface(x_sl, y_sl, rm_sl, xi, yi, **surface_options)
+        yt_grid = complete_grid_surface(x_sl, y_sl, yt_sl, xi, yi, **surface_options)
 
         rm_masked = np.where(inside, rm_grid, np.nan)
         yt_masked = np.where(inside, yt_grid, np.nan)
