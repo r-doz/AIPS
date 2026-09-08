@@ -538,6 +538,15 @@ def main(cfg: dict):
     lat_std = (cell_coords["latitude"].to_numpy() - meta["lat_mean"]) / meta["lat_std"]
     spatial_coords = np.tile(np.column_stack([lon_std, lat_std]), (len(dates_test), 1))
 
+    # Preserve final cell values for exact, training-free spatial replotting.
+    spatial_export = pd.DataFrame({
+        "date": test_dates_flat, "x": spatial_coords[:, 0], "y": spatial_coords[:, 1],
+        "observed": y_test_flat, "predicted": rate_test_flat,
+    })
+    for key in ("lon_mean", "lon_std", "lat_mean", "lat_std"):
+        spatial_export[key] = meta[key]
+    spatial_export.to_csv(out_dir / "spatial_predictions.csv", index=False)
+
     print(f"  Saving observed vs predicted spatial maps for all {len(dates_test)} test days …")
     plot_daily_interpolated_spatial_maps_separate(
         test_coords=spatial_coords,

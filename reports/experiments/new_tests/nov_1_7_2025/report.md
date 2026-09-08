@@ -215,6 +215,8 @@ It seems reasonable to use as best model
 
 
 ## Combine the spatial 2 RBF + GNN
+
+### First experiment 
 The idea is to have the GNN to forecast the number of ships. Then, the LGCP split them on the most likely cells. 
 The gamma parameter controls the forecasting-concentration. With gamma = 1 is the same would be the standard LGCP. With gamma greater than 1 concentrates activity into higher-rate cells. 
 
@@ -241,6 +243,43 @@ The best overall is
 In terms of MAE-OBS the best is 
 - spatial 2 RBF 0.2, 0.01, periodic l trianable (it reaches 1.6) 
 However, we saw that for this purpose, the classifier is even better. 
+
+### Second experiment 
+I compared 
+- GNN
+- LGCP spatial 2 RBF 0.2, 0.01, periodic l 0.8 
+- LGCP+GNN gamma = 1.0
+- LGCP+GNN gamma = 1.0, periodic l = 0.8
+- LGCP+GNN gamma = 1.5
+- LGCP+GNN gamma = 2.0
+- LGCP+GNN+Classifier gamma = 1.0, periodic l 0.8
+
+Results:
+The best model is 
+- LGCP+GNN+Classifier gamma = 1.0, periodic l 0.8
+It outperforms all the other models across all metrics, except for OBS-LL.
+
+Other two good models are 
+- GNN
+- LGCP+GNN gamma = 1.0, periodic l = 0.8
+GNN is strong daily and outperforms other models on OBS-LL.
+"LGCP+GNN gamma = 1.0, periodic l = 0.8" outperforms other models on OBS-RMSE, and it is good across all metrics.
+
+A more interpretable model is
+- LGCP spatial 2 RBF 0.2, 0.01, periodic l 0.8 
+which is the second-best on correlation and MAE-OBS, weak on daily and decent for the remaining metrics. 
+
+Conclusions:
+- LGCP+GNN+Classfier is the best model found so far 
+- LGCP+GNN seems to be better than LGCP
+- fixing temporal periodic lengthscale at 0.8 is the right choice
+- gamma seems optimal at 1, but could be okay also in 1.5
+
+
+
+
+
+
 
 
 

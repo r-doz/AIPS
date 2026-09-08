@@ -682,6 +682,15 @@ def main(cfg: dict):
         )
         print("Applied external daily totals with normalized spatial allocation.")
 
+    # Preserve final cell values for exact, training-free spatial replotting.
+    spatial_export = pd.DataFrame({
+        "date": test_dates, "x": test_coords[:, 0], "y": test_coords[:, 1],
+        "observed": test_y, "predicted": rate_mean_test,
+    })
+    for key in ("lon_mean", "lon_std", "lat_mean", "lat_std"):
+        spatial_export[key] = meta[key]
+    spatial_export.to_csv(out_dir / "spatial_predictions.csv", index=False)
+
     df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
 
     assert len(df_test_plot) == len(test_y) == len(rate_mean_test)
