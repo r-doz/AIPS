@@ -156,3 +156,41 @@ def poisson_nll(rate: torch.Tensor, y: torch.Tensor, eps: float = 1e-8) -> torch
     (the log(y!) term is dropped since it does not depend on the model).
     """
     return (rate - y * torch.log(rate + eps)).mean()
+
+
+class GNNTrainingLoss(nn.Module):
+    """Select cell Poisson, combined, or daily-only MAE training.
+
+    Scales are fixed from training targets: max(mean cell count, 1) and
+    max(mean daily total, 1). The cell_poisson mode is exactly the historical
+    unnormalized objective. Daily-only supervision does not identify spatial
+    allocations; use the summed forecast for downstream LGCP allocation.
+    """
+
+    def __init__(self, training_targets, mode='cell_poisson', daily_weight=1.0):
+        super().__init__()
+        if mode not in ('cell_poisson', 'combined', 'daily_only'):
+            raise ValueError('loss.mode must be cell_poisson, combined, or daily_only')
+        if not np.isfinite(daily_weight) or daily_weight < 0:
+            raise ValueError('loss.daily_weight must be finite and nonnegative')
+        y = training_targets.detach()
+        if y.ndim != 2 or y.numel() == 0 or not torch.isfinite(y).all() or (y < 0).any():
+            raise ValueError('Training targets must be finite nonnegative [days, cells] counts')
+        self.mode = mode
+        self.daily_weight = float(daily_weight)
+        self.register_buffer('cell_scale', y.mean().clamp_min(1.0))
+        self.register_buffer('daily_scale', y.sum(dim=1).mean().clamp_min(1.0))
+
+    def forward(self, rate, y):
+        if rate.ndim != 2 or rate.shape != y.shape:
+            raise ValueError('Rates and targets must have the same [days, cells] shape')
+        if self.mode == 'cell_poisson':
+            return poisson_nll(rate, y)
+        daily_mae = (rate.sum(dim=1) - y.sum(dim=1)).abs().mean() / self.daily_scale
+        if self.mode == 'daily_only':
+            return daily_mae
+        return poisson_nll(rate, y) / self.cell_scale + self.daily_weight * daily_mae
+
+    def metadata(self):
+        return dict(mode=self.mode, daily_weight=self.daily_weight,
+                    cell_scale=float(self.cell_scale.item()), daily_scale=float(self.daily_scale.item()))

@@ -195,3 +195,6 @@ xarray==2026.4.0
 zarr==3.1.6
 zipp==4.1.0
 svgwrite==1.4.3
+
+lightgbm==4.6.0
+catboost==1.2.8

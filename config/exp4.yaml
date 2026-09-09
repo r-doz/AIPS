@@ -62,7 +62,7 @@ num_pred_samples: 300
 num_vis_samples: 500
 report_root: reports/experiments
 model_family: new_tests
-run_name: nov_1_7_lgcp_2rbf_gnn_daily_allocation_gamma1.0_periodic_l0.8_classifier
+run_name: nov_1_7_lgcp_2rbf_gnn_daily_allocation_gamma1.0_periodic_l0.8
 log_every: 100
 lag_features:
   enabled: true
@@ -84,7 +84,7 @@ lag_features:
   - 7
   fillna_value: 0.0
 zero_gate:
-  enabled: true
+  enabled: false
   mode: hard # Rejected cells stay zero.
   hidden_layer_sizes:
   - 32

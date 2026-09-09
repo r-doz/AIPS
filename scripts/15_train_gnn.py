@@ -53,6 +53,7 @@ from src.models.gnn import (
     build_grid_adjacency,
     normalize_adjacency,
     poisson_nll,
+    GNNTrainingLoss,
 )
 from src.visualization.viz_lgcp import plot_daily_interpolated_spatial_maps_separate
 
@@ -460,7 +461,11 @@ def main(cfg: dict):
         weight_decay=float(cfg["weight_decay"]),
     )
 
-    print("Training GNN …")
+    loss_cfg = cfg.get("loss") or {}
+    criterion = GNNTrainingLoss(Y_train_t, **loss_cfg)
+    with open(out_dir / "loss_params.yaml", "w") as f:
+        yaml.safe_dump(criterion.metadata(), f)
+    print(f"Training GNN with {criterion.mode} loss …")
     num_epochs = int(cfg["num_epochs"])
     log_every = int(cfg.get("log_every", 25))
     losses = []
@@ -469,7 +474,7 @@ def main(cfg: dict):
     for epoch in range(1, num_epochs + 1):
         optimizer.zero_grad()
         rate_train = model(X_train_t, adj_norm_t)
-        loss = poisson_nll(rate_train, Y_train_t)
+        loss = criterion(rate_train, Y_train_t)
         loss.backward()
         optimizer.step()
 
@@ -477,7 +482,7 @@ def main(cfg: dict):
 
         if epoch == 1 or epoch % log_every == 0 or epoch == num_epochs:
             print(
-                f"  epoch {epoch:5d}/{num_epochs}   train Poisson NLL = {loss.item():.4f}"
+                f"  epoch {epoch:5d}/{num_epochs}   train {criterion.mode} loss = {loss.item():.4f}"
             )
 
     # ---- Predict ---------------------------------------------------------------
@@ -531,6 +536,10 @@ def main(cfg: dict):
         rate_mean=rate_test_flat,
         save_path=plots_dir / "daily_timeseries.png",
     )
+
+    if not cfg.get("generate_spatial_plots", True):
+        print("Done (daily outputs only).")
+        return
 
     # Spatial comparisons for every forecast day, using a shared color scale.
     meta = compute_meta(df_feat)
