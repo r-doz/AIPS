@@ -1,0 +1,16 @@
+mean_validation_mae: 6.731587586706289
+model:
+  allow_writing_files: false
+  depth: 4
+  has_time: true
+  iterations: 1000
+  l2_leaf_reg: 3.0
+  learning_rate: 0.05
+  loss_function: RMSE
+  random_seed: 0
+  random_strength: 0.5
+  thread_count: 1
+  verbose: false
+training:
+  half_life_days: 90
+trial: 3

@@ -37,6 +37,7 @@ from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_m
 from src.models.metrics_lgcp import evaluate_metrics
 from src.models.lgcp import SparseLGCP
 from src.models.zero_gate import train_zero_gate, apply_zero_gate
+from src.models.daily_allocation import load_daily_totals, allocate_daily_totals, validate_conflict_policy
 from src.visualization.viz_lgcp import (
     plot_loss,
     plot_pp_overview,
@@ -117,6 +118,7 @@ DEFAULT_CONFIG = {
     # tendency to smooth a small positive rate into always-zero cells/dates.
     "zero_gate": {
         "enabled": False,
+        "mode": "hard",  # soft multiplies rates by P(nonzero); ignores threshold
         "hidden_layer_sizes": [32],
         "activation": "relu",
         "alpha": 1e-4,
@@ -529,6 +531,16 @@ def configure_log_noise(model, cfg):
 # Main
 # ---------------------------------------------------------------------------
 def main(cfg: dict):
+    allocation_cfg = cfg.get("daily_allocation") or {}
+    allocation_totals = None
+    if allocation_cfg.get("enabled", False):
+        validate_conflict_policy(allocation_cfg.get("conflict_policy", "error"))
+        allocation_totals = load_daily_totals(
+            allocation_cfg["totals_csv"], float(allocation_cfg.get("gamma", 1.0))
+        )
+    gate_cfg = cfg.get("zero_gate") or {}
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft", "hard_redistribute"}:
+        raise ValueError("zero_gate.mode must be 'hard', 'soft', or 'hard_redistribute'.")
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
@@ -636,6 +648,7 @@ def main(cfg: dict):
         test_coords, test_covs, num_samples=cfg["num_pred_samples"]
     )
 
+    ungated_rate_mean_test = rate_mean_test.copy()
     zero_gate_cfg = cfg.get("zero_gate") or {}
     if zero_gate_cfg.get("enabled", False):
         print("Training zero-inflation gate classifier …")
@@ -645,9 +658,39 @@ def main(cfg: dict):
         rate_mean_test = apply_zero_gate(
             zero_gate_clf, test_coords, test_covs, rate_mean_test,
             threshold=float(zero_gate_cfg.get("threshold", 0.5)),
+            mode=zero_gate_cfg.get("mode", "hard"),
+            dates=test_dates,
         )
         n_gated = int((rate_mean_test == 0).sum())
-        print(f"  Zero-gate forced {n_gated}/{len(rate_mean_test)} test predictions to 0.")
+        print(f"  Zero-gate ({zero_gate_cfg.get('mode', 'hard')}): "
+              f"{n_gated}/{len(rate_mean_test)} test predictions are zero.")
+
+    if allocation_totals is not None:
+        raw_allocation_rates = rate_mean_test.copy()
+        rate_mean_test = allocate_daily_totals(
+            rate_mean_test, test_dates, allocation_totals,
+            gamma=float(allocation_cfg.get("gamma", 1.0)),
+            conflict_policy=allocation_cfg.get("conflict_policy", "error"),
+            fallback_rates=ungated_rate_mean_test,
+        )
+        pd.DataFrame({
+            "date": test_dates,
+            "rate_before_allocation": raw_allocation_rates,
+            "allocated_rate": rate_mean_test,
+        }).to_csv(out_dir / "allocation_predictions.csv", index=False)
+        allocation_totals.rename("predicted_total").rename_axis("date").to_csv(
+            out_dir / "allocation_daily_totals.csv"
+        )
+        print("Applied external daily totals with normalized spatial allocation.")
+
+    # Preserve final cell values for exact, training-free spatial replotting.
+    spatial_export = pd.DataFrame({
+        "date": test_dates, "x": test_coords[:, 0], "y": test_coords[:, 1],
+        "observed": test_y, "predicted": rate_mean_test,
+    })
+    for key in ("lon_mean", "lon_std", "lat_mean", "lat_std"):
+        spatial_export[key] = meta[key]
+    spatial_export.to_csv(out_dir / "spatial_predictions.csv", index=False)
 
     df_test_plot = df.loc[test_mask].copy().reset_index(drop=True)
 
@@ -663,6 +706,7 @@ def main(cfg: dict):
         out_dir=plots_dir / "spatial_interpolated_test_days",
         cmap="viridis",
         max_days=None,
+        **(cfg.get("spatial_plot") or {}),
     )
 
     metrics = evaluate_metrics(test_y, rate_mean_test, test_dates)
@@ -715,32 +759,7 @@ def main(cfg: dict):
     all_covs = all_covs[sort_idx]
     all_y = all_y[sort_idx]
 
-    # Pick a random test date for the spatial map
-    rng = np.random.default_rng(cfg.get("np_seed", 0))
-    target_date = str(pd.to_datetime(rng.choice(test_dates)).date())
-    print(f"  Spatial map target date: {target_date}")
-
-    # print("\n=== DEBUG spatial dates ===")
-    # print("df shape:", df.shape)
-    # print("df date min/max:", df["date"].min(), df["date"].max())
-
-    # daily_counts = df.groupby("date").size().sort_values(ascending=False)
-    # print("Top 10 dates by number of rows:")
-    # print(daily_counts.head(10))
-
-    # print("Target date:", target_date)
-    # print(
-    #    "Rows in df for target_date:",
-    #    (
-    #        pd.to_datetime(df["date"]).dt.date == pd.to_datetime(target_date).date()
-    #    ).sum(),
-    # )
-
-    # Check how many rows in all_coords correspond to target_date via t-scaler logic
-
-    # Note: plot_pp_overview() recomputes its own rate predictions internally
-    # and is not passed through the zero-inflation gate above -- it stays a
-    # raw-LGCP visualization even when zero_gate.enabled is true.
+    # Keep the full-period raw-LGCP time series; daily maps above show final predictions.
     plot_pp_overview(
         model=model,
         df=df,
@@ -751,9 +770,9 @@ def main(cfg: dict):
         scalers=scalers,
         gulf_csv_path=cfg["gulf_csv_path"],
         num_samples=cfg["num_vis_samples"],
-        target_date=target_date,
         test_coords=test_coords,
         save_dir=plots_dir,
+        include_spatial_map=False,
     )
 
     print("Done.")

@@ -64,7 +64,7 @@ def load_config(config_path=None):
             shared_cfg = yaml.safe_load(f)
 
         if shared_cfg is not None:
-            # Import shared data settings from the LGCP config.
+            # Import shared data and output settings, including batch-runner paths.
             for key in [
                 "years",
                 "parquet_path",
@@ -74,6 +74,8 @@ def load_config(config_path=None):
                 "test_start_date",
                 "test_end_date",
                 "report_root",
+                "model_family",
+                "run_name",
                 "last_available_mode",
             ]:
                 if key in shared_cfg:

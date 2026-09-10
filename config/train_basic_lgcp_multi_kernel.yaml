@@ -156,6 +156,11 @@ lag_features:
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
   enabled: true
+  # hard: zero rejected cells; soft: multiply by P(nonzero).
+  # hard_redistribute: preserve each day's LGCP total across accepted cells.
+  # If no positive rate survives, retain the original rates for that day.
+  # External daily_allocation totals, if enabled, override the LGCP total afterward.
+  mode: hard # hard or soft or hard_redistribuite 
   hidden_layer_sizes: [32]
   activation: relu
   alpha: 1.0e-4
@@ -181,3 +186,9 @@ report_root: reports/experiments
 log_every: 100
 
 
+# Optional GNN daily total + normalized LGCP spatial allocation.
+# Use predictions from a GNN with matching dates, region and forecast information.
+daily_allocation:
+  enabled: false
+  totals_csv: null # path to a GNN run's daily_predictions.csv
+  gamma: 1.0 # 1 preserves spatial proportions; >1 concentrates activity

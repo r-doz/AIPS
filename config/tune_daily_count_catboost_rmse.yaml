@@ -1,0 +1,58 @@
+base_config: config/daily_count_catboost_rmse.yaml
+model_kind: catboost
+n_trials: 20
+report_root: reports/tuning/daily_count_catboost_rmse
+search_space:
+  depth:
+  - 3
+  - 4
+  - 5
+  - 6
+  half_life_days:
+  - null
+  - 90
+  - 180
+  - 365
+  iterations:
+  - 300
+  - 600
+  - 1000
+  l2_leaf_reg:
+  - 1.0
+  - 3.0
+  - 5.0
+  - 10.0
+  learning_rate:
+  - 0.01
+  - 0.03
+  - 0.05
+  random_strength:
+  - 0.0
+  - 0.5
+  - 1.0
+seed: 42
+windows:
+- end: '2025-05-07'
+  name: may_1_7
+  start: '2025-05-01'
+- end: '2025-05-14'
+  name: may_8_14
+  start: '2025-05-08'
+- end: '2025-05-21'
+  name: may_15_21
+  start: '2025-05-15'
+- end: '2025-05-28'
+  name: may_22_28
+  start: '2025-05-22'
+- end: '2025-11-07'
+  name: nov_1_7
+  start: '2025-11-01'
+- end: '2025-11-14'
+  name: nov_8_14
+  start: '2025-11-08'
+- end: '2025-11-21'
+  name: nov_15_21
+  start: '2025-11-15'
+- end: '2025-11-28'
+  name: nov_22_28
+  start: '2025-11-22'

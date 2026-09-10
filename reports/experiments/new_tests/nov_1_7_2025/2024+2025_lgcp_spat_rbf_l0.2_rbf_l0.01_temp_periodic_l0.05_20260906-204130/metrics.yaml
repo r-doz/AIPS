@@ -1,0 +1,8 @@
+daily_delta_corr: 0.9431310488449014
+daily_direction_accuracy_moving: 0.75
+mae_daily: 4.183581675801959
+mae_obs: 0.3786739904967031
+mean_ll_daily: -2.609065228610878
+mean_ll_obs: -0.5803815970582754
+rmse_daily: 5.188245035734453
+rmse_obs: 0.7543996408095659

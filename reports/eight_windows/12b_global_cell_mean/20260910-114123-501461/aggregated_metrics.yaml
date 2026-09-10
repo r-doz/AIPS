@@ -1,0 +1,87 @@
+aggregation: Unweighted mean across windows; std is population standard deviation.
+  Non-finite/non-numeric values excluded. RMSE is mean window RMSE, not pooled RMSE.
+expected_windows: 8
+windows_with_metrics: 8
+missing_windows: []
+metrics:
+  mae_daily:
+    mean: 12.40170581709834
+    std: 2.9091988366251744
+    n_windows: 8
+  mae_obs:
+    mean: 0.41353226698177015
+    std: 0.05549398751381384
+    n_windows: 8
+  mean_ll_daily:
+    mean: -10.064098656222306
+    std: 2.5834879634700556
+    n_windows: 8
+  mean_ll_obs:
+    mean: -0.6782043732064236
+    std: 0.10931980512447727
+    n_windows: 8
+  rmse_daily:
+    mean: 14.413039581351105
+    std: 3.352008243729303
+    n_windows: 8
+  rmse_obs:
+    mean: 1.0547128890972102
+    std: 0.2229080732789445
+    n_windows: 8
+per_window:
+  2025_may_15_21:
+    mean_ll_obs: -0.7192071240618073
+    mae_obs: 0.4268012606305908
+    rmse_obs: 1.2526191105989242
+    mean_ll_daily: -9.544378445263423
+    mae_daily: 12.054468147766045
+    rmse_daily: 14.306350328084985
+  2025_may_1_7:
+    mean_ll_obs: -0.4838739959965892
+    mae_obs: 0.31416487170894225
+    rmse_obs: 0.7760587394111771
+    mean_ll_daily: -9.795970019502837
+    mae_daily: 11.071115930987057
+    rmse_daily: 13.015952520033531
+  2025_may_22_28:
+    mean_ll_obs: -0.7581831197727029
+    mae_obs: 0.4598853541014666
+    rmse_obs: 1.1750848308085773
+    mean_ll_daily: -13.956068296238596
+    mae_daily: 16.318319750993048
+    rmse_daily: 19.58333018137886
+  2025_may_8_14:
+    mean_ll_obs: -0.8237312551817983
+    mae_obs: 0.5030670562431084
+    rmse_obs: 1.4166460999455106
+    mean_ll_daily: -13.767458430230025
+    mae_daily: 16.77840147275577
+    rmse_daily: 18.65877684424949
+  2025_nov_15_21:
+    mean_ll_obs: -0.5516261555315566
+    mae_obs: 0.3703525196116644
+    rmse_obs: 1.0369993140807832
+    mean_ll_daily: -10.002781302656887
+    mae_daily: 11.97922352349847
+    rmse_daily: 14.71127016638701
+  2025_nov_1_7:
+    mean_ll_obs: -0.7789932121531392
+    mae_obs: 0.42739634234006024
+    rmse_obs: 0.8712799940804561
+    mean_ll_daily: -7.413111051060051
+    mae_daily: 9.815485118397875
+    rmse_daily: 10.517193498759394
+  2025_nov_22_28:
+    mean_ll_obs: -0.6292226950309937
+    mae_obs: 0.43612322819719973
+    rmse_obs: 1.1559527638045275
+    mean_ll_daily: -10.11105738709752
+    mae_daily: 13.594119496982854
+    rmse_daily: 15.30462702955
+  2025_nov_8_14:
+    mean_ll_obs: -0.6807974279228015
+    mae_obs: 0.3704675030211285
+    rmse_obs: 0.7530622600477249
+    mean_ll_daily: -5.921964317729115
+    mae_daily: 7.602513095405606
+    rmse_daily: 9.206816082365577

@@ -15,8 +15,8 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2025-11-01"
-test_end_date: "2025-11-07"
+test_start_date: "2025-11-03"
+test_end_date: "2025-11-09"
 
 # --- features ---
 covariate_cols:
@@ -27,6 +27,7 @@ covariate_cols:
   - is_weekend
   - cell_lag_1
   - cell_lag_7
+
   #- cell_roll_mean_7
   #- daily_total_lag_1
   #- daily_total_lag_7
@@ -59,6 +60,14 @@ num_layers: 2 # 3
 dropout: 0.10
 
 # --- training ---
+# Choose: cell_poisson (original), combined, or daily_only.
+# combined = cell Poisson / max(training mean cell count, 1)
+#          + daily_weight * daily MAE / max(training mean daily total, 1).
+# daily_only uses only normalized daily MAE; its cell allocations are not supervised.
+loss:
+  mode: daily_mse # cell_poisson or daily_mse
+  daily_weight: 1.0 # Used only by combined; tune on validation windows.
+
 lr: 0.01
 weight_decay: 1.0e-5
 num_epochs: 300 # 500
@@ -69,4 +78,12 @@ log_every: 25
 # --- output ---
 report_root: reports/experiments
 model_family: new_tests
-run_name: gnn_apr21_apr30
+run_name: gnn_nov_3_9
+
+# Display only: same rendering as LGCP, for every forecast day.
+spatial_plot:
+  radius_cells: 1
+  diffusion_strength: 0.25
+  display_method: pchip
+  nx: 2700
+  ny: 1800
