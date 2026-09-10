@@ -65,7 +65,7 @@ dropout: 0.10
 #          + daily_weight * daily MAE / max(training mean daily total, 1).
 # daily_only uses only normalized daily MAE; its cell allocations are not supervised.
 loss:
-  mode: cell_poisson
+  mode: daily_mse # cell_poisson or daily_mse
   daily_weight: 1.0 # Used only by combined; tune on validation windows.
 
 lr: 0.01

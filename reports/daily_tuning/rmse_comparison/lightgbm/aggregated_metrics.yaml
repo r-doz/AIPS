@@ -1,0 +1,99 @@
+aggregation: Unweighted mean across windows; std is population standard deviation.
+  Non-finite/non-numeric values excluded. RMSE is mean window RMSE, not pooled RMSE.
+expected_windows: 8
+windows_with_metrics: 8
+missing_windows: []
+metrics:
+  daily_delta_corr:
+    mean: 0.43400917100188324
+    std: 0.347620230587275
+    n_windows: 8
+  daily_direction_accuracy_moving:
+    mean: 0.5833333333333334
+    std: 0.2101586702153082
+    n_windows: 8
+  mae_daily:
+    mean: 8.108635740230964
+    std: 2.5622300462002223
+    n_windows: 8
+  mean_ll_daily:
+    mean: -11.077839395405297
+    std: 12.069820990838032
+    n_windows: 8
+  n_test_days:
+    mean: 7.0
+    std: 0.0
+    n_windows: 8
+  n_train_days:
+    mean: 588.5
+    std: 92.33228037907436
+    n_windows: 8
+  rmse_daily:
+    mean: 10.08739754409184
+    std: 3.0788791278261045
+    n_windows: 8
+per_window:
+  2025_may_15_21:
+    daily_delta_corr: 0.34964481390629804
+    daily_direction_accuracy_moving: 0.5
+    mae_daily: 6.95998850158041
+    mean_ll_daily: -5.325849454540395
+    n_test_days: 7
+    n_train_days: 500
+    rmse_daily: 8.880053484245039
+  2025_may_1_7:
+    daily_delta_corr: -0.22086491361870278
+    daily_direction_accuracy_moving: 0.5
+    mae_daily: 10.417617184043994
+    mean_ll_daily: -8.224076963839865
+    n_test_days: 7
+    n_train_days: 486
+    rmse_daily: 13.33096585318347
+  2025_may_22_28:
+    daily_delta_corr: 0.7495370741308254
+    daily_direction_accuracy_moving: 0.4
+    mae_daily: 7.05390174318583
+    mean_ll_daily: -13.252228720731077
+    n_test_days: 7
+    n_train_days: 507
+    rmse_daily: 8.715035173349689
+  2025_may_8_14:
+    daily_delta_corr: 0.6697947471843612
+    daily_direction_accuracy_moving: 0.5
+    mae_daily: 11.735296845398581
+    mean_ll_daily: -42.0621472007967
+    n_test_days: 7
+    n_train_days: 493
+    rmse_daily: 13.498647869497981
+  2025_nov_15_21:
+    daily_delta_corr: 0.3503636192408745
+    daily_direction_accuracy_moving: 0.6
+    mae_daily: 9.30342847599988
+    mean_ll_daily: -5.239938219816213
+    n_test_days: 7
+    n_train_days: 684
+    rmse_daily: 11.778674331586446
+  2025_nov_1_7:
+    daily_delta_corr: 0.8128447638991296
+    daily_direction_accuracy_moving: 1.0
+    mae_daily: 3.205920673955096
+    mean_ll_daily: -2.5776615948255253
+    n_test_days: 7
+    n_train_days: 670
+    rmse_daily: 3.6423512570134835
+  2025_nov_22_28:
+    daily_delta_corr: 0.7115281130846625
+    daily_direction_accuracy_moving: 0.8333333333333334
+    mae_daily: 9.84858228647229
+    mean_ll_daily: -6.661104826077339
+    n_test_days: 7
+    n_train_days: 691
+    rmse_daily: 12.11613799479376
+  2025_nov_8_14:
+    daily_delta_corr: 0.049225150187617736
+    daily_direction_accuracy_moving: 0.3333333333333333
+    mae_daily: 6.344350211211633
+    mean_ll_daily: -5.279708182615262
+    n_test_days: 7
+    n_train_days: 677
+    rmse_daily: 8.737314389064847

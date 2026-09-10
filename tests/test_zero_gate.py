@@ -46,6 +46,34 @@ class ZeroGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "zero_gate.mode"):
             self.apply(mode="invalid")
 
+    def test_redistribution_preserves_each_day_and_relative_weights(self):
+        dates = ['2025-05-01', '2025-05-02', '2025-05-01', '2025-05-02']
+        result = self.apply(mode='hard_redistribute', dates=dates)
+        np.testing.assert_allclose(result, [0, 0, 8, 12])
+        result = self.apply(mode='hard_redistribute', dates=['2025-05-01'] * 4)
+        np.testing.assert_allclose(result, [0, 0, 20 * 6 / 14, 20 * 8 / 14])
+        np.testing.assert_array_equal(self.rates, [2, 4, 6, 8])
+
+    def test_redistribution_empty_support_falls_back(self):
+        with self.assertWarnsRegex(RuntimeWarning, 'keeping original'):
+            result = self.apply(mode='hard_redistribute', dates=['2025-05-01'] * 2 + ['2025-05-02'] * 2)
+        np.testing.assert_allclose(result, self.rates)
+
+    def test_redistribution_zero_totals_and_column_shape(self):
+        result = self.apply(np.zeros((4, 1)), mode='hard_redistribute', dates=['2025-05-01'] * 4)
+        np.testing.assert_array_equal(result, np.zeros((4, 1)))
+        result = self.apply(self.rates[:, None], mode='hard_redistribute', dates=['2025-05-01'] * 4)
+        self.assertEqual(result.shape, (4, 1))
+        self.assertAlmostEqual(result.sum(), self.rates.sum())
+
+    def test_redistribution_requires_valid_dates_and_rates(self):
+        for dates in (None, ['2025-05-01'], [None] * 4):
+            with self.assertRaises(ValueError):
+                self.apply(mode='hard_redistribute', dates=dates)
+        for rates in (np.array([-1, 2, 3, 4]), np.array([np.nan, 2, 3, 4])):
+            with self.assertRaises(ValueError):
+                self.apply(rates, mode='hard_redistribute', dates=['2025-05-01'] * 4)
+
 
 if __name__ == "__main__":
     unittest.main()

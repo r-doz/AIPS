@@ -539,8 +539,8 @@ def main(cfg: dict):
             allocation_cfg["totals_csv"], float(allocation_cfg.get("gamma", 1.0))
         )
     gate_cfg = cfg.get("zero_gate") or {}
-    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft"}:
-        raise ValueError("zero_gate.mode must be 'hard' or 'soft'.")
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft", "hard_redistribute"}:
+        raise ValueError("zero_gate.mode must be 'hard', 'soft', or 'hard_redistribute'.")
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
@@ -659,6 +659,7 @@ def main(cfg: dict):
             zero_gate_clf, test_coords, test_covs, rate_mean_test,
             threshold=float(zero_gate_cfg.get("threshold", 0.5)),
             mode=zero_gate_cfg.get("mode", "hard"),
+            dates=test_dates,
         )
         n_gated = int((rate_mean_test == 0).sum())
         print(f"  Zero-gate ({zero_gate_cfg.get('mode', 'hard')}): "

@@ -159,18 +159,20 @@ def poisson_nll(rate: torch.Tensor, y: torch.Tensor, eps: float = 1e-8) -> torch
 
 
 class GNNTrainingLoss(nn.Module):
-    """Select cell Poisson, combined, or daily-only MAE training.
+    """Select cell Poisson, combined, daily-only MAE, or daily MSE training.
 
     Scales are fixed from training targets: max(mean cell count, 1) and
     max(mean daily total, 1). The cell_poisson mode is exactly the historical
     unnormalized objective. Daily-only supervision does not identify spatial
     allocations; use the summed forecast for downstream LGCP allocation.
+    daily_mse uses squared daily-total residuals divided by daily_scale squared,
+    targeting the daily RMSE optimum without a square-root gradient at zero.
     """
 
     def __init__(self, training_targets, mode='cell_poisson', daily_weight=1.0):
         super().__init__()
-        if mode not in ('cell_poisson', 'combined', 'daily_only'):
-            raise ValueError('loss.mode must be cell_poisson, combined, or daily_only')
+        if mode not in ('cell_poisson', 'combined', 'daily_only', 'daily_mse'):
+            raise ValueError('loss.mode must be cell_poisson, combined, daily_only, or daily_mse')
         if not np.isfinite(daily_weight) or daily_weight < 0:
             raise ValueError('loss.daily_weight must be finite and nonnegative')
         y = training_targets.detach()
@@ -186,6 +188,8 @@ class GNNTrainingLoss(nn.Module):
             raise ValueError('Rates and targets must have the same [days, cells] shape')
         if self.mode == 'cell_poisson':
             return poisson_nll(rate, y)
+        if self.mode == 'daily_mse':
+            return ((rate.sum(dim=1) - y.sum(dim=1)) / self.daily_scale).square().mean()
         daily_mae = (rate.sum(dim=1) - y.sum(dim=1)).abs().mean() / self.daily_scale
         if self.mode == 'daily_only':
             return daily_mae

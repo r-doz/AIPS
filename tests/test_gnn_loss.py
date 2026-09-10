@@ -4,6 +4,15 @@ from src.models.gnn import GNNTrainingLoss, poisson_nll
 
 
 class GNNLossTests(unittest.TestCase):
+    def test_daily_mse_value_and_gradient(self):
+        y = torch.tensor([[2., 8.], [6., 4.]])
+        rates = torch.tensor([[1., 7.], [8., 4.]], requires_grad=True)
+        loss = GNNTrainingLoss(y, 'daily_mse')(rates, y)
+        self.assertAlmostEqual(loss.item(), 0.04)
+        loss.backward()
+        torch.testing.assert_close(rates.grad, torch.tensor([[-.02, -.02], [.02, .02]]))
+        self.assertEqual(GNNTrainingLoss(y, 'daily_mse')(y, y).item(), 0)
+
     def test_original_exact_and_combined_formula(self):
         y = torch.tensor([[2., 8.], [6., 4.]])
         rates = torch.tensor([[1., 7.], [5., 3.]], requires_grad=True)

@@ -28,7 +28,7 @@ class LightGBMDailyTests(unittest.TestCase):
                        lag_features=dict(enabled=True, daily_total_lags=[1]),
                        split_strategy='fixed_test_window', test_start_date=str(dates[50].date()),
                        test_end_date=str(dates[-1].date()), report_root=tmp,
-                       model=dict(objective='poisson', n_estimators=20, num_leaves=3,
+                       model=dict(objective=getattr(self, 'objective', 'poisson'), n_estimators=20, num_leaves=3,
                                   min_child_samples=5, verbosity=-1, n_jobs=1, random_state=0))
             if self.model_kind == 'catboost':
                 cfg['model'] = dict(loss_function=getattr(self, 'loss', 'Poisson'), iterations=20, depth=3,
@@ -67,6 +67,10 @@ class LightGBMDailyTests(unittest.TestCase):
                 self.assertEqual(a['model'].booster_.model_to_string(), b['model'].booster_.model_to_string())
             else:
                 np.testing.assert_array_equal(a['model'].get_leaf_values(), b['model'].get_leaf_values())
+
+
+class LightGBMRegressionDailyTests(LightGBMDailyTests):
+    objective = 'regression'
 
 
 class CatBoostDailyTests(LightGBMDailyTests):

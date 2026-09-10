@@ -23,4 +23,10 @@ Conclusion:
 - LGCP+GNN+Classfier it is the best found so far from a OBS level. However it is weak on LL.
 - It seems that LGCP+GNN simply inherit the daily good skills of GNN without outperforming it 
 
+## Catboos vs GNN as a support for the LGCP
+I tried Catboost as a daily predictor instead of GNN. 
+
+Result:
+- LGCP+GNN outperforms LGCP+Catboost across all metrics
+
 

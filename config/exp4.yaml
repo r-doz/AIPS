@@ -62,7 +62,7 @@ num_pred_samples: 300
 num_vis_samples: 500
 report_root: reports/experiments
 model_family: new_tests
-run_name: nov_1_7_lgcp_2rbf_gnn_daily_allocation_gamma1.0_periodic_l0.8
+run_name: nov_3_9_lgcp_2rbf_gnn_daily_allocation_gamma1.0_periodic_l0.8
 log_every: 100
 lag_features:
   enabled: true
@@ -92,8 +92,8 @@ zero_gate:
   alpha: 0.0001
   max_iter: 500
   threshold: 0.3
-test_start_date: '2025-11-01' # 11-01 11-03 - 05-05
-test_end_date:   '2025-11-07' # 11-07 11-09 - 05-11
+test_start_date: '2025-11-03' # 11-01 11-03 - 05-05
+test_end_date:   '2025-11-09' # 11-07 11-09 - 05-11
 last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 last_available_run_name: dataseed42_npseed0_onestep
@@ -104,7 +104,7 @@ kernel_noise:
   trainable: false
 daily_allocation:
   enabled: true
-  totals_csv: /home/samuele/projects/AIPS/reports/experiments/new_tests/nov_1_7_2025/1_gnn/daily_predictions.csv
+  totals_csv: /home/samuele/projects/AIPS/reports/experiments/new_tests/nov_3_9_2025/1_catboost/daily_predictions.csv
   gamma: 1.0
   # When all cells have zero weights but the GNN total is positive:
   # classifier: keep zeros; daily_total: use ungated LGCP weights (uniform if all zero);

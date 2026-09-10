@@ -1,5 +1,21 @@
 Run the daily-total model from the project root:
 
+For daily squared-error (RMSE-targeting) comparisons on the eight May/November
+windows, run:
+
+```bash
+python scripts/run_eight_windows.py --script daily_count_lightgbm.py --config daily_count_lightgbm_rmse.yaml
+python scripts/run_eight_windows.py --script 15_train_gnn.py --config 15_gnn_rmse.yaml
+```
+
+LightGBM supports `model.objective: regression` (squared error) as well as
+`poisson`. Regression predictions are clipped at zero. GNN `loss.mode: daily_mse`
+minimizes squared error of summed daily counts, divided by the square of the
+training-only daily scale. This has the same optimum as daily RMSE; it does
+not supervise spatial allocations. The RMSE configs retain the seven covariates
+and existing hyperparameters, without a new tuning search. Each batch writes
+`aggregated_metrics.yaml` with unweighted mean window metrics.
+
 ```bash
 python scripts/daily_count_nbinarchx.py --config config/daily_count_nbinarchx.yaml
 ```

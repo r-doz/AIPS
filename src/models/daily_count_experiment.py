@@ -52,13 +52,13 @@ def run(cfg, model_kind="nbinarchx"):
         model = NBINGARCH(**cfg.get('model', {}))
     elif model_kind == 'lightgbm':
         from lightgbm import LGBMRegressor
-        label = 'LightGBM Poisson'
         parameters = dict(cfg.get('model', {}))
-        if parameters.get('objective', 'poisson') != 'poisson':
-            raise ValueError('The daily LightGBM model requires objective: poisson')
-        parameters['objective'] = 'poisson'
+        if parameters.get('objective', 'poisson') not in ('poisson', 'regression'):
+            raise ValueError('The daily LightGBM model requires objective: poisson or regression')
+        parameters.setdefault('objective', 'poisson')
+        label = 'LightGBM ' + parameters['objective']
         model = LGBMRegressor(**parameters)
-        if not (y[train] > 0).any():
+        if parameters['objective'] == 'poisson' and not (y[train] > 0).any():
             raise ValueError('LightGBM Poisson requires at least one positive training count')
         if not active.any():
             raise ValueError('LightGBM requires at least one varying training covariate')
@@ -91,7 +91,7 @@ def run(cfg, model_kind="nbinarchx"):
         fit_info = {'n_estimators_fitted': int(model.tree_count_)}
     else:
         # No test labels are supplied to fitting, prediction, or early stopping.
-        predicted = model.predict(design[test])
+        predicted = np.maximum(model.predict(design[test]), 0.0)
         fit_info = {'n_estimators_fitted': int(model.n_estimators_)}
     if not np.isfinite(predicted).all() or (predicted < 0).any():
         raise ValueError('Daily predictions must be finite and nonnegative')

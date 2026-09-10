@@ -1,4 +1,41 @@
-# 
+# Daily predictor comparison
+
+## Current ranking across eight windows
+
+The best daily predictor evaluated so far is **tuned CatBoost with the RMSE
+objective**, followed by **tuned LightGBM with the Poisson objective**, then
+**GNN with cell Poisson loss**. These results use the seven selected covariates
+and the same eight windows in May and November 2025 (days 1–7, 8–14, 15–21,
+and 22–28 in each month).
+
+| Model | Mean daily MAE ↓ | Mean window daily RMSE ↓ |
+|---|---:|---:|
+| **CatBoost tuned — RMSE objective** | **6.732** | **8.727** |
+| LightGBM tuned — Poisson objective | 7.172 | 9.056 |
+| GNN — cell Poisson loss, seven covariates | 7.388 | 9.865 |
+| GNN — daily MSE loss | 7.740 | 9.631 |
+| LightGBM — MSE objective | 8.109 | 10.087 |
+| Window GLM — Poisson | 9.194 | 12.207 |
+| Last available — one-step ahead | 10.964 | 13.981 |
+| Global cell mean | 12.402 | 14.413 |
+
+Tuned CatBoost Poisson achieved mean daily MAE **7.197**, worse than CatBoost
+RMSE and slightly worse than LightGBM Poisson. The newer MSE runs for GNN and
+LightGBM retained their existing hyperparameters; they were not retuned for
+the changed objective. The window GLM used `window_size: 7`, adding five lag
+predictors beyond the seven listed covariates.
+
+These are validation results: CatBoost and LightGBM were selected on these
+same windows. LGCP has not yet been included in this eight-window comparison.
+The earlier GNN MAE of 6.881 below used four additional covariates and is not
+the seven-covariate baseline used in this ranking.
+
+Sources: [CatBoost RMSE tuning metrics](../tuning/daily_count_catboost_rmse/20260909-185058-174431/window_metrics.csv),
+[LightGBM Poisson tuning metrics](daily_count_lightgbm/20260909-181302-023538/window_metrics.csv),
+and [completed eight-window batches](../eight_windows/).
+
+## Earlier tuning work
+
 I tried different models to forcast the daily-count. The aim is to train a model stronger than the GNN and passing it to the LGCP+Model. 
 
 I tried and tuned 
