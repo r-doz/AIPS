@@ -517,6 +517,7 @@ def plot_daily_interpolated_spatial_maps_separate(
     nx=150,
     ny=100,
     filename_template="spatial_map_{date}.png",
+    vmax=None,
 ):
     """
     Save one interpolated observed-vs-predicted spatial map per test day.
@@ -527,6 +528,11 @@ def plot_daily_interpolated_spatial_maps_separate(
       - Gulf polygon mask
       - red Gulf boundary
       - separate colorbar for predicted and observed
+
+    `vmax`: color-scale upper bound. Defaults to None, which auto-scales
+    to this call's own y_true/rate_mean (original behavior). Pass an
+    explicit value to share one color scale across multiple calls (e.g.
+    across methods for the same day).
     """
 
     out_dir = FilePath(out_dir)
@@ -559,11 +565,14 @@ def plot_daily_interpolated_spatial_maps_separate(
     pts_flat = np.column_stack([Xi.ravel(), Yi.ravel()])
     inside = gulf_poly.contains_points(pts_flat).reshape(Xi.shape)
 
-    global_vmax = max(
-        float(np.nanmax(y_true)),
-        float(np.nanmax(rate_mean)),
-        1e-8,
-    )
+    if vmax is not None:
+        global_vmax = float(vmax)
+    else:
+        global_vmax = max(
+            float(np.nanmax(y_true)),
+            float(np.nanmax(rate_mean)),
+            1e-8,
+        )
 
     print(f"Using shared color scale: vmin=0, vmax={global_vmax:.4f}")
 
