@@ -1,0 +1,51 @@
+# config/18_convlstm.yaml
+#
+# ConvLSTM baseline, adapted from CATCH (Contreras Lopez et al.,
+# https://pmc.ncbi.nlm.nih.gov/articles/PMC12203189/) -- see
+# src/models/convlstm.py's module docstring for the adaptations.
+
+# --- data ---
+years: [2024, 2025]
+parquet_path: data/processed/cpr_gfw.parquet
+gulf_csv_path: data/raw/ts_gulf_coords.csv
+target_col: ais_vessels_count
+
+# --- split ---
+split_strategy: fixed_test_window
+train_fraction: 0.9
+data_seed: 42
+
+test_start_date: "2025-05-01"
+test_end_date: "2025-05-07"
+
+# --- features ---
+# No cell_lag_* here: the ConvLSTM's lagged-sequence input (seq_length
+# days of covariates + target) is itself the autoregressive mechanism.
+covariate_cols:
+  - chl
+  - thetao
+  - fishing_block
+  - is_holiday
+  - is_weekend
+
+standardize_features: true
+
+# --- sequence / model ---
+seq_length: 7       # T: days of history fed into the ConvLSTM stack
+hidden_channels: 4  # "filters" in the original paper (3-5)
+num_layers: 2
+kernel_size: 3       # smaller than the paper's 9x9 -- our grid is ~14x7, not basin-scale
+dropout: 0.2
+
+# --- training ---
+lr: 0.001
+num_epochs: 300
+torch_seed: 0
+device: cpu
+log_every: 25
+
+# --- output ---
+report_root: reports
+model_family: convlstm
+run_name: convlstm_may_1_7
+generate_spatial_plots: true
