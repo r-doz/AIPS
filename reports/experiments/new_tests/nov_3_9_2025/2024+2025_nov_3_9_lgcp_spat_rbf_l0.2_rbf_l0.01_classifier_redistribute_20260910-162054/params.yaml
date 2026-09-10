@@ -61,7 +61,7 @@ num_pred_samples: 300
 num_vis_samples: 500
 report_root: reports/experiments
 model_family: new_tests
-run_name: nov_3_9_lgcp_spat_rbf_l0.2_rbf_l0.01_classifierRidistribuite
+run_name: nov_3_9_lgcp_spat_rbf_l0.2_rbf_l0.01_classifier_redistribute
 log_every: 100
 lag_features:
   enabled: true

@@ -89,10 +89,10 @@ There are 3 models which are superior on all the other. These are
 
 All the other models are worse, especially the one with lenghscale trianable 
 
-## Tune the singol spatial RBF again
+## Tune the single spatial RBF again 
 After discovering the best 2 spatial RBF is 
 - lgcp_spat_2rbf_l0.20_l0.01
-I tried the singol spatial RBF with 
+I tried the single spatial RBF with 
 - lgcp_spat_2rbf_l0.20_l0.01 (best 2 spatial RBF)
 - lgcp_spat_rbf_l0.10 (best 1 spatial RBF)
 - lgcp_spat_rbf_l0.20_lr0001 (original lr)

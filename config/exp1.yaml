@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: nov_3_9_lgcp_spat_rbf_l0.2_rbf_l0.01
+run_name: nov_3_9_lgcp_spat_rbf_l0.2_rbf_l0.01_classifier_redistribute
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -92,11 +92,11 @@ model:
         variance: true
   - type: periodic
     hyperparameters:
-        lengthscale: 0.2
+        lengthscale: 0.8
         variance: 0.2
         period: 0.074 # is a week
     trainable:
-        lengthscale: true
+        lengthscale: false
         variance: true
         period: false
   #- type: periodic
@@ -155,7 +155,8 @@ lag_features:
 # classifier calls "zero" are forced to 0, correcting the LGCP's tendency
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
-  enabled: false
+  enabled: true 
+  mode: hard_redistribute # hard or soft or hard_redistribute
   hidden_layer_sizes: [32]
   activation: relu
   alpha: 1.0e-4

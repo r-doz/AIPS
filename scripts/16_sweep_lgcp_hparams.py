@@ -57,7 +57,11 @@ _spec.loader.exec_module(train_lgcp)
 
 # Whether a higher value of each evaluate_metrics() key is better.
 HIGHER_IS_BETTER = {
+    "wasserstein": False,
     "mean_ll_obs": True,
+    "accuracy": True,
+    "precision": True,
+    "recall": True,
     "mean_ll_daily": True,
     "daily_delta_corr": True,
     "daily_direction_accuracy_moving": True,

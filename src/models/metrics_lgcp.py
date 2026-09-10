@@ -9,7 +9,50 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from scipy.special import gammaln
-from sklearn import metrics
+from scipy.stats import wasserstein_distance
+
+
+def evaluate_wasserstein(y_true, rate_mean) -> float:
+    """Empirical 1-Wasserstein distance, following bpaf045, Table 2, Eq. 9.
+
+    Integrates |CDF_observed(x) - CDF_predicted(x)| over the count axis.
+    Each cell-day has equal weight; values retain their original count units.
+    This compares value distributions, ignoring spatial/temporal ordering.
+    Use final predictions before likelihood-specific epsilon floors.
+    Empty or non-finite inputs yield NaN, rather than dropping observations.
+    """
+    observed = np.asarray(y_true, dtype=float).reshape(-1)
+    predicted = np.asarray(rate_mean, dtype=float).reshape(-1)
+    if not observed.size or not predicted.size:
+        return float("nan")
+    if not np.all(np.isfinite(observed)) or not np.all(np.isfinite(predicted)):
+        return float("nan")
+    return float(wasserstein_distance(observed, predicted))
+
+
+def evaluate_activity_metrics(y_true, rate_mean) -> dict:
+    """Binary activity scores per observation, following Fishes 2025, 10, 479.
+
+    Observed and predicted activity mean strictly positive counts/rates (> 0).
+    Use predictions before any numerical epsilon floor for log-likelihoods.
+    Scores are fractions in [0, 1]; undefined precision/recall are 0.
+    Empty inputs return NaN scores. Positive rates everywhere imply recall 1
+    when observed activity exists, even if those rates are very small.
+    """
+    observed = np.asarray(y_true).reshape(-1) > 0
+    predicted = np.asarray(rate_mean).reshape(-1) > 0
+    if observed.shape != predicted.shape:
+        raise ValueError("Observed counts and predicted rates must have equal size.")
+    if not observed.size:
+        return dict.fromkeys(("accuracy", "precision", "recall"), float("nan"))
+    tp = int(np.count_nonzero(observed & predicted))
+    predicted_positive = int(np.count_nonzero(predicted))
+    observed_positive = int(np.count_nonzero(observed))
+    return {
+        "accuracy": float(np.mean(observed == predicted)),
+        "precision": float(tp / predicted_positive) if predicted_positive else 0.0,
+        "recall": float(tp / observed_positive) if observed_positive else 0.0,
+    }
 
 
 def _safe_corr(x, y):
@@ -120,6 +163,9 @@ def evaluate_metrics(
     mean_ll_obs : mean Poisson log-likelihood per observation/cell
     mae_obs     : mean absolute error per observation/cell
     rmse_obs    : root mean squared error per observation/cell
+    wasserstein : 1-Wasserstein distance between cell-day value distributions
+    accuracy, precision, recall : binary activity (> 0), per observation/cell;
+        undefined precision/recall are 0 (see evaluate_activity_metrics)
 
     Daily-level metrics
     -------------------
@@ -185,6 +231,7 @@ def evaluate_metrics(
         "mean_ll_obs": mean_ll_obs,
         "mae_obs": mae_obs,
         "rmse_obs": rmse_obs,
+        "wasserstein": evaluate_wasserstein(y_true, rate_mean),
         # Daily-level metrics
         "mean_ll_daily": mean_ll_daily,
         "mae_daily": mae_daily,
@@ -192,5 +239,6 @@ def evaluate_metrics(
     }
 
     metrics.update(trend_metrics)
+    metrics.update(evaluate_activity_metrics(y_true, rate_mean))
 
     return metrics

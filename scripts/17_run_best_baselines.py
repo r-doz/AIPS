@@ -90,6 +90,8 @@ BASE_GLM_CONFIG = PROJECT_ROOT / "config/14_window_poisson_glm.yaml"
 BASE_GNN_CONFIG = PROJECT_ROOT / "config/15_gnn.yaml"
 
 METRIC_KEYS = [
+    "wasserstein",
+    "accuracy", "precision", "recall",
     "mean_ll_obs", "mae_obs", "rmse_obs",
     "mean_ll_daily", "mae_daily", "rmse_daily",
     "daily_delta_corr", "daily_direction_accuracy_moving",

@@ -283,6 +283,10 @@ def main(cfg: dict):
     print(f"  Mean log-likelihood per obs: {metrics['mean_ll_obs']:.4f}")
     print(f"  MAE per obs:                 {metrics['mae_obs']:.4f}")
     print(f"  RMSE per obs:                {metrics['rmse_obs']:.4f}")
+    print(f"  Wasserstein:                 {metrics['wasserstein']:.4f}")
+    print(f"  Accuracy (activity): {metrics['accuracy']:.4f}")
+    print(f"  Precision (activity): {metrics['precision']:.4f}")
+    print(f"  Recall (activity): {metrics['recall']:.4f}")
 
     print("Daily-level metrics:")
     print(f"  Mean log-likelihood daily:   {metrics['mean_ll_daily']:.4f}")

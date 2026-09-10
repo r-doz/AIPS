@@ -17,6 +17,7 @@ from scipy.special import gammaln
 
 from src.data.multi_year import load_parquet_years, years_label
 from src.models.data_pp_lgcp import make_day_split_masks
+from src.models.metrics_lgcp import evaluate_activity_metrics, evaluate_wasserstein
 
 
 DEFAULT_CONFIG = {
@@ -87,6 +88,8 @@ def load_config(config_path):
 
 
 def poisson_metrics(y_true, rate_mean, dates, eps=1e-8):
+    activity_metrics = evaluate_activity_metrics(y_true, rate_mean)
+    wasserstein = evaluate_wasserstein(y_true, rate_mean)
     y_true = np.asarray(y_true, dtype=float)
     rate_mean = np.asarray(rate_mean, dtype=float)
     rate_mean = np.clip(rate_mean, eps, None)
@@ -127,11 +130,13 @@ def poisson_metrics(y_true, rate_mean, dates, eps=1e-8):
         "mean_ll_obs": mean_ll_obs,
         "mae_obs": mae_obs,
         "rmse_obs": rmse_obs,
+        "wasserstein": wasserstein,
         "mean_ll_daily": mean_ll_daily,
         "mae_daily": mae_daily,
         "rmse_daily": rmse_daily,
     }
 
+    metrics.update(activity_metrics)
     return metrics, daily_df
 
 

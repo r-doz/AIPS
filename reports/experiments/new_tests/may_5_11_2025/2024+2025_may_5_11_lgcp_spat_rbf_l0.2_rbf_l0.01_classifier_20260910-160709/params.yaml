@@ -61,7 +61,7 @@ num_pred_samples: 300
 num_vis_samples: 500
 report_root: reports/experiments
 model_family: new_tests
-run_name: may_5_11_lgcp_spat_rbf_l0.2_rbf_l0.01_classifierRidistribuite
+run_name: may_5_11_lgcp_spat_rbf_l0.2_rbf_l0.01_classifier
 log_every: 100
 lag_features:
   enabled: true
@@ -84,7 +84,7 @@ lag_features:
   fillna_value: 0.0
 zero_gate:
   enabled: true
-  mode: hard_redistribute
+  mode: hard
   hidden_layer_sizes:
   - 32
   activation: relu
