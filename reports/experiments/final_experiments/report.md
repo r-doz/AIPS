@@ -31,4 +31,16 @@ For 1 day forcasting, we train the model and we forcast $g_1$, then we train the
 ## Period correction 
 During the tuning we used 0.074 as fixed period for the periodic temporal kernel. Our aim was to fix it to have periods of 1 week. However, if the train data change in length then this number should have been adapted. Therefore, we changed the config in order to be able to select as an integer number the "days_period" and we fix it for all experiments as 7. The algorithm autonomously define the proper value depending on the length of the train data. 
 
+Results with 7 days period:
+On november: \
+- the fixed kernel at 7 days seems for "2 spatiak kernels" btter on an obs level, better in tren, a bit worse in correlation, worse in daily predictions. 
+- the classifier hard is better overall 
+- the classifier redistribuite is better on an observation level, better in trend, and W measure, a bit worse in correlation and worse in daily predictions. 
+On may:
+- all models with the fixed period at 7 days are worse across all metrics. 
 
+Results with no period:
+- all models across almost all variables seem to be worse with no period rather than with 0-074 period 
+
+Results with 14 days period:
+14 days period is similar to 0.074 because it may 0.074 is 10-11 days while in november is almost 14 days. 
