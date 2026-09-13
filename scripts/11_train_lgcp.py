@@ -214,6 +214,13 @@ def _normalize_kernel_block(
         raise ValueError(f"{location}.hyperparameters must be a mapping.")
 
     required = REQUIRED_HYPERPARAMETERS[normalized_type]
+    trainable_keys = required
+    if "period_days" in hyperparameters:
+        if not location.startswith("model.temporal_kernels") or "period" not in required:
+            raise ValueError(f"{location}: period_days is only supported for temporal periodic kernels.")
+        if "period" in hyperparameters:
+            raise ValueError(f"{location}: specify period or period_days, not both.")
+        required = (required - {"period"}) | {"period_days"}
     unknown_hparams = set(hyperparameters) - required
     if unknown_hparams:
         raise ValueError(
@@ -236,7 +243,7 @@ def _normalize_kernel_block(
                 f"{location}.hyperparameters.{hp_name} must be numeric, got {type(value).__name__}."
             )
         value = float(value)
-        if value <= 0.0:
+        if not math.isfinite(value) or value <= 0.0:
             raise ValueError(
                 f"{location}.hyperparameters.{hp_name} must be > 0, got {value}."
             )
@@ -246,15 +253,15 @@ def _normalize_kernel_block(
     if not isinstance(trainable, dict):
         raise ValueError(f"{location}.trainable must be a mapping.")
 
-    unknown_trainable = set(trainable) - required
+    unknown_trainable = set(trainable) - trainable_keys
     if unknown_trainable:
         raise ValueError(
             f"Unknown trainable flags in {location}.trainable: {sorted(unknown_trainable)}. "
-            f"Allowed keys: {sorted(required)}"
+            f"Allowed keys: {sorted(trainable_keys)}"
         )
 
     normalized_trainable = {}
-    for hp_name in sorted(required):
+    for hp_name in sorted(trainable_keys):
         flag = trainable.get(hp_name, True)
         if not isinstance(flag, bool):
             raise ValueError(
@@ -451,7 +458,24 @@ def save_kernel_parameters(model, save_path):
     print(f"Kernel parameters saved → {save_path}")
 
 
-def compute_time_diagnostics(scalers, lengthscales=None, periods=None):
+def resolve_period_days(kernel_config, scalers, span_days):
+    """Return model-ready kernels; preserve the requested config for provenance.
+
+    prepare_data uses elapsed days / span_days, then a training-only scaler.
+    Thus one standardized time unit spans span_days * scaler.scale_ days.
+    """
+    resolved = copy.deepcopy(kernel_config)
+    days_per_unit = float(span_days) * float(scalers["t_scaler"].scale_[0])
+    for block in resolved["temporal"]:
+        hp = block["hyperparameters"]
+        if "period_days" in hp:
+            if not math.isfinite(days_per_unit) or days_per_unit <= 0:
+                raise ValueError("Cannot convert period_days without a positive time span and scale.")
+            hp["period"] = hp.pop("period_days") / days_per_unit
+    return resolved
+
+
+def compute_time_diagnostics(scalers, span_days, lengthscales=None, periods=None):
     if lengthscales is None:
         lengthscales = [0.01, 0.03, 0.05, 0.08, 0.10, 0.12, 0.15, 0.20, 0.30]
 
@@ -468,12 +492,16 @@ def compute_time_diagnostics(scalers, lengthscales=None, periods=None):
     t_mean = float(np.ravel(t_scaler.mean_)[0])
     t_scale = float(np.ravel(t_scaler.scale_)[0])
 
-    annual_period_raw = 1.0
+    if span_days <= 0:
+        raise ValueError("Time diagnostics require a positive data span.")
+    annual_period_raw = 365.25 / span_days
     annual_period_std = annual_period_raw / t_scale
 
     diagnostics = {
         "t_raw_mean": t_mean,
         "t_raw_std": t_scale,
+        "span_days": int(span_days),
+        "days_per_standardized_unit": float(t_scale * span_days),
         "annual_period_raw": annual_period_raw,
         "annual_period_standardized": annual_period_std,
         "lengthscale_to_days": {},
@@ -487,13 +515,13 @@ def compute_time_diagnostics(scalers, lengthscales=None, periods=None):
 
     print("\nLengthscale interpretation:")
     for l in lengthscales:
-        days = l * t_scale * 365.25
+        days = l * t_scale * span_days
         diagnostics["lengthscale_to_days"][float(l)] = float(days)
         print(f"  lengthscale {l:.3f} ≈ {days:.2f} days")
 
     print("\nPeriod interpretation:")
     for p in periods:
-        days = p * t_scale * 365.25
+        days = p * t_scale * span_days
         diagnostics["period_to_days"][float(p)] = float(days)
         print(f"  period {p:.3f} ≈ {days:.2f} days")
 
@@ -577,7 +605,17 @@ def main(cfg: dict):
         )
     )
     meta = compute_meta(df)
-    time_diagnostics = compute_time_diagnostics(scalers)
+    span_days = (df["date"].max() - df["date"].min()).days
+    cfg["kernel_config"] = resolve_period_days(cfg["kernel_config"], scalers, span_days)
+    # Record both the requested calendar-day settings and resolved model units.
+    with open(params_path, "w") as f:
+        yaml.safe_dump(cfg, f, sort_keys=False)
+    periods = [
+        block["hyperparameters"]["period"]
+        for block in cfg["kernel_config"]["temporal"]
+        if "period" in block["hyperparameters"]
+    ]
+    time_diagnostics = compute_time_diagnostics(scalers, span_days, periods=periods)
 
     time_diag_path = out_dir / "time_diagnostics.yaml"
     with open(time_diag_path, "w") as f:
@@ -737,6 +775,36 @@ def main(cfg: dict):
     with open(metrics_path, "w") as f:
         yaml.dump(metrics, f)
     print(f"Metrics saved → {metrics_path}")
+
+    # Reuse final predictions (including any gate/allocation) for the first
+    # three test days. These are pooled window metrics, as in metrics.yaml.
+    normalized_dates = pd.DatetimeIndex(test_dates).normalize()
+    unique_test_days = normalized_dates.unique().sort_values()
+    if len(unique_test_days) > 3:
+        first_three_days = unique_test_days[:3]
+        first_three_mask = normalized_dates.isin(first_three_days)
+        three_day_metrics = evaluate_metrics(
+            test_y[first_three_mask],
+            rate_mean_test[first_three_mask],
+            normalized_dates[first_three_mask],
+        )
+        three_day_report = {
+            "dates": [day.strftime("%Y-%m-%d") for day in first_three_days],
+            "num_observations": int(first_three_mask.sum()),
+            "aggregation": "pooled_first_three_test_days",
+            "metrics": {
+                key: float(value) if np.isfinite(value) else None
+                for key, value in three_day_metrics.items()
+            },
+        }
+        three_day_path = out_dir / "metrics_first_3_days.yaml"
+        with open(three_day_path, "w") as f:
+            yaml.safe_dump(three_day_report, f, sort_keys=False)
+        print("\n=== First three test days ===")
+        print(yaml.safe_dump(three_day_report, sort_keys=False))
+        print(f"First-three-day metrics saved → {three_day_path}")
+    else:
+        print("Skipping first-three-day metrics: three or fewer test days.")
 
     # window plot
     test_window_plot_path = plots_dir / "daily_timeseries_test_window.png"
