@@ -156,12 +156,13 @@ lag_features:
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
   enabled: false 
-  mode: hard_redistribute # hard or soft or hard_redistribute
-  hidden_layer_sizes: [32]
-  activation: relu
-  alpha: 1.0e-4
-  max_iter: 500
-  threshold: 0.3
+  mode: hard_redistribute # hard or soft or hard_redistribute or local_redistribute
+  hidden_layer_sizes: [32] # [32], [16], [64], [32, 16]
+  activation: relu # relu, tanh
+  alpha: 1.0e-4 # 1.0e-4, 1.0e-3, 1.0e-2
+  learning_rate_init: 0.001 # 0.001, 0.01, 0.0001 
+  max_iter: 500 # at the end try 1000
+  threshold: 0.3 # already tuned 
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.

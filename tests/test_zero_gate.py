@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from src.models.zero_gate import apply_zero_gate
+from src.models.zero_gate import apply_zero_gate, cell_grid_coordinates
 
 
 class FixedClassifier:
@@ -73,6 +73,52 @@ class ZeroGateTests(unittest.TestCase):
         for rates in (np.array([-1, 2, 3, 4]), np.array([np.nan, 2, 3, 4])):
             with self.assertRaises(ValueError):
                 self.apply(rates, mode='hard_redistribute', dates=['2025-05-01'] * 4)
+
+    def test_local_uses_diagonal_neighbour_and_nearest_fallback(self):
+        # Rejected cell 0 has a diagonal neighbour; cell 1 is isolated.
+        grid = [[0, 0], [5, 0], [1, 1], [4, 0]]
+        result = self.apply(mode='local_redistribuite',
+                            dates=['2025-05-01'] * 4, grid_coords=grid)
+        np.testing.assert_allclose(result, [0, 0, 8, 12])
+        self.assertEqual(result.sum(), self.rates.sum())
+
+    def test_local_nearest_ties_use_original_rate_weights(self):
+        grid = [[0, 0], [0, 0], [-2, 0], [2, 0]]
+        result = self.apply(mode='local_redistribute',
+                            dates=['2025-05-01'] * 4, grid_coords=grid)
+        np.testing.assert_allclose(result, [0, 0, 6 + 6 * 6/14, 8 + 6 * 8/14])
+        np.testing.assert_array_equal(self.rates, [2, 4, 6, 8])
+
+    def test_local_zero_rate_recipients_and_column_shape(self):
+        result = self.apply(np.array([[2.], [4.], [0.], [0.]]),
+                            mode='local_redistribuite', dates=['2025-05-01'] * 4,
+                            grid_coords=[[0, 0], [0, 0], [-1, 0], [1, 0]])
+        np.testing.assert_allclose(result, [[0], [0], [3], [3]])
+
+    def test_local_isolates_days_and_preserves_empty_support(self):
+        with self.assertWarnsRegex(RuntimeWarning, 'keeping original'):
+            result = self.apply(mode='local_redistribuite',
+                                dates=['2025-05-01'] * 2 + ['2025-05-02'] * 2,
+                                grid_coords=[[0, 0]] * 4)
+        np.testing.assert_allclose(result, self.rates)
+
+    def test_local_radius_changes_neighbourhood(self):
+        grid = [[0, 0], [0, 0], [1, 0], [2, 0]]
+        near = self.apply(mode='local_redistribuite', dates=['2025-05-01'] * 4,
+                          grid_coords=grid)
+        wide = self.apply(mode='local_redistribuite', dates=['2025-05-01'] * 4,
+                          grid_coords=grid, local_radius=2)
+        np.testing.assert_allclose(near, [0, 0, 12, 8])
+        np.testing.assert_allclose(wide, [0, 0, 6 + 6 * 6/14, 8 + 6 * 8/14])
+
+    def test_local_requires_grid_and_valid_radius(self):
+        for options in ({}, {'grid_coords': [[0, 0]] * 4, 'local_radius': -1}):
+            with self.assertRaises(ValueError):
+                self.apply(mode='local_redistribuite', dates=['2025-05-01'] * 4, **options)
+
+    def test_grid_distances_preserve_missing_levels_and_axis_spacing(self):
+        xy = [[10, 40], [10.1, 40.2], [10.3, 40.6]]
+        np.testing.assert_allclose(cell_grid_coordinates(xy), [[0, 0], [1, 1], [3, 3]])
 
 
 if __name__ == "__main__":

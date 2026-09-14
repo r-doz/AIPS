@@ -67,3 +67,30 @@ implementation. Windows of three or fewer dates use only `metrics.yaml`.
 Global cell mean retains its existing epsilon convention for likelihoods in
 both reports; trend, activity and Wasserstein use predictions before that floor.
 Existing saved experiments are not automatically updated.
+
+## Local classifier redistribution (LGCP)
+
+To select local redistribution in an LGCP config, use:
+
+```yaml
+zero_gate:
+  enabled: true
+  mode: local_redistribuite # local_redistribute is also accepted
+  threshold: 0.3
+  local_radius: 1 # Chebyshev distance in spatial grid steps
+```
+
+Keep the other classifier settings as desired. This mode uses longitude/latitude
+cell centres converted to regular grid indices, not standardized model features.
+For each rejected cell, its predicted rate is transferred to classifier-accepted
+cells on the same date within the specified radius. Radius 1 includes horizontal,
+vertical and diagonal neighbours. If none exist within the radius, all accepted
+cells tied at the nearest Chebyshev distance receive the rate instead.
+Shares are proportional to recipients' original LGCP rates; if all recipient
+rates are zero, shares are equal. Weights never use already redistributed rates,
+so rejected-cell processing order does not change the result.
+
+Daily predicted totals are preserved. If the classifier accepts no cells on a
+date, original predictions for that date are retained with a warning, matching
+the existing global redistribution fallback. Existing configs keep their chosen
+mode; enabling this option does not require changing the kernel configuration.
