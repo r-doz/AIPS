@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: may_5_11_lgcp_2_spatial_kernels_classifier_hard_period_14_days
+run_name: may_5_11_lgcp_2_spatial_kernels_classifier_hard_period_10.47_days_l0.8
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -94,7 +94,7 @@ model:
     hyperparameters:
         lengthscale: 0.8
         variance: 0.2
-        period_days: 14 # calendar days; converted using the training time scaler
+        period_days: 10.47 # calendar days; converted using the training time scaler
     trainable:
         lengthscale: false
         variance: true
