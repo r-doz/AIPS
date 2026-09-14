@@ -35,6 +35,8 @@ class WassersteinMetricsTests(unittest.TestCase):
         dates = ['2025-11-01', '2025-11-01', '2025-11-02']
         shared = evaluate_metrics(observed, predicted, dates)
         baseline, _ = module.poisson_metrics(observed, predicted, dates, eps=.1)
+        for key in ('daily_delta_corr', 'daily_direction_accuracy_moving'):
+            np.testing.assert_allclose(baseline[key], shared[key], equal_nan=True)
         for result in (shared, baseline):
             self.assertAlmostEqual(result['wasserstein'], 1.0)
 

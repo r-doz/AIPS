@@ -33,7 +33,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.multi_year import years_label
 from src.models.data_pp_lgcp import prepare_data, make_day_split_masks
-from src.models.metrics_lgcp import evaluate_metrics
+from src.models.metrics_lgcp import evaluate_metrics, evaluate_first_three_days
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +292,15 @@ def main(cfg: dict):
     print(f"  Mean log-likelihood daily:   {metrics['mean_ll_daily']:.4f}")
     print(f"  MAE daily:                   {metrics['mae_daily']:.4f}")
     print(f"  RMSE daily:                  {metrics['rmse_daily']:.4f}")
+
+    print(f"  Daily delta correlation:     {metrics['daily_delta_corr']:.4f}")
+    print(f"  Daily direction accuracy:    {metrics['daily_direction_accuracy_moving']:.4f}")
+
+    three_day_report = evaluate_first_three_days(test_y, rate_mean_test, test_dates)
+    if three_day_report is not None:
+        with open(out_dir / "metrics_first_3_days.yaml", "w") as f:
+            yaml.safe_dump(three_day_report, f, sort_keys=False)
+
 
     # Save metrics
     metrics_path = out_dir / "metrics.yaml"

@@ -34,7 +34,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.multi_year import years_label
 from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_masks
-from src.models.metrics_lgcp import evaluate_metrics
+from src.models.metrics_lgcp import evaluate_metrics, evaluate_first_three_days
 from src.models.lgcp import SparseLGCP
 from src.models.zero_gate import train_zero_gate, apply_zero_gate
 from src.models.daily_allocation import load_daily_totals, allocate_daily_totals, validate_conflict_policy
@@ -778,25 +778,8 @@ def main(cfg: dict):
 
     # Reuse final predictions (including any gate/allocation) for the first
     # three test days. These are pooled window metrics, as in metrics.yaml.
-    normalized_dates = pd.DatetimeIndex(test_dates).normalize()
-    unique_test_days = normalized_dates.unique().sort_values()
-    if len(unique_test_days) > 3:
-        first_three_days = unique_test_days[:3]
-        first_three_mask = normalized_dates.isin(first_three_days)
-        three_day_metrics = evaluate_metrics(
-            test_y[first_three_mask],
-            rate_mean_test[first_three_mask],
-            normalized_dates[first_three_mask],
-        )
-        three_day_report = {
-            "dates": [day.strftime("%Y-%m-%d") for day in first_three_days],
-            "num_observations": int(first_three_mask.sum()),
-            "aggregation": "pooled_first_three_test_days",
-            "metrics": {
-                key: float(value) if np.isfinite(value) else None
-                for key, value in three_day_metrics.items()
-            },
-        }
+    three_day_report = evaluate_first_three_days(test_y, rate_mean_test, test_dates)
+    if three_day_report is not None:
         three_day_path = out_dir / "metrics_first_3_days.yaml"
         with open(three_day_path, "w") as f:
             yaml.safe_dump(three_day_report, f, sort_keys=False)

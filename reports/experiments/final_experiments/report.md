@@ -44,3 +44,7 @@ Results with no period:
 
 Results with 14 days period:
 14 days period is similar to 0.074 because it may 0.074 is 10-11 days while in november is almost 14 days. 
+
+Results with 14 days period with period trainable
+- it is very good on may, decent, almost as 0.074 for november 
+- currently is our choice 

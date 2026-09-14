@@ -50,7 +50,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.data.multi_year import load_parquet_years, years_label
 from src.models.data_pp_lgcp import compute_meta, make_day_split_masks
-from src.models.metrics_lgcp import evaluate_metrics
+from src.models.metrics_lgcp import evaluate_metrics, evaluate_first_three_days
 from src.models.convlstm import (
     ConvLSTMBaseline,
     build_cell_grid_index,
@@ -431,6 +431,15 @@ def main(cfg: dict):
     print(f"  Mean log-likelihood daily:   {metrics['mean_ll_daily']:.4f}")
     print(f"  MAE daily:                   {metrics['mae_daily']:.4f}")
     print(f"  RMSE daily:                  {metrics['rmse_daily']:.4f}")
+
+    print(f"  Daily delta correlation:     {metrics['daily_delta_corr']:.4f}")
+    print(f"  Daily direction accuracy:    {metrics['daily_direction_accuracy_moving']:.4f}")
+
+    three_day_report = evaluate_first_three_days(y_test_flat, rate_test_flat, test_dates_flat)
+    if three_day_report is not None:
+        with open(out_dir / "metrics_first_3_days.yaml", "w") as f:
+            yaml.safe_dump(three_day_report, f, sort_keys=False)
+
 
     with open(out_dir / "metrics.yaml", "w") as f:
         yaml.dump(metrics, f, sort_keys=True)

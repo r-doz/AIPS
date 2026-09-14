@@ -46,3 +46,24 @@ count predictions without normalizing daily totals. The metric ignores cell/day
 ordering: permuting predictions leaves it unchanged. It therefore measures
 distributional agreement, not geographical transport distance. Empty or
 non-finite inputs yield NaN. Existing reports require reevaluation.
+
+## Trend metrics and first-three-day reports
+
+LGCP, GNN, Window-GLM, ConvLSTM, global cell mean (including expanding mode),
+and last available (including one-step-ahead mode) save all 12 metrics:
+`mean_ll_obs`, `mae_obs`, `rmse_obs`, `wasserstein`, `mean_ll_daily`,
+`mae_daily`, `rmse_daily`, `daily_delta_corr`,
+`daily_direction_accuracy_moving`, `accuracy`, `precision`, and `recall`.
+The two trend metrics also appear in console summaries. Correlation compares
+changes in daily totals; direction accuracy excludes flat observed transitions.
+
+When the test window contains more than three distinct calendar dates, these
+scripts also save `metrics_first_3_days.yaml`. It contains the first three dates,
+the observation count, `aggregation: pooled_first_three_test_days`, and all
+metrics evaluated on the corresponding final predictions. This does not retrain
+models or change their forecast mode. Undefined values are stored as YAML null;
+in particular, three days provide too few transitions for the correlation
+implementation. Windows of three or fewer dates use only `metrics.yaml`.
+Global cell mean retains its existing epsilon convention for likelihoods in
+both reports; trend, activity and Wasserstein use predictions before that floor.
+Existing saved experiments are not automatically updated.

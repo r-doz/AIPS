@@ -17,7 +17,7 @@ from scipy.special import gammaln
 
 from src.data.multi_year import load_parquet_years, years_label
 from src.models.data_pp_lgcp import make_day_split_masks
-from src.models.metrics_lgcp import evaluate_activity_metrics, evaluate_wasserstein
+from src.models.metrics_lgcp import evaluate_activity_metrics, evaluate_wasserstein, evaluate_daily_trend_metrics, evaluate_first_three_days
 
 
 DEFAULT_CONFIG = {
@@ -88,6 +88,7 @@ def load_config(config_path):
 
 
 def poisson_metrics(y_true, rate_mean, dates, eps=1e-8):
+    trend_metrics = evaluate_daily_trend_metrics(y_true, rate_mean, dates)
     activity_metrics = evaluate_activity_metrics(y_true, rate_mean)
     wasserstein = evaluate_wasserstein(y_true, rate_mean)
     y_true = np.asarray(y_true, dtype=float)
@@ -136,6 +137,7 @@ def poisson_metrics(y_true, rate_mean, dates, eps=1e-8):
         "rmse_daily": rmse_daily,
     }
 
+    metrics.update(trend_metrics)
     metrics.update(activity_metrics)
     return metrics, daily_df
 
@@ -374,6 +376,14 @@ def main():
 
     with open(report_dir / "metrics.yaml", "w") as f:
         yaml.safe_dump(metrics, f, sort_keys=False)
+
+    three_day_report = evaluate_first_three_days(
+        y_test, rate_mean_test, test_dates,
+        evaluator=lambda y, rate, dates: poisson_metrics(y, rate, dates, eps=cfg["eps"])[0],
+    )
+    if three_day_report is not None:
+        with open(report_dir / "metrics_first_3_days.yaml", "w") as f:
+            yaml.safe_dump(three_day_report, f, sort_keys=False)
 
     pred_df = test_df[[date_col] + cell_cols + [target_col]].copy()
     pred_df["rate_mean"] = rate_mean_test

@@ -242,3 +242,29 @@ def evaluate_metrics(
     metrics.update(evaluate_activity_metrics(y_true, rate_mean))
 
     return metrics
+
+
+def evaluate_first_three_days(y_true, rate_mean, dates, evaluator=evaluate_metrics):
+    """Pool the first three test dates when the full window exceeds three days.
+
+    Return LGCP's report schema, with undefined metrics represented as None.
+    Predictions are reused without retraining or changing the forecast mode.
+    """
+    normalized_dates = pd.DatetimeIndex(dates).normalize()
+    unique_days = normalized_dates.unique().sort_values()
+    if len(unique_days) <= 3:
+        return None
+    first_days = unique_days[:3]
+    mask = normalized_dates.isin(first_days)
+    metrics = evaluator(
+        np.asarray(y_true)[mask], np.asarray(rate_mean)[mask], normalized_dates[mask]
+    )
+    return {
+        "dates": [day.strftime("%Y-%m-%d") for day in first_days],
+        "num_observations": int(mask.sum()),
+        "aggregation": "pooled_first_three_test_days",
+        "metrics": {
+            key: float(value) if np.isfinite(value) else None
+            for key, value in metrics.items()
+        },
+    }
