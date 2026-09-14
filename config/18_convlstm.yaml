@@ -15,8 +15,8 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2025-05-01"
-test_end_date: "2025-05-07"
+test_start_date: "2025-05-05"
+test_end_date: "2025-05-11"
 
 # --- features ---
 # No cell_lag_* here: the ConvLSTM's lagged-sequence input (seq_length
@@ -45,7 +45,7 @@ device: cpu
 log_every: 25
 
 # --- output ---
-report_root: reports
-model_family: convlstm
-run_name: convlstm_may_1_7
+report_root: reports/experiments/final_experiments
+model_family: new_tests
+run_name: may_5_11_convlstm
 generate_spatial_plots: true

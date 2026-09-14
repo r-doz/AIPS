@@ -15,8 +15,8 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2025-11-03"
-test_end_date: "2025-11-09"
+test_start_date: "2025-05-05"
+test_end_date: "2025-05-11"
 
 # --- features ---
 covariate_cols:
@@ -76,9 +76,9 @@ device: cpu
 log_every: 25
 
 # --- output ---
-report_root: reports/experiments
+report_root: reports/experiments/final_experiments
 model_family: new_tests
-run_name: gnn_nov_3_9
+run_name: may_5_11_gnn
 
 # Display only: same rendering as LGCP, for every forecast day.
 spatial_plot:
