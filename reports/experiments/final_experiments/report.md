@@ -48,3 +48,14 @@ Results with 14 days period:
 Results with 14 days period with period trainable
 - it is very good on may, decent, almost as 0.074 for november 
 - currently is our choice 
+
+
+## Classifier hard local redistribuite
+I tried the version of the classifier in which if the classifier tells: "do not put vessels here" then the quantity is distribuited in the closest points rather then the original version in which they were re-distribuited across all the positions. 
+
+Results:
+- in may the local-redistribuite and the redistribuite have almost the same results 
+- in november the local-redistribuite is worse then the redistribuite 
+
+Conclusion: 
+- I would discard the local-redistribuite version 
