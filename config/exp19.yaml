@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: may_5_11_lgcp_2_spatial_kernels_classifier_hard_redistribute_period_init_14_days_l0.8_trainable
+run_name: 2024+2025_may_5_11_lgcp_2_spatial_kernels_classifier_hard_period_init_14_days_l0.8_trainable_t0.2
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -156,12 +156,12 @@ lag_features:
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
   enabled: true 
-  mode: hard_redistribute # hard or soft or hard_redistribute
+  mode: hard # hard or soft or hard_redistribute or local_redistribute
   hidden_layer_sizes: [32]
   activation: relu
   alpha: 1.0e-4
   max_iter: 500
-  threshold: 0.3
+  threshold: 0.2
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
