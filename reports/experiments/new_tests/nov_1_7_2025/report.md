@@ -275,6 +275,74 @@ Conclusions:
 - fixing temporal periodic lengthscale at 0.8 is the right choice
 - gamma seems optimal at 1, but could be okay also in 1.5
 
+# Classifier tuning 
+
+## Threshold 
+I report the results on 1-7 november 2025, in a previous configuration:
+
+0.2
+daily_delta_corr: 0.93225868270584
+daily_direction_accuracy_moving: 1.0
+mae_daily: 7.978039868175983
+mae_obs: 0.24169953591013787
+mean_ll_daily: -5.2922074009115585
+mean_ll_obs: -1.4498644479353768
+rmse_daily: 9.711791701091496
+rmse_obs: 0.6694534401518167
+
+0.3
+daily_delta_corr: 0.8401705016296871
+daily_direction_accuracy_moving: 1.0
+mae_daily: 8.973428382671305
+mae_obs: 0.23108842462279533
+mean_ll_daily: -6.786799265355976
+mean_ll_obs: -1.8355087599948503
+rmse_daily: 10.899511021763644
+rmse_obs: 0.674025807591469
+
+0.1
+daily_delta_corr: 0.9517232064127957
+daily_direction_accuracy_moving: 1.0
+mae_daily: 6.492092413295593
+mae_obs: 0.25801832260938673
+mean_ll_daily: -3.858063230922393
+mean_ll_obs: -1.0953725102815137
+rmse_daily: 8.0052214212521
+rmse_obs: 0.6704590115862532
+
+Results:
+- on 03-09 november and 05-11 may 0.2 is worse than 0.3 on the main metrics and rarely it is slightly slightly better
+
+Conclusion:
+- i will keep hard classifier threshold as 0.3 
+
+## Layer 
+I tested for the hard classfier, the layers 
+- 16
+- 32
+- 64
+- [16,32]
+To choose which one is the best I set as criteria the correlation, mae-obs, rmse-obs, wesserstain and in case of similar results the other metrics, excluded the daily ones. 
+
+Results
+- On may 16 and 64 are the strongest 
+- On november the results are very similar with 16 slighlty better
+
+Conclusion
+- I chose 16 as layer 
+
+## Activation
+I tried relu vs tanh. 
+
+Results:
+- almost equal 
+- super super slightly better relu, but almost equal 
+
+Conclusion
+- I chose relu 
+
+
+
 
 
 
