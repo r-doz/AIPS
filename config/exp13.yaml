@@ -29,8 +29,8 @@ covariate_cols:
 split_strategy: fixed_test_window
 #split_strategy: chronological
 #split_strategy: random_day
-test_start_date: "2025-05-24"
-test_end_date: "2025-05-30"
+test_start_date: "2025-11-24"
+test_end_date: "2025-11-30"
 train_fraction: 0.9
 data_seed: 42
 
@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: may_24_30_hard_classifier_tuning_layer_16_activation_relu_alpha_?_iter_500
+run_name: nov_24_30_hard_classifier_tuning_layer_16_activation_relu_alpha_1.0e-4_iter_500
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -159,7 +159,7 @@ zero_gate:
   mode: hard # hard or soft or hard_redistribute or local_redistribute
   hidden_layer_sizes: [16]
   activation: relu
-  alpha: ?
+  alpha: 1.0e-4
   max_iter: 500
   threshold: 0.3
 
