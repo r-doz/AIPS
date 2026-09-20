@@ -484,3 +484,10 @@ the four primary metrics in both windows and consistently improved accuracy
 and precision. Therefore, the remaining confidence-redistribution experiments
 use **threshold 0.3 and layer `[32]`**.
 
+I then tested `gamma` values 1 and 2 and redistribution scales 0.5 and 1. The
+change from `gamma = 1` to `gamma = 2` produced negligible differences, so I
+keep the simpler **gamma = 1**. Scale 0.5 improved correlation, MAE-OBS, and
+RMSE-OBS in May, but scale 1 was better on Wasserstein in May and on all four
+primary metrics in November. It also had the best two-window average for every
+primary metric. The selected configuration is therefore **gamma = 1, scale =
+1, threshold = 0.3, and layer `[32]`**.

@@ -66,6 +66,8 @@ used throughout the paper.
 | ConvLSTM | **-0.572** | 0.352 | **0.879** | 0.212 | 0.619 | 0.160 | **1.000** | 0.160 |
 | LGCP | -0.589 | 0.371 | 0.973 | 0.255 | 0.796 | 0.160 | **1.000** | 0.160 |
 | LGCP + Classifier H | -1.733 | **0.307** | 0.977 | 0.188 | **0.925** | **0.892** | 0.764 | **0.636** |
+| LGCP + Classifier HCR (original parameters) | -1.734 | 0.315 | 1.010 | 0.161 | 0.879 | **0.892** | 0.764 | **0.636** |
+| LGCP + Classifier HCR (gamma 1, scale 0.5) | -1.733 | 0.311 | 0.991 | 0.174 | 0.905 | **0.892** | 0.764 | **0.636** |
 | LGCP + Classifier HR | -1.144 | 0.336 | 1.037 | 0.136 | 0.796 | 0.641 | 0.873 | 0.293 |
 | LGCP + Classifier HLR | -1.149 | 0.337 | 1.039 | 0.136 | 0.796 | 0.641 | 0.873 | 0.293 |
 
@@ -80,12 +82,16 @@ used throughout the paper.
 | ConvLSTM | **-0.509** | 0.255 | **0.587** | 0.139 | 0.657 | 0.155 | **1.000** | 0.155 |
 | LGCP | -0.570 | 0.334 | 0.699 | 0.242 | **0.938** | 0.155 | **1.000** | 0.155 |
 | LGCP + Classifier H | -1.797 | 0.250 | 0.683 | 0.182 | 0.824 | **0.892** | 0.660 | **0.648** |
-| LGCP + Classifier HR | -1.613 | **0.239** | 0.604 | 0.115 | **0.938** | 0.618 | 0.698 | 0.243 |
+| LGCP + Classifier HCR (original parameters) | -1.772 | **0.233** | 0.637 | 0.145 | 0.904 | **0.892** | 0.660 | **0.648** |
+| LGCP + Classifier HCR (gamma 1, scale 0.5) | -1.782 | 0.241 | 0.658 | 0.163 | 0.867 | **0.892** | 0.660 | **0.648** |
+| LGCP + Classifier HR | -1.613 | 0.239 | 0.604 | 0.115 | **0.938** | 0.618 | 0.698 | 0.243 |
 | LGCP + Classifier HLR | -1.639 | 0.270 | 0.710 | 0.106 | **0.938** | 0.618 | 0.698 | 0.243 |
 
 **Bold** indicates the best value within each week. Lower values are better
 for MAE_obs, RMSE_obs, and Wasserstein; higher values are better for all other
 metrics. `Corr_delta` is the correlation of daily changes.
 
-Classifier abbreviations: H = hard, HR = hard redistribution, and HLR = hard
-local redistribution.
+Classifier abbreviations: H = hard, HCR = hard confidence redistribution, HR =
+hard redistribution, and HLR = hard local redistribution. Both HCR variants use
+threshold 0.3, layer `[32]`, and gamma 1; the original-parameters variant uses
+scale 1.
