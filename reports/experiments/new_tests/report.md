@@ -469,4 +469,18 @@ Conclusion:
 - A possible final refinement is to test 0.15, 0.175, 0.20, and 0.225 on
   additional validation windows. The optimum is likely to lie in this range.
 
+## Confidence-weighted hard redistribution
+
+The `confidence_redistribute` gate redistributes only a confidence-dependent
+part of the intensity removed by the hard classifier. It assigns this mass to
+accepted cells according to their LGCP intensity and classifier confidence.
+The first tests (`gamma = 1`, `scale = 1`) show that it is a useful compromise
+between the hard classifier and full hard redistribution.
+
+I compared the tuned classifier (`threshold = 0.2`, layer `[16]`) with the
+original classifier settings (`threshold = 0.3`, layer `[32]`) on May 5--11 and
+November 3--9. Excluding LL-OBS, the original settings were better on three of
+the four primary metrics in both windows and consistently improved accuracy
+and precision. Therefore, the remaining confidence-redistribution experiments
+use **threshold 0.3 and layer `[32]`**.
 

@@ -1,4 +1,4 @@
-# Experiment 1: spatial RBF(0.35) + RBF(0.01); fixed lengthscales.
+# Tuned LGCP with confidence-weighted classifier redistribution.
 # config/train_basic_lgcp_multi_kernel.yaml
 years: [2024, 2025]
 
@@ -29,8 +29,8 @@ covariate_cols:
 split_strategy: fixed_test_window
 #split_strategy: chronological
 #split_strategy: random_day
-test_start_date: "2025-05-05"
-test_end_date: "2025-05-11"
+test_start_date: "2025-11-03"
+test_end_date: "2025-11-09"
 train_fraction: 0.9
 data_seed: 42
 
@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: may_5_11_lgcp_1_spatial_kernel
+run_name: nov_3_9_confidence_redistribute
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -69,18 +69,18 @@ model:
   spatial_kernels:
   - type: RBF
     hyperparameters:
-      lengthscale: 0.1
+      lengthscale: 0.2
       variance: 2.0
     trainable:
       lengthscale: false
       variance: true
-  #- type: RBF
-  #  hyperparameters:
-  #    lengthscale: 0.01
-  #    variance: 0.5
-  #  trainable:
-  #    lengthscale: false
-  #    variance: true
+  - type: RBF
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
 
   temporal_kernels:
   - type: RBF
@@ -94,11 +94,11 @@ model:
     hyperparameters:
         lengthscale: 0.8
         variance: 0.2
-        period_days: 7 # calendar days; converted using the training time scaler
+        period_days: 14 # calendar days; converted using the training time scaler
     trainable:
         lengthscale: false
         variance: true
-        period: false
+        period: true
   #- type: periodic
   #  hyperparameters:
   #      lengthscale: 0.50
@@ -155,13 +155,15 @@ lag_features:
 # classifier calls "zero" are forced to 0, correcting the LGCP's tendency
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
-  enabled: false 
-  mode: hard_redistribute # hard or soft or hard_redistribute
-  hidden_layer_sizes: [32]
+  enabled: true
+  mode: confidence_redistribute # partially recover rejected mass using classifier confidence
+  hidden_layer_sizes: [16]
   activation: relu
   alpha: 1.0e-4
   max_iter: 500
-  threshold: 0.3
+  threshold: 0.2
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.

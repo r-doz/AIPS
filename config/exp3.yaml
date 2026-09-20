@@ -1,4 +1,4 @@
-# Experiment 1: spatial RBF(0.35) + RBF(0.01); fixed lengthscales.
+# Tuned LGCP with confidence-weighted classifier redistribution.
 # config/train_basic_lgcp_multi_kernel.yaml
 years: [2024, 2025]
 
@@ -51,7 +51,7 @@ last_available_mode: one_step_ahead
 global_cell_mean_mode: expanding
 #global_cell_mean_mode: frozen_train
 
-run_name: nov_3_9_hard_classifier_tuned
+run_name: nov_3_9_confidence_redistribute_gamma1_scale0.5
 last_available_run_name: dataseed42_npseed0_onestep
 #last_available_run_name: dataseed42_npseed0_frozen
 global_mean_run_name: dataseed42_npseed0
@@ -155,13 +155,15 @@ lag_features:
 # classifier calls "zero" are forced to 0, correcting the LGCP's tendency
 # to smooth a small positive rate into always-zero cells/dates.
 zero_gate:
-  enabled: true 
-  mode: hard # hard or soft or hard_redistribute or local_redistribute
-  hidden_layer_sizes: [16]
+  enabled: true
+  mode: confidence_redistribute # partially recover rejected mass using classifier confidence
+  hidden_layer_sizes: [32]
   activation: relu
   alpha: 1.0e-4
   max_iter: 500
-  threshold: 0.2
+  threshold: 0.3
+  redistribution_gamma: 1.0
+  redistribution_scale: 0.5
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
