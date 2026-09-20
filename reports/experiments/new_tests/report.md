@@ -379,23 +379,94 @@ Results:
 Conclusion:
 - I chose 500 for simplicity 
 
+## Threshold 
 
+Given the current configuration, I tested six thresholds: 0.1, 0.2, 0.3,
+0.4, 0.5, and 0.6. The experiments were evaluated on 24-30 May 2025 and
+24-30 November 2025.
 
+The primary selection metrics are daily correlation (`daily_delta_corr`),
+MAE-OBS, RMSE-OBS, and Wasserstein distance. LL-OBS, accuracy, precision, and
+recall are secondary metrics.
 
+Results: 24-30 May 2025
 
+| Threshold | Correlation (higher is better) | MAE-OBS | RMSE-OBS | Wasserstein |
+|---:|---:|---:|---:|---:|
+| 0.1 | **0.3993** | 0.3878 | **1.1885** | 0.2475 |
+| 0.2 | 0.3002 | 0.3798 | 1.1971 | **0.2430** |
+| 0.3 | 0.3062 | **0.3777** | 1.1978 | 0.2441 |
+| 0.4 | 0.2811 | 0.3791 | 1.2041 | 0.2475 |
+| 0.5 | 0.2149 | 0.3898 | 1.2335 | 0.2644 |
+| 0.6 | 0.1172 | 0.3965 | 1.2517 | 0.2895 |
 
+| Threshold | LL-OBS (higher is better) | Accuracy | Precision | Recall |
+|---:|---:|---:|---:|---:|
+| 0.1 | **-0.8413** | 0.7901 | 0.4769 | **0.9394** |
+| 0.2 | -1.6599 | 0.8746 | 0.6533 | 0.7424 |
+| 0.3 | -1.8190 | 0.8921 | 0.7302 | 0.6970 |
+| 0.4 | -2.1075 | **0.8980** | 0.7719 | 0.6667 |
+| 0.5 | -2.9324 | 0.8892 | 0.7917 | 0.5758 |
+| 0.6 | -3.7415 | 0.8805 | **0.8378** | 0.4697 |
 
+Results: 24-30 November 2025
 
+| Threshold | Correlation (higher is better) | MAE-OBS | RMSE-OBS | Wasserstein |
+|---:|---:|---:|---:|---:|
+| 0.1 | 0.7881 | 0.4046 | **1.5147** | 0.2371 |
+| 0.2 | **0.8366** | **0.3824** | 1.5362 | **0.2019** |
+| 0.3 | 0.8330 | 0.3843 | 1.5428 | 0.2045 |
+| 0.4 | 0.8163 | 0.3886 | 1.5907 | 0.2199 |
+| 0.5 | 0.7940 | 0.4005 | 1.6178 | 0.2475 |
+| 0.6 | 0.7559 | 0.4143 | 1.6356 | 0.2651 |
 
+| Threshold | LL-OBS (higher is better) | Accuracy | Precision | Recall |
+|---:|---:|---:|---:|---:|
+| 0.1 | **-1.4243** | 0.7784 | 0.3168 | **0.8205** |
+| 0.2 | -2.7933 | 0.9125 | 0.6047 | 0.6667 |
+| 0.3 | -3.2524 | **0.9155** | **0.6389** | 0.5897 |
+| 0.4 | -4.7576 | 0.9096 | 0.6250 | 0.5128 |
+| 0.5 | -5.6451 | 0.9038 | 0.6364 | 0.3590 |
+| 0.6 | -6.2972 | 0.8950 | 0.5882 | 0.2564 |
 
+Comparison:
 
+An equal-weight rank over the four primary metrics gives the following result
+(a lower rank sum is better):
 
+| Threshold | May rank sum | November rank sum | Combined rank sum |
+|---:|---:|---:|---:|
+| 0.1 | 9 | 15 | 24 |
+| **0.2** | 9 | **5** | **14** |
+| 0.3 | **8** | 9 | 17 |
+| 0.4 | 14 | 13 | 27 |
+| 0.5 | 20 | 18 | 38 |
+| 0.6 | 24 | 24 | 48 |
 
+The results show a clear deterioration for thresholds of 0.4 and above.
+Threshold 0.1 gives the best RMSE-OBS in both windows, as well as the best
+LL-OBS and recall. However, it has substantially lower accuracy and precision.
+Thresholds 0.2 and 0.3 provide the strongest balance. In particular, 0.2 is
+best on three of the four primary metrics in November and remains competitive
+in May. Threshold 0.3 has the best MAE-OBS in May and slightly better
+classification accuracy and precision, but is less consistent across the two
+windows.
 
+LL-OBS decreases rapidly as the threshold increases because hard gating can
+set the predicted intensity to zero for an observed positive cell. Such false
+negatives receive a very large likelihood penalty. This also explains why the
+low threshold and its high recall perform particularly well on LL-OBS.
 
+Conclusion:
 
-
-
-
+- I select **threshold = 0.2** because it is the most robust choice across the
+  two windows according to the four primary metrics.
+- Threshold 0.1 would be preferable if recall, LL-OBS, or the cost of missing
+  active cells became the main concern. The price is on accuracy and precision. 
+- Threshold 0.3 would be preferable only if precision and false-positive
+  reduction were given more importance.
+- Thresholds greater than or equal to 0.4 are discarded.
+- A possible final refinement is to test 0.15, 0.175, 0.20, and 0.225 on
+  additional validation windows. The optimum is likely to lie in this range.
 
 
