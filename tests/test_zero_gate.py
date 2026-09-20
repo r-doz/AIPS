@@ -74,6 +74,37 @@ class ZeroGateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 self.apply(rates, mode='hard_redistribute', dates=['2025-05-01'] * 4)
 
+    def test_confidence_redistribution_uses_source_and_recipient_confidence(self):
+        result = self.apply(
+            mode='confidence_redistribute', threshold=0.5,
+            dates=['2025-05-01'] * 4,
+            redistribution_gamma=1, redistribution_scale=1,
+        )
+        # Recovered mass: 2*(0/.5) + 4*(.25/.5) = 2. Recipient weights:
+        # 6*.5 and 8*1, hence additions 6/11 and 16/11.
+        np.testing.assert_allclose(result, [0, 0, 6 + 6/11, 8 + 16/11])
+        self.assertAlmostEqual(result.sum(), 16)
+        np.testing.assert_array_equal(self.rates, [2, 4, 6, 8])
+
+    def test_confidence_redistribution_scale_and_day_isolation(self):
+        result = self.apply(
+            mode='confidence_redistribute', threshold=0.5,
+            dates=['2025-05-01', '2025-05-01', '2025-05-02', '2025-05-02'],
+            redistribution_gamma=0, redistribution_scale=0.5,
+        )
+        # Day one has no accepted cells and therefore follows hard gating.
+        # Day two has no rejected mass, so its accepted rates are unchanged.
+        np.testing.assert_allclose(result, [0, 0, 6, 8])
+
+    def test_confidence_redistribution_validates_parameters(self):
+        dates = ['2025-05-01'] * 4
+        for options in (
+            {'threshold': 0}, {'redistribution_gamma': -1},
+            {'redistribution_scale': -0.1}, {'redistribution_scale': 1.1},
+        ):
+            with self.assertRaises(ValueError):
+                self.apply(mode='confidence_redistribute', dates=dates, **options)
+
     def test_local_uses_diagonal_neighbour_and_nearest_fallback(self):
         # Rejected cell 0 has a diagonal neighbour; cell 1 is isolated.
         grid = [[0, 0], [5, 0], [1, 1], [4, 0]]

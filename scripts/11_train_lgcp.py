@@ -567,8 +567,19 @@ def main(cfg: dict):
             allocation_cfg["totals_csv"], float(allocation_cfg.get("gamma", 1.0))
         )
     gate_cfg = cfg.get("zero_gate") or {}
-    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft", "hard_redistribute", "local_redistribuite", "local_redistribute"}:
-        raise ValueError("zero_gate.mode must be 'hard', 'soft', 'hard_redistribute', or 'local_redistribuite'.")
+    valid_gate_modes = {"hard", "soft", "hard_redistribute", "local_redistribuite", "local_redistribute", "confidence_redistribute"}
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in valid_gate_modes:
+        raise ValueError("zero_gate.mode must be 'hard', 'soft', 'hard_redistribute', 'local_redistribuite', or 'confidence_redistribute'.")
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode") == "confidence_redistribute":
+        gamma = float(gate_cfg.get("redistribution_gamma", 1))
+        scale = float(gate_cfg.get("redistribution_scale", 1))
+        threshold = float(gate_cfg.get("threshold", 0.5))
+        if not np.isfinite(gamma) or gamma < 0:
+            raise ValueError("zero_gate.redistribution_gamma must be finite and nonnegative.")
+        if not np.isfinite(scale) or not 0 <= scale <= 1:
+            raise ValueError("zero_gate.redistribution_scale must be between 0 and 1.")
+        if not np.isfinite(threshold) or not 0 < threshold <= 1:
+            raise ValueError("confidence redistribution requires 0 < zero_gate.threshold <= 1.")
     if gate_cfg.get("enabled", False) and gate_cfg.get("mode") in {"local_redistribuite", "local_redistribute"}:
         radius = float(gate_cfg.get("local_radius", 1))
         if not np.isfinite(radius) or radius < 0:
@@ -709,6 +720,8 @@ def main(cfg: dict):
             dates=test_dates,
             grid_coords=local_grid_coords,
             local_radius=float(zero_gate_cfg.get("local_radius", 1)),
+            redistribution_gamma=float(zero_gate_cfg.get("redistribution_gamma", 1)),
+            redistribution_scale=float(zero_gate_cfg.get("redistribution_scale", 1)),
         )
         n_gated = int((rate_mean_test == 0).sum())
         print(f"  Zero-gate ({zero_gate_cfg.get('mode', 'hard')}): "

@@ -104,6 +104,8 @@ def apply_zero_gate(
     dates=None,
     grid_coords=None,
     local_radius: float = 1,
+    redistribution_gamma: float = 1.0,
+    redistribution_scale: float = 1.0,
 ) -> np.ndarray:
     """
     Return a new array of gated rates. Hard mode zeros entries where
@@ -119,9 +121,24 @@ def apply_zero_gate(
     original rates, or equally when all are zero. With no accepted cells, keep
     the original daily predictions and warn, as in global redistribution.
     grid_coords must contain spatial grid indices, never standardized features.
+
+    confidence_redistribute zeros rejected cells but recovers only a fraction
+    ``redistribution_scale * P(nonzero) / threshold`` of each rejected rate.
+    Recovered mass is assigned, within each day, to accepted cells in
+    proportion to ``rate * P(nonzero) ** redistribution_gamma``. Thus a
+    confident rejection contributes little mass, while confident recipients
+    receive more of it. Unlike hard_redistribute, this mode does not force the
+    original daily total to be preserved.
     """
-    if mode not in {"hard", "soft", "hard_redistribute", "local_redistribuite", "local_redistribute"}:
-        raise ValueError("zero_gate.mode must be 'hard', 'soft', 'hard_redistribute', or 'local_redistribuite'.")
+    valid_modes = {
+        "hard", "soft", "hard_redistribute", "local_redistribuite",
+        "local_redistribute", "confidence_redistribute",
+    }
+    if mode not in valid_modes:
+        raise ValueError(
+            "zero_gate.mode must be 'hard', 'soft', 'hard_redistribute', "
+            "'local_redistribuite', or 'confidence_redistribute'."
+        )
     X = build_zero_gate_features(coords, covs)
     nonzero_class_idx = list(clf.classes_).index(1)
     proba_nonzero = clf.predict_proba(X)[:, nonzero_class_idx]
@@ -134,7 +151,11 @@ def apply_zero_gate(
         weights = proba_nonzero.reshape((-1,) + (1,) * (gated.ndim - 1))
         return gated * weights
     gated[~is_nonzero_pred] = 0.0
-    if mode in {"hard_redistribute", "local_redistribuite", "local_redistribute"}:
+    redistribute_modes = {
+        "hard_redistribute", "local_redistribuite", "local_redistribute",
+        "confidence_redistribute",
+    }
+    if mode in redistribute_modes:
         original = np.asarray(rate_mean, dtype=float)
         if original.ndim > 2 or (original.ndim == 2 and original.shape[1] != 1):
             raise ValueError("Redistribution requires one scalar rate per cell/date.")
@@ -145,6 +166,40 @@ def apply_zero_gate(
         days = pd.DatetimeIndex(pd.to_datetime(dates)).normalize()
         if days.isna().any():
             raise ValueError("Redistribution dates must not be missing.")
+        if mode == "confidence_redistribute":
+            gamma = float(redistribution_gamma)
+            scale = float(redistribution_scale)
+            if not np.isfinite(threshold) or not 0 < threshold <= 1:
+                raise ValueError("confidence redistribution requires 0 < threshold <= 1.")
+            if not np.isfinite(gamma) or gamma < 0:
+                raise ValueError("zero_gate.redistribution_gamma must be finite and nonnegative.")
+            if not np.isfinite(scale) or not 0 <= scale <= 1:
+                raise ValueError("zero_gate.redistribution_scale must be between 0 and 1.")
+            flat_original = original.reshape(-1)
+            flat_gated = gated.reshape(-1)
+            for day in days.unique():
+                mask = np.asarray(days == day)
+                accepted = mask & is_nonzero_pred
+                rejected = mask & ~is_nonzero_pred
+                if not accepted.any():
+                    continue
+                recovered = np.sum(
+                    flat_original[rejected]
+                    * scale
+                    * proba_nonzero[rejected]
+                    / threshold
+                )
+                if recovered == 0:
+                    continue
+                recipient_weights = (
+                    flat_original[accepted]
+                    * np.power(proba_nonzero[accepted], gamma)
+                )
+                if recipient_weights.sum() == 0:
+                    recipient_weights = np.power(proba_nonzero[accepted], gamma)
+                recipient_weights = recipient_weights / recipient_weights.sum()
+                flat_gated[accepted] += recovered * recipient_weights
+            return gated
         local = mode != "hard_redistribute"
         if local:
             grid = np.asarray(grid_coords, dtype=float)

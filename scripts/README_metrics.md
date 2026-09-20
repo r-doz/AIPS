@@ -94,3 +94,21 @@ Daily predicted totals are preserved. If the classifier accepts no cells on a
 date, original predictions for that date are retained with a warning, matching
 the existing global redistribution fallback. Existing configs keep their chosen
 mode; enabling this option does not require changing the kernel configuration.
+
+## Confidence-weighted classifier redistribution (LGCP)
+
+```yaml
+zero_gate:
+  enabled: true
+  mode: confidence_redistribute
+  threshold: 0.2
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0
+```
+
+For a rejected cell with LGCP rate `r`, classifier probability `p`, and
+threshold `t`, this mode recovers `r * redistribution_scale * p / t`. The
+unrecovered rate is discarded. Within each date, recovered mass is assigned to
+accepted cells using weights `r * p ** redistribution_gamma`. It therefore
+does not force preservation of an unreliable LGCP daily total. If a date has
+no accepted cells, hard-gate behavior is retained and its predictions are zero.

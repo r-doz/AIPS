@@ -158,6 +158,8 @@ zero_gate:
   enabled: true
   # hard: zero rejected cells; soft: multiply by P(nonzero).
   # hard_redistribute: preserve each day's LGCP total across accepted cells.
+  # confidence_redistribute: recover rejected mass according to source
+  # confidence, then weight accepted recipients by rate * confidence^gamma.
   # If no positive rate survives, retain the original rates for that day.
   # External daily_allocation totals, if enabled, override the LGCP total afterward.
   mode: hard # hard or soft or hard_redistribuite 
@@ -166,6 +168,9 @@ zero_gate:
   alpha: 1.0e-4
   max_iter: 500
   threshold: 0.3
+  # Used only by confidence_redistribute.
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0
 
 # Supported kernel types: RBF, periodic, RationalQuadratic
 # Within each dimension, kernels are summed.
