@@ -38,7 +38,7 @@ kernel_size: 3       # smaller than the paper's 9x9 -- our grid is ~14x7, not ba
 dropout: 0.2
 
 # --- training ---
-lr: 0.001
+lr: 0.01  # convlstm_tuning grid search (seq_length x lr): best avg mean_ll_obs
 num_epochs: 300
 torch_seed: 0
 device: cpu
