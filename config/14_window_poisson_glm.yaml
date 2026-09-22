@@ -14,8 +14,8 @@ split_strategy: fixed_test_window
 train_fraction: 0.9
 data_seed: 42
 
-test_start_date: "2025-11-01"
-test_end_date: "2025-11-07"
+test_start_date: "2025-05-05"
+test_end_date: "2025-05-11"
 
 # --- window features ---
 window_size: 7 # 7 or 14
@@ -39,6 +39,6 @@ max_iter: 1000
 standardize_features: true
 
 # --- output ---
-report_root: reports/experiments
+report_root: reports/experiments/final_experiments
 model_family: new_tests
-run_name: window_poisson_glm
+run_name: may_5_11_window_poisson_glm_window_7

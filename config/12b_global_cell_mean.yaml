@@ -7,12 +7,12 @@ cell_cols: [longitude, latitude]
 
 # Same evaluation window as exp1.yaml.
 split_strategy: fixed_test_window
-test_start_date: "2025-11-03"
-test_end_date: "2025-11-09"
+test_start_date: "2025-05-05"
+test_end_date: "2025-05-11"
 
 # Update each cell's mean with observations from preceding test days.
 cell_mean_mode: expanding # Alternative: frozen_train
 
 report_root: reports/experiments/final_experiments
-model_family: global_cell_mean_poisson
-run_name: 2024+2025_nov_3_9_expanding
+model_family: new_tests
+run_name: may_5_11_global_cell_mean_expanding

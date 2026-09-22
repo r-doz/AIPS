@@ -36,7 +36,7 @@ from src.data.multi_year import years_label
 from src.models.data_pp_lgcp import prepare_data, compute_meta, make_day_split_masks
 from src.models.metrics_lgcp import evaluate_metrics, evaluate_first_three_days
 from src.models.lgcp import SparseLGCP
-from src.models.zero_gate import train_zero_gate, apply_zero_gate
+from src.models.zero_gate import train_zero_gate, apply_zero_gate, cell_grid_coordinates
 from src.models.daily_allocation import load_daily_totals, allocate_daily_totals, validate_conflict_policy
 from src.visualization.viz_lgcp import (
     plot_loss,
@@ -567,8 +567,23 @@ def main(cfg: dict):
             allocation_cfg["totals_csv"], float(allocation_cfg.get("gamma", 1.0))
         )
     gate_cfg = cfg.get("zero_gate") or {}
-    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in {"hard", "soft", "hard_redistribute"}:
-        raise ValueError("zero_gate.mode must be 'hard', 'soft', or 'hard_redistribute'.")
+    valid_gate_modes = {"hard", "soft", "hard_redistribute", "local_redistribuite", "local_redistribute", "confidence_redistribute"}
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode", "hard") not in valid_gate_modes:
+        raise ValueError("zero_gate.mode must be 'hard', 'soft', 'hard_redistribute', 'local_redistribuite', or 'confidence_redistribute'.")
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode") == "confidence_redistribute":
+        gamma = float(gate_cfg.get("redistribution_gamma", 1))
+        scale = float(gate_cfg.get("redistribution_scale", 1))
+        threshold = float(gate_cfg.get("threshold", 0.5))
+        if not np.isfinite(gamma) or gamma < 0:
+            raise ValueError("zero_gate.redistribution_gamma must be finite and nonnegative.")
+        if not np.isfinite(scale) or not 0 <= scale <= 1:
+            raise ValueError("zero_gate.redistribution_scale must be between 0 and 1.")
+        if not np.isfinite(threshold) or not 0 < threshold <= 1:
+            raise ValueError("confidence redistribution requires 0 < zero_gate.threshold <= 1.")
+    if gate_cfg.get("enabled", False) and gate_cfg.get("mode") in {"local_redistribuite", "local_redistribute"}:
+        radius = float(gate_cfg.get("local_radius", 1))
+        if not np.isfinite(radius) or radius < 0:
+            raise ValueError("zero_gate.local_radius must be finite and nonnegative.")
     set_seeds(cfg.get("np_seed", 0))
     torch.set_default_dtype(torch.float32)
 
@@ -633,6 +648,11 @@ def main(cfg: dict):
     )
 
     test_dates = df.loc[test_mask, "date"].values
+    local_grid_coords = (
+        cell_grid_coordinates(df[["longitude", "latitude"]].values)[test_mask]
+        if gate_cfg.get("enabled", False) and gate_cfg.get("mode") in {"local_redistribuite", "local_redistribute"}
+        else None
+    )
 
     print(
         f"  Train: {train_coords.shape[0]:,} obs   "
@@ -698,6 +718,10 @@ def main(cfg: dict):
             threshold=float(zero_gate_cfg.get("threshold", 0.5)),
             mode=zero_gate_cfg.get("mode", "hard"),
             dates=test_dates,
+            grid_coords=local_grid_coords,
+            local_radius=float(zero_gate_cfg.get("local_radius", 1)),
+            redistribution_gamma=float(zero_gate_cfg.get("redistribution_gamma", 1)),
+            redistribution_scale=float(zero_gate_cfg.get("redistribution_scale", 1)),
         )
         n_gated = int((rate_mean_test == 0).sum())
         print(f"  Zero-gate ({zero_gate_cfg.get('mode', 'hard')}): "
