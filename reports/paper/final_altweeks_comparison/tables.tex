@@ -1,0 +1,58 @@
+\begin{table}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccc}
+\toprule
+Week & Method & LL$_{\text{obs}}$ & MAE$_{\text{obs}}$ & RMSE$_{\text{obs}}$ & Wasserstein & Corr$_{\Delta}$ & Accuracy & Recall & Precision \\
+\midrule
+\multirow{7}{*}{May 5--11} & Last Available Poisson & -3.390 & 0.388 & 1.136 & \textbf{0.032} & 0.049 & 0.872 & 0.545 & 0.612 \\
+ & Global Cell Mean Poisson & -0.634 & 0.396 & 0.995 & 0.322 & -0.667 & 0.283 & \textbf{1.000} & 0.183 \\
+ & Window Poisson GLM & -0.730 & 0.420 & 1.005 & 0.388 & 0.648 & 0.160 & \textbf{1.000} & 0.160 \\
+ & GNN & -0.637 & 0.377 & 1.003 & 0.226 & 0.910 & 0.160 & \textbf{1.000} & 0.160 \\
+ & ConvLSTM & \textbf{-0.572} & 0.352 & \textbf{0.879} & 0.212 & 0.619 & 0.160 & \textbf{1.000} & 0.160 \\
+ & LGCP & -0.589 & 0.371 & 0.973 & 0.255 & 0.796 & 0.160 & \textbf{1.000} & 0.160 \\
+ & LGCP + Classifier & -1.733 & \textbf{0.307} & 0.977 & 0.188 & \textbf{0.925} & \textbf{0.892} & 0.764 & \textbf{0.636} \\
+\midrule
+\multirow{7}{*}{Nov 3--9} & Last Available Poisson & -2.473 & 0.318 & 0.788 & \textbf{0.009} & 0.295 & 0.866 & 0.547 & 0.569 \\
+ & Global Cell Mean Poisson & -0.791 & 0.433 & 0.876 & 0.269 & -0.243 & 0.257 & \textbf{1.000} & 0.172 \\
+ & Window Poisson GLM & -0.613 & 0.405 & 0.764 & 0.372 & 0.897 & 0.155 & \textbf{1.000} & 0.155 \\
+ & GNN & -0.552 & 0.346 & 0.736 & 0.168 & 0.884 & 0.155 & \textbf{1.000} & 0.155 \\
+ & ConvLSTM & \textbf{-0.509} & 0.255 & \textbf{0.587} & 0.139 & 0.657 & 0.155 & \textbf{1.000} & 0.155 \\
+ & LGCP & -0.570 & 0.334 & 0.699 & 0.242 & \textbf{0.938} & 0.155 & \textbf{1.000} & 0.155 \\
+ & LGCP + Classifier & -1.797 & \textbf{0.250} & 0.683 & 0.182 & 0.824 & \textbf{0.892} & 0.660 & \textbf{0.648} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Model results on the full test week (2025-05-05--11 and 2025-11-03--09), at the same tuned hyperparameters used throughout the paper.}
+\label{tab:results-altweeks-7day}
+\end{table}
+
+
+\begin{table}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llcccccccc}
+\toprule
+Week & Method & LL$_{\text{obs}}$ & MAE$_{\text{obs}}$ & RMSE$_{\text{obs}}$ & Wasserstein & Corr$_{\Delta}$ & Accuracy & Recall & Precision \\
+\midrule
+\multirow{7}{*}{May 5--11} & Last Available Poisson & -4.820 & \textbf{0.320} & 1.122 & 0.252 & -- & \textbf{0.891} & 0.423 & \textbf{0.917} \\
+ & Global Cell Mean Poisson & -0.703 & 0.420 & 1.080 & 0.317 & -- & 0.299 & \textbf{1.000} & 0.202 \\
+ & Window Poisson GLM & -0.845 & 0.487 & 1.124 & 0.447 & -- & 0.177 & \textbf{1.000} & 0.177 \\
+ & GNN & -0.746 & 0.464 & 1.142 & 0.181 & -- & 0.177 & \textbf{1.000} & 0.177 \\
+ & ConvLSTM & \textbf{-0.658} & 0.442 & \textbf{1.043} & 0.229 & -- & 0.177 & \textbf{1.000} & 0.177 \\
+ & LGCP & -0.682 & 0.457 & 1.125 & 0.275 & -- & 0.177 & \textbf{1.000} & 0.177 \\
+ & LGCP + Classifier & -1.087 & 0.356 & 1.108 & \textbf{0.179} & -- & 0.857 & 0.885 & 0.561 \\
+\midrule
+\multirow{7}{*}{Nov 3--9} & Last Available Poisson & -4.481 & 0.456 & 0.951 & \textbf{0.143} & -- & 0.796 & 0.441 & 0.577 \\
+ & Global Cell Mean Poisson & -1.099 & 0.524 & 1.025 & 0.348 & -- & 0.333 & \textbf{1.000} & 0.258 \\
+ & Window Poisson GLM & -0.912 & 0.590 & 0.961 & 0.528 & -- & 0.231 & \textbf{1.000} & 0.231 \\
+ & GNN & -0.815 & 0.531 & 0.907 & 0.234 & -- & 0.231 & \textbf{1.000} & 0.231 \\
+ & ConvLSTM & \textbf{-0.761} & \textbf{0.367} & \textbf{0.706} & 0.187 & -- & 0.231 & \textbf{1.000} & 0.231 \\
+ & LGCP & -0.841 & 0.482 & 0.849 & 0.323 & -- & 0.231 & \textbf{1.000} & 0.231 \\
+ & LGCP + Classifier & -2.814 & 0.378 & 0.826 & 0.255 & -- & \textbf{0.816} & 0.647 & \textbf{0.595} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Model results on the first 3 days of the test week (2025-05-05--07 and 2025-11-03--05), at the same tuned hyperparameters used throughout the paper. Corr$_{\Delta}$ is undefined over a 3-day window (fewer than 3 daily deltas) and shown as `--'.}
+\label{tab:results-altweeks-3day}
+\end{table}
