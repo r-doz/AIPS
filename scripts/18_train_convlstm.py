@@ -318,6 +318,8 @@ def main(cfg: dict):
         yaml.dump(cfg, f, sort_keys=False)
 
     torch.manual_seed(int(cfg.get("torch_seed", 0)))
+    torch.set_num_threads(1)
+    torch.use_deterministic_algorithms(True)
     device = torch.device(cfg.get("device", "cpu"))
 
     # ---- Data ------------------------------------------------------------

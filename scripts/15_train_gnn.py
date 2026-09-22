@@ -379,6 +379,8 @@ def main(cfg: dict):
     print(f"Experiment parameters saved → {params_path}")
 
     torch.manual_seed(int(cfg.get("torch_seed", 0)))
+    torch.set_num_threads(1)
+    torch.use_deterministic_algorithms(True)
     device = torch.device(cfg.get("device", "cpu"))
 
     # ---- Data ----------------------------------------------------------------
