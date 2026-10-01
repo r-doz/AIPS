@@ -157,11 +157,11 @@ lag_features:
 zero_gate:
   enabled: true
   mode: confidence_redistribute # partially recover rejected mass using classifier confidence
-  hidden_layer_sizes: [32]
-  activation: relu
-  alpha: 1.0e-4
+  hidden_layer_sizes: [16]
+  activation: tanh
+  alpha: 1.0e-5
   max_iter: 500
-  threshold: 0.3
+  threshold: 0.1
   redistribution_gamma: 1.0
   redistribution_scale: 1.0
 

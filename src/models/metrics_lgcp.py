@@ -44,14 +44,18 @@ def evaluate_activity_metrics(y_true, rate_mean) -> dict:
     if observed.shape != predicted.shape:
         raise ValueError("Observed counts and predicted rates must have equal size.")
     if not observed.size:
-        return dict.fromkeys(("accuracy", "precision", "recall"), float("nan"))
+        return dict.fromkeys(("accuracy", "precision", "recall", "f1"), float("nan"))
     tp = int(np.count_nonzero(observed & predicted))
     predicted_positive = int(np.count_nonzero(predicted))
     observed_positive = int(np.count_nonzero(observed))
+    precision = float(tp / predicted_positive) if predicted_positive else 0.0
+    recall = float(tp / observed_positive) if observed_positive else 0.0
+    f1 = float(2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
     return {
         "accuracy": float(np.mean(observed == predicted)),
-        "precision": float(tp / predicted_positive) if predicted_positive else 0.0,
-        "recall": float(tp / observed_positive) if observed_positive else 0.0,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
     }
 
 
@@ -164,7 +168,7 @@ def evaluate_metrics(
     mae_obs     : mean absolute error per observation/cell
     rmse_obs    : root mean squared error per observation/cell
     wasserstein : 1-Wasserstein distance between cell-day value distributions
-    accuracy, precision, recall : binary activity (> 0), per observation/cell;
+    accuracy, precision, recall, f1 : binary activity (> 0), per observation/cell;
         undefined precision/recall are 0 (see evaluate_activity_metrics)
 
     Daily-level metrics

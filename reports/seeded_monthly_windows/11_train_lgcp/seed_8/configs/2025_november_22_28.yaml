@@ -1,0 +1,105 @@
+years:
+- 2024
+- 2025
+parquet_path: data/processed/cpr_gfw.parquet
+gulf_csv_path: data/raw/ts_gulf_coords.csv
+covariate_cols:
+- chl
+- thetao
+- fishing_block
+- is_holiday
+- is_weekend
+- cell_lag_1
+- cell_lag_7
+split_strategy: fixed_test_window
+test_start_date: '2025-11-22'
+test_end_date: '2025-11-28'
+train_fraction: 0.9
+data_seed: 8
+model_family: 2025_november_22_28
+last_available_mode: one_step_ahead
+global_cell_mean_mode: expanding
+run_name: 2025_november_22_28
+last_available_run_name: dataseed42_npseed0_onestep
+global_mean_run_name: dataseed42_npseed0
+global_cell_mean_run_name: dataseed42_npseed0
+num_steps: 5000
+M_inducing: 300
+np_seed: 8
+model:
+  spatial_composition: sum
+  temporal_composition: sum
+  spatial_kernels:
+  - type: RBF
+    hyperparameters:
+      lengthscale: 0.2
+      variance: 2.0
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: RBF
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
+  temporal_kernels:
+  - type: RBF
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: periodic
+    hyperparameters:
+      lengthscale: 0.8
+      variance: 0.2
+      period_days: 14
+    trainable:
+      lengthscale: false
+      variance: true
+      period: true
+kernel_noise:
+  value: 0.001
+  trainable: false
+lag_features:
+  enabled: true
+  mode: observed_past
+  target_col: ais_vessels_count
+  date_col: date
+  cell_cols:
+  - longitude
+  - latitude
+  cell_lags:
+  - 1
+  - 7
+  cell_rolling_windows:
+  - 7
+  daily_total_lags:
+  - 1
+  - 7
+  daily_total_rolling_windows:
+  - 7
+  fillna_value: 0.0
+zero_gate:
+  enabled: true
+  mode: confidence_redistribute
+  hidden_layer_sizes:
+  - 16
+  activation: tanh
+  alpha: 1.0e-05
+  max_iter: 500
+  threshold: 0.1
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0
+lr: 0.001
+minibatch: 1024
+num_mc: 32
+grad_clip: 10.0
+device: cpu
+num_pred_samples: 300
+num_vis_samples: 500
+report_root: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows/11_train_lgcp/seed_8/runs
+log_every: 100

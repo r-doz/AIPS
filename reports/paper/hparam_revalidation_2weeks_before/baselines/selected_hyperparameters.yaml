@@ -1,0 +1,20 @@
+test_weeks:
+- label: before_may_w1
+  test_start: '2025-04-21'
+  test_end: '2025-04-27'
+- label: before_may_w2
+  test_start: '2025-04-28'
+  test_end: '2025-05-04'
+- label: before_nov_w1
+  test_start: '2025-10-20'
+  test_end: '2025-10-26'
+- label: before_nov_w2
+  test_start: '2025-10-27'
+  test_end: '2025-11-02'
+glm:
+  window_size: 14
+  poisson_alpha: 0.01
+gnn:
+  hidden_dim: 32
+  num_layers: 2
+  lr: 0.1

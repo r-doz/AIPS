@@ -585,6 +585,8 @@ def main(cfg: dict):
         if not np.isfinite(radius) or radius < 0:
             raise ValueError("zero_gate.local_radius must be finite and nonnegative.")
     set_seeds(cfg.get("np_seed", 0))
+    torch.set_num_threads(1)
+    torch.use_deterministic_algorithms(True)
     torch.set_default_dtype(torch.float32)
 
     out_dir = (
@@ -707,6 +709,22 @@ def main(cfg: dict):
     )
 
     ungated_rate_mean_test = rate_mean_test.copy()
+
+    cache_path = cfg.get("cache_pregate_path")
+    if cache_path:
+        cache_grid_coords = cell_grid_coordinates(df[["longitude", "latitude"]].values)[test_mask]
+        Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
+        np.savez(
+            cache_path,
+            train_coords=train_coords, train_covs=train_covs, train_y=train_y,
+            test_coords=test_coords, test_covs=test_covs, test_y=test_y,
+            test_dates=test_dates.astype("datetime64[ns]"),
+            local_grid_coords=cache_grid_coords,
+            ungated_rate_mean_test=ungated_rate_mean_test,
+            np_seed=cfg.get("np_seed", 0),
+        )
+        print(f"Pre-gate cache saved → {cache_path}")
+
     zero_gate_cfg = cfg.get("zero_gate") or {}
     if zero_gate_cfg.get("enabled", False):
         print("Training zero-inflation gate classifier …")

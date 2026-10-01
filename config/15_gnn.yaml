@@ -55,8 +55,8 @@ lag_features:
 adjacency: queen  # "rook" or "queen"
 
 # --- model ---
-hidden_dim: 64  # notebook 51 grid search: best of [16, 32, 64]
-num_layers: 3   # notebook 51 grid search: best of [1, 2, 3]
+hidden_dim: 32  # re-validated on 2-weeks-before windows: best of [16, 32, 64]
+num_layers: 2   # re-validated on 2-weeks-before windows: best of [1, 2, 3]
 dropout: 0.10
 
 # --- training ---
@@ -68,7 +68,7 @@ loss:
   mode: daily_mse # cell_poisson or daily_mse
   daily_weight: 1.0 # Used only by combined; tune on validation windows.
 
-lr: 0.01  # notebook 51 grid search: best of [1e-4, 1e-3, 1e-2, 1e-1]
+lr: 0.1  # re-validated on 2-weeks-before windows: best of [1e-4, 1e-3, 1e-2, 1e-1]
 weight_decay: 1.0e-5
 num_epochs: 300 # 500
 torch_seed: 0
