@@ -1,0 +1,77 @@
+{
+  "dataset": "Marine Regions World Maritime Boundaries v12 (2023)",
+  "provider": "Flanders Marine Institute (VLIZ)",
+  "source_page": "https://www.marineregions.org/downloads.php",
+  "wfs_url": "https://geo.vliz.be/geoserver/MarineRegions/wfs",
+  "wfs_parameters": {
+    "service": "WFS",
+    "version": "1.0.0",
+    "request": "GetFeature",
+    "typeName": "MarineRegions:eez_boundaries",
+    "outputFormat": "application/json",
+    "srsName": "EPSG:4326",
+    "bbox": "13.02,45.35,14.02,45.9,EPSG:4326"
+  },
+  "retrieved_on": "2026-10-01",
+  "response_sha256": "6f602423e48f24affd8b98d41724d53f0976c2a7a6b74302f3ae1f05b055dab9",
+  "license": "CC BY 4.0",
+  "license_url": "https://www.marineregions.org/disclaimer.php",
+  "line_ids": [
+    3511,
+    3512,
+    3513
+  ],
+  "processing": "Select bilateral lines 3511, 3512 and 3513; clip to local GIS asset extent. Notebook clips to the displayed water geometry. No interpolation, smoothing, or inferred extension of boundary coordinates.",
+  "omitted_features": "Baselines, connection lines and joint-regime perimeter 4104 are not sovereign-country divisions and are not shown.",
+  "status_note": "Slovenia\u2013Croatia follows the 2017 arbitral award and is disputed by Croatia; this is research context, not a declaration of agreed jurisdiction.",
+  "arbitration_source": "https://pca-cpa.org/en/cases/3/",
+  "croatian_position": "https://mvep.gov.hr/pm-plenkovic-arbitral-award-does-not-in-any-way-bind-croatia-and-croatia-shall-not-implement-it/195887",
+  "slovenian_display_mask": {
+    "mrgid": 5692,
+    "source_page": "https://www.marineregions.org/eezdetails.php?mrgid=5692",
+    "wfs_parameters": {
+      "service": "WFS",
+      "version": "1.0.0",
+      "request": "GetFeature",
+      "typeName": "MarineRegions:eez",
+      "outputFormat": "application/json",
+      "srsName": "EPSG:4326",
+      "cql_filter": "mrgid=5692"
+    },
+    "response_sha256": "6b40dc391981d3862c4259abb6b02359975c937746cc5c24697fdd4a3ac23c69",
+    "processing": "Clip the source polygon to the GIS asset extent; intersect with displayed water in the notebook. Exclude it from rendered heatmaps only; raw cell counts and predictions remain unchanged.",
+    "status": "Uses the source dataset's Slovenia polygon, consistent with its 2017 arbitral line representation; this display choice does not resolve the dispute."
+  },
+  "italian_edge_smoothing_mask": {
+    "mrgid": 5682,
+    "source_page": "https://www.marineregions.org/eezdetails.php?mrgid=5682",
+    "wfs_parameters": {
+      "service": "WFS",
+      "version": "1.0.0",
+      "request": "GetFeature",
+      "typeName": "MarineRegions:eez",
+      "outputFormat": "application/json",
+      "srsName": "EPSG:4326",
+      "cql_filter": "mrgid=5682"
+    },
+    "response_sha256": "f5d4c75a99dd5e5d819c964382367f6b0a8e041193759805732f6487163fd46d",
+    "retrieved_on": "2026-10-01",
+    "processing": "Clip to bundled GIS extent. Restrict inward opacity feathering to Italian water. Protect the coastline from the offshore grid fade; fade at enabled Italian bilateral sea-border masks with a 100 m clear display margin."
+  },
+  "croatian_display_mask": {
+    "mrgid": 5673,
+    "source_page": "https://www.marineregions.org/eezdetails.php?mrgid=5673",
+    "wfs_parameters": {
+      "service": "WFS",
+      "version": "1.0.0",
+      "request": "GetFeature",
+      "typeName": "MarineRegions:eez",
+      "outputFormat": "application/json",
+      "srsName": "EPSG:4326",
+      "cql_filter": "mrgid=5673"
+    },
+    "response_sha256": "196683567b5adcab67e6453a3a9e701ab30ebd8d836e9591563b2a8f7de77b9d",
+    "retrieved_on": "2026-10-01",
+    "processing": "Clip source polygon to GIS asset extent; exclude from rendered heatmaps only, preserving raw counts and predictions."
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "dataset": "Eurostat GISCO Countries 2024",
+  "version": "2024",
+  "scale": "1:1,000,000 (01m)",
+  "source_page": "https://gisco-services.ec.europa.eu/distribution/v2/countries/countries-2024-units.html",
+  "license": "GISCO administrative units: non-commercial use with acknowledgement",
+  "license_url": "https://ec.europa.eu/eurostat/web/gisco/geodata/administrative-units",
+  "crs": "EPSG:4326",
+  "clip_bounds_west_south_east_north": [
+    13.02,
+    45.35,
+    14.02,
+    45.9
+  ],
+  "processing": "GeoPandas: load Italy/Slovenia/Croatia units, add English country names, convert to EPSG:4326, concatenate and clip to bounding box; no simplification.",
+  "grid_sources": [
+    "data/processed/cpr_gfw_2024.parquet",
+    "data/processed/cpr_gfw_2025.parquet"
+  ],
+  "grid_processing": "Read only longitude/latitude; assert the unique grids from both years match, retain 49 centres sorted by latitude/longitude.",
+  "attribution": "\u00a9 EuroGeographics for the administrative boundaries",
+  "downloads": [
+    {
+      "country": "IT",
+      "url": "https://gisco-services.ec.europa.eu/distribution/v2/countries/distribution/IT-region-01m-4326-2024.geojson",
+      "sha256": "d6edabe87d03402357aed492962bbfd29c0db994f3c69e5e59e8f5e81a9af245"
+    },
+    {
+      "country": "SI",
+      "url": "https://gisco-services.ec.europa.eu/distribution/v2/countries/distribution/SI-region-01m-4326-2024.geojson",
+      "sha256": "6c989cee97c3e323a5554580cd206f343affbdd56bab51b4bd4b5af9ebf86d31"
+    },
+    {
+      "country": "HR",
+      "url": "https://gisco-services.ec.europa.eu/distribution/v2/countries/distribution/HR-region-01m-4326-2024.geojson",
+      "sha256": "76948ce7b6fe560598f48df1f89ed42134461d33a352b8fa7282b976c5d2250c"
+    }
+  ]
+}
