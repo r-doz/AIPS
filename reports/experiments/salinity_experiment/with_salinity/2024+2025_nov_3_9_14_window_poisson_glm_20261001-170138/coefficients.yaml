@@ -1,0 +1,25 @@
+intercept: -2.1126046180725098
+coefficients:
+  longitude: 0.00702475942671299
+  latitude: 0.01111840270459652
+  t_norm: 0.09769231826066971
+  chl: 0.15004156529903412
+  thetao: 0.06429396569728851
+  is_holiday: -0.27297794818878174
+  is_weekend: -0.6190968155860901
+  fishing_block: -0.4771251976490021
+  cell_lag_1: 0.21480007469654083
+  cell_lag_7: 0.033773165196180344
+  salinity: -0.028233394026756287
+  ais_vessels_count_lag_2: 0.030481794849038124
+  ais_vessels_count_lag_3: 0.02859165146946907
+  ais_vessels_count_lag_4: 0.03208502009510994
+  ais_vessels_count_lag_5: 0.08305192738771439
+  ais_vessels_count_lag_6: 0.08473943173885345
+  ais_vessels_count_lag_8: -0.004170395899564028
+  ais_vessels_count_lag_9: 0.03627472370862961
+  ais_vessels_count_lag_10: 0.08066833764314651
+  ais_vessels_count_lag_11: 0.02645357884466648
+  ais_vessels_count_lag_12: 0.023789066821336746
+  ais_vessels_count_lag_13: 0.026816992089152336
+  ais_vessels_count_lag_14: 0.07879112660884857

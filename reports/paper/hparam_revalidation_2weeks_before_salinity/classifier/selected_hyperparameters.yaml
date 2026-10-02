@@ -1,0 +1,12 @@
+lgcp_lr: 0.001
+selected:
+  mode: confidence_redistribute
+  hidden_layer_sizes:
+  - 32
+  - 16
+  activation: relu
+  alpha: 0.01
+  max_iter: 500
+  threshold: 0.1
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0

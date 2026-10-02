@@ -1,0 +1,120 @@
+aggregation: Unweighted mean/pstdev pooled over all (window x seed) values per month.
+  n = n_windows_per_month (4) x n_seeds, minus any missing runs.
+seeds:
+- 1
+- 2
+- 3
+- 4
+- 5
+- 6
+- 7
+- 8
+- 9
+- 10
+monthly_metrics:
+  may:
+    accuracy:
+      mean: 0.13768221574344022
+      std: 0.0287913790904862
+      n: 40
+    daily_delta_corr:
+      mean: 0.6721501613583638
+      std: 0.233475023788443
+      n: 40
+    daily_direction_accuracy_moving:
+      mean: 0.7354166666666667
+      std: 0.12344519139187958
+      n: 40
+    f1:
+      mean: 0.23160851027413262
+      std: 0.04559697047159196
+      n: 40
+    mae_daily:
+      mean: 7.008620876073837
+      std: 1.9677031963818192
+      n: 40
+    mae_obs:
+      mean: 0.5360402494668961
+      std: 0.13493579732867428
+      n: 40
+    mean_ll_daily:
+      mean: -17.693216335773467
+      std: 10.898775770328818
+      n: 40
+    mean_ll_obs:
+      mean: -1.2218304768204689
+      std: 0.34635209255040794
+      n: 40
+    precision:
+      mean: 0.13174967470686968
+      std: 0.029182018027327557
+      n: 40
+    recall:
+      mean: 0.9979166666666667
+      std: 0.00959741316742032
+      n: 40
+    rmse_daily:
+      mean: 9.13184963464737
+      std: 2.0287881209835157
+      n: 40
+    rmse_obs:
+      mean: 1.232817567884922
+      std: 0.2512641845017596
+      n: 40
+    wasserstein:
+      mean: 0.3793845058091827
+      std: 0.10962262474447187
+      n: 40
+  november:
+    accuracy:
+      mean: 0.18717201166180758
+      std: 0.12953303883436662
+      n: 40
+    daily_delta_corr:
+      mean: 0.5404377519875071
+      std: 0.19470649102799362
+      n: 40
+    daily_direction_accuracy_moving:
+      mean: 0.63125
+      std: 0.18820008191638316
+      n: 40
+    f1:
+      mean: 0.23566521340714733
+      std: 0.0600850593162106
+      n: 40
+    mae_daily:
+      mean: 6.613232386112213
+      std: 1.7766158189109449
+      n: 40
+    mae_obs:
+      mean: 0.42373813018202783
+      std: 0.05463370023291483
+      n: 40
+    mean_ll_daily:
+      mean: -8.887938851118088
+      std: 5.854408175541423
+      n: 40
+    mean_ll_obs:
+      mean: -1.1156185284256934
+      std: 0.300756972368997
+      n: 40
+    precision:
+      mean: 0.13493121775760686
+      std: 0.0399286597997072
+      n: 40
+    recall:
+      mean: 1.0
+      std: 0.0
+      n: 40
+    rmse_daily:
+      mean: 9.314996367692947
+      std: 2.7736691649779983
+      n: 40
+    rmse_obs:
+      mean: 1.0090250015258788
+      std: 0.21321378957666146
+      n: 40
+    wasserstein:
+      mean: 0.30186842865304264
+      std: 0.050667632275839265
+      n: 40

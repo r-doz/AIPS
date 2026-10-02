@@ -1,0 +1,265 @@
+aggregation: Unweighted mean by month; std is population standard deviation. Non-finite
+  and non-numeric values are excluded. RMSE is the mean of weekly RMSE values, not
+  a pooled RMSE.
+expected_windows_per_month: 4
+missing_windows: []
+monthly_metrics:
+  may:
+    accuracy:
+      mean: 0.8104956268221575
+      std: 0.038622860931462916
+      n_windows: 4
+    daily_delta_corr:
+      mean: 0.4646491185013173
+      std: 0.2620761278446298
+      n_windows: 4
+    daily_direction_accuracy_moving:
+      mean: 0.6083333333333333
+      std: 0.06821127309893707
+      n_windows: 4
+    f1:
+      mean: 0.5312546583850931
+      std: 0.11357955478700713
+      n_windows: 4
+    mae_daily:
+      mean: 8.585132643623506
+      std: 3.3803142265960213
+      n_windows: 4
+    mae_obs:
+      mean: 0.32346058304945646
+      std: 0.06241794410951256
+      n_windows: 4
+    mean_ll_daily:
+      mean: -6.592922027566421
+      std: 2.409276382779828
+      n_windows: 4
+    mean_ll_obs:
+      mean: -0.9870842854601485
+      std: 0.34726916128468094
+      n_windows: 4
+    precision:
+      mean: 0.400499975991549
+      std: 0.11875650420546038
+      n_windows: 4
+    recall:
+      mean: 0.830908314997631
+      std: 0.07607166275645662
+      n_windows: 4
+    rmse_daily:
+      mean: 10.654387818177394
+      std: 3.421962744258234
+      n_windows: 4
+    rmse_obs:
+      mean: 1.1302554159919875
+      std: 0.3671829061959675
+      n_windows: 4
+    wasserstein:
+      mean: 0.19469475850707807
+      std: 0.05039990568503975
+      n_windows: 4
+  november:
+    accuracy:
+      mean: 0.7966472303206997
+      std: 0.06601342171683366
+      n_windows: 4
+    daily_delta_corr:
+      mean: 0.47269050518948624
+      std: 0.33981771948062367
+      n_windows: 4
+    daily_direction_accuracy_moving:
+      mean: 0.6833333333333333
+      std: 0.24324199198877375
+      n_windows: 4
+    f1:
+      mean: 0.4980401678141359
+      std: 0.0982347466059731
+      n_windows: 4
+    mae_daily:
+      mean: 6.750040506345478
+      std: 1.3242589077240632
+      n_windows: 4
+    mae_obs:
+      mean: 0.30872707892796464
+      std: 0.041552976423133
+      n_windows: 4
+    mean_ll_daily:
+      mean: -9.85786957432536
+      std: 5.640210447452293
+      n_windows: 4
+    mean_ll_obs:
+      mean: -1.3189686259514264
+      std: 0.46720915833645416
+      n_windows: 4
+    precision:
+      mean: 0.37828598160936544
+      std: 0.11729108192735516
+      n_windows: 4
+    recall:
+      mean: 0.7828126465897364
+      std: 0.07235338281811668
+      n_windows: 4
+    rmse_daily:
+      mean: 9.258688817149556
+      std: 2.4073094218503686
+      n_windows: 4
+    rmse_obs:
+      mean: 0.9347748599811057
+      std: 0.3186965441786082
+      n_windows: 4
+    wasserstein:
+      mean: 0.18701151159600715
+      std: 0.012296444138402156
+      n_windows: 4
+per_window:
+- name: 2025_may_01_07
+  month: may
+  test_start_date: '2025-05-01'
+  test_end_date: '2025-05-07'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_may_01_07/2024+2025_2025_may_01_07_20261001-201311/metrics.yaml
+  metrics:
+    accuracy: 0.7988338192419825
+    daily_delta_corr: 0.06574497320541549
+    daily_direction_accuracy_moving: 0.5
+    f1: 0.44799999999999995
+    mae_daily: 7.233533380800066
+    mae_obs: 0.23776087820790168
+    mean_ll_daily: -5.859226240772535
+    mean_ll_obs: -0.971143593133473
+    precision: 0.3146067415730337
+    recall: 0.7777777777777778
+    rmse_daily: 10.826953069964965
+    rmse_obs: 0.7753185695985659
+    wasserstein: 0.1285986314670822
+- name: 2025_may_08_14
+  month: may
+  test_start_date: '2025-05-08'
+  test_end_date: '2025-05-14'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_may_08_14/2024+2025_2025_may_08_14_20261001-202340/metrics.yaml
+  metrics:
+    accuracy: 0.8600583090379009
+    daily_delta_corr: 0.3945322164665838
+    daily_direction_accuracy_moving: 0.6666666666666666
+    f1: 0.6521739130434783
+    mae_daily: 13.64554564846326
+    mae_obs: 0.39370839944402053
+    mean_ll_daily: -10.659504584730097
+    mean_ll_obs: -1.5428446038106722
+    precision: 0.5555555555555556
+    recall: 0.7894736842105263
+    rmse_daily: 14.804172666199753
+    rmse_obs: 1.5264063967779828
+    wasserstein: 0.27017988879185645
+- name: 2025_may_15_21
+  month: may
+  test_start_date: '2025-05-15'
+  test_end_date: '2025-05-21'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_may_15_21/2024+2025_2025_may_15_21_20261001-203706/metrics.yaml
+  metrics:
+    accuracy: 0.7551020408163265
+    daily_delta_corr: 0.7179255506095228
+    daily_direction_accuracy_moving: 0.6666666666666666
+    f1: 0.391304347826087
+    mae_daily: 4.343902879226617
+    mae_obs: 0.29127773475169266
+    mean_ll_daily: -4.383809110970991
+    mean_ll_obs: -0.8345568179527123
+    precision: 0.25961538461538464
+    recall: 0.7941176470588235
+    rmse_daily: 5.311431203747497
+    rmse_obs: 0.7522073890080816
+    wasserstein: 0.18500914591211265
+- name: 2025_may_22_28
+  month: may
+  test_start_date: '2025-05-22'
+  test_end_date: '2025-05-28'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_may_22_28/2024+2025_2025_may_22_28_20261001-204920/metrics.yaml
+  metrics:
+    accuracy: 0.8279883381924198
+    daily_delta_corr: 0.680393733723747
+    daily_direction_accuracy_moving: 0.6
+    f1: 0.6335403726708074
+    mae_daily: 9.117548666004085
+    mae_obs: 0.37109531979421095
+    mean_ll_daily: -5.4691481737920595
+    mean_ll_obs: -0.5997921269437363
+    precision: 0.4722222222222222
+    recall: 0.9622641509433962
+    rmse_daily: 11.674994332797363
+    rmse_obs: 1.4670893085833199
+    wasserstein: 0.19499136785726093
+- name: 2025_november_01_07
+  month: november
+  test_start_date: '2025-11-01'
+  test_end_date: '2025-11-07'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_november_01_07/2024+2025_2025_november_01_07_20261001-210304/metrics.yaml
+  metrics:
+    accuracy: 0.7755102040816326
+    daily_delta_corr: 0.9643087081926112
+    daily_direction_accuracy_moving: 1.0
+    f1: 0.5157232704402517
+    mae_daily: 4.897669497215901
+    mae_obs: 0.27387011485309104
+    mean_ll_daily: -2.8206313056644263
+    mean_ll_obs: -1.2047509543664547
+    precision: 0.37962962962962965
+    recall: 0.803921568627451
+    rmse_daily: 5.98021824594426
+    rmse_obs: 0.6542089145697801
+    wasserstein: 0.18172874331269534
+- name: 2025_november_08_14
+  month: november
+  test_start_date: '2025-11-08'
+  test_end_date: '2025-11-14'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_november_08_14/2024+2025_2025_november_08_14_20261001-211427/metrics.yaml
+  metrics:
+    accuracy: 0.7521865889212828
+    daily_delta_corr: 0.2310282260629894
+    daily_direction_accuracy_moving: 0.5
+    f1: 0.41379310344827586
+    mae_daily: 6.687824379345363
+    mae_obs: 0.2904998489277468
+    mean_ll_daily: -13.119066889129083
+    mean_ll_obs: -1.4333869634874115
+    precision: 0.297029702970297
+    recall: 0.6818181818181818
+    rmse_daily: 8.456285163080056
+    rmse_obs: 0.7084785777692392
+    wasserstein: 0.16934974982596943
+- name: 2025_november_15_21
+  month: november
+  test_start_date: '2025-11-15'
+  test_end_date: '2025-11-21'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_november_15_21/2024+2025_2025_november_15_21_20261001-212747/metrics.yaml
+  metrics:
+    accuracy: 0.749271137026239
+    daily_delta_corr: 0.09219714912108916
+    daily_direction_accuracy_moving: 0.4
+    f1: 0.4109589041095891
+    mae_daily: 8.641859479604545
+    mae_obs: 0.2908259891412797
+    mean_ll_daily: -6.270466663624129
+    mean_ll_obs: -0.6680993870140459
+    precision: 0.26785714285714285
+    recall: 0.8823529411764706
+    rmse_daily: 12.614718282785951
+    rmse_obs: 0.9162794826939911
+    wasserstein: 0.19941623427698016
+- name: 2025_november_22_28
+  month: november
+  test_start_date: '2025-11-22'
+  test_end_date: '2025-11-28'
+  metrics_path: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity/11_train_lgcp/seed_2/runs/2025_november_22_28/2024+2025_2025_november_22_28_20261001-213854/metrics.yaml
+  metrics:
+    accuracy: 0.9096209912536443
+    daily_delta_corr: 0.6032279373812552
+    daily_direction_accuracy_moving: 0.8333333333333334
+    f1: 0.651685393258427
+    mae_daily: 6.772808669216103
+    mae_obs: 0.37971236278974096
+    mean_ll_daily: -17.2213134388838
+    mean_ll_obs: -1.9696371989377937
+    precision: 0.5686274509803921
+    recall: 0.7631578947368421
+    rmse_daily: 9.983533576787956
+    rmse_obs: 1.4601324648914125
+    wasserstein: 0.19755131896838363

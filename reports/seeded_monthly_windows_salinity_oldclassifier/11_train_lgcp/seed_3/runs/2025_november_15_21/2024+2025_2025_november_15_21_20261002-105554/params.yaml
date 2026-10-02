@@ -1,0 +1,141 @@
+years:
+- 2024
+- 2025
+parquet_path: data/processed/cpr_gfw_salinity.parquet
+gulf_csv_path: data/raw/ts_gulf_coords.csv
+train_fraction: 0.9
+data_seed: 3
+split_strategy: fixed_test_window
+covariate_cols:
+- chl
+- thetao
+- fishing_block
+- is_holiday
+- is_weekend
+- cell_lag_1
+- cell_lag_7
+- salinity
+M_inducing: 300
+np_seed: 3
+model:
+  spatial_kernels:
+  - type: rbf
+    hyperparameters:
+      lengthscale: 0.2
+      variance: 2.0
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: rbf
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
+  temporal_kernels:
+  - type: rbf
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: periodic
+    hyperparameters:
+      lengthscale: 0.8
+      period_days: 14.0
+      variance: 0.2
+    trainable:
+      lengthscale: false
+      period: true
+      variance: true
+  spatial_composition: sum
+  temporal_composition: sum
+lr: 0.001
+num_steps: 5000
+minibatch: 1024
+num_mc: 32
+grad_clip: 10.0
+device: cpu
+num_pred_samples: 300
+num_vis_samples: 500
+report_root: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_salinity_oldclassifier/11_train_lgcp/seed_3/runs
+model_family: 2025_november_15_21
+run_name: 2025_november_15_21
+log_every: 100
+lag_features:
+  enabled: true
+  mode: observed_past
+  target_col: ais_vessels_count
+  date_col: date
+  cell_cols:
+  - longitude
+  - latitude
+  cell_lags:
+  - 1
+  - 7
+  cell_rolling_windows:
+  - 7
+  daily_total_lags:
+  - 1
+  - 7
+  daily_total_rolling_windows:
+  - 7
+  fillna_value: 0.0
+zero_gate:
+  enabled: true
+  mode: confidence_redistribute
+  hidden_layer_sizes:
+  - 32
+  activation: relu
+  alpha: 0.0001
+  max_iter: 500
+  threshold: 0.3
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0
+test_start_date: '2025-11-15'
+test_end_date: '2025-11-21'
+last_available_mode: one_step_ahead
+global_cell_mean_mode: expanding
+last_available_run_name: dataseed42_npseed0_onestep
+global_mean_run_name: dataseed42_npseed0
+global_cell_mean_run_name: dataseed42_npseed0
+kernel_noise:
+  value: 0.001
+  trainable: false
+kernel_config:
+  spatial:
+  - type: rbf
+    hyperparameters:
+      lengthscale: 0.2
+      variance: 2.0
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: rbf
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
+  temporal:
+  - type: rbf
+    hyperparameters:
+      lengthscale: 0.01
+      variance: 0.5
+    trainable:
+      lengthscale: false
+      variance: true
+  - type: periodic
+    hyperparameters:
+      lengthscale: 0.8
+      variance: 0.2
+      period: 0.07090274035987006
+    trainable:
+      lengthscale: false
+      period: true
+      variance: true
+  spatial_composition: sum
+  temporal_composition: sum

@@ -1,0 +1,4 @@
+cell_scale: 1.0
+daily_scale: 11.729166984558105
+daily_weight: 1.0
+mode: daily_mse
