@@ -1,0 +1,20 @@
+Let $i=1,\dots,n$ index the (cell, day) observations of a test window ($n=343$: 49 cells $\times$ 7 days), with observed count $y_i$ and point prediction $\hat\lambda_i$, i.e., the predicted rate for the baselines and the prediction after the gate and redistribution for Red-LGCP. Let $G_y$ and $G_{\hat\lambda}$ denote the empirical cumulative distribution functions of $\{y_i\}_{i=1}^n$ and $\{\hat\lambda_i\}_{i=1}^n$, respectively (as two unordered samples, not matched pairwise), and let $a_i=\mathbf{1}[y_i>0]$ and $\hat a_i=\mathbf{1}[\hat\lambda_i>0]$ denote observed and predicted activity. Finally, let $P_i$ and $F_i$ denote the probability mass function and the cumulative distribution function of the predictive distribution of $y_i$: for the baselines, $P_i=\operatorname{Poisson}(\cdot\mid\hat\lambda_i)$, with $\hat\lambda_i$ clipped at $10^{-8}$; for Red-LGCP, the hurdle predictive distribution $P_i(0)=1-\bar p_i$ and $P_i(k)=\bar p_i\,\mathbb{E}_q\bigl[\operatorname{Poisson}(k\mid\lambda_i)/(1-\operatorname{Poisson}(0\mid\lambda_i))\bigr]$ for $k\geq1$, estimated with 300 samples of the latent field and 100 dropout passes. Table~\ref{tab:metric-formulas} reports all the metrics used in this work.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+Metric & Formula \\
+\midrule
+MAE & $\displaystyle \frac{1}{n}\sum_{i=1}^n \big|y_i - \hat\lambda_i\big|$ \\[12pt]
+RMSE & $\displaystyle \sqrt{\frac{1}{n}\sum_{i=1}^n \big(y_i - \hat\lambda_i\big)^2}$ \\[12pt]
+Wasserstein & $\displaystyle W_1 = \int_{-\infty}^{\infty} \big|G_y(x) - G_{\hat\lambda}(x)\big|\, dx$ \\[12pt]
+Accuracy & $\displaystyle \frac{1}{n}\sum_{i=1}^n \mathbf{1}\big[a_i = \hat a_i\big]$ \\[12pt]
+F1 & $\displaystyle \frac{2 \cdot \mathrm{Prec} \cdot \mathrm{Rec}}{\mathrm{Prec} + \mathrm{Rec}}$ \\[12pt]
+Log-likelihood & $\displaystyle \frac{1}{n}\sum_{i=1}^n \log P_i(y_i)$ \\[12pt]
+CRPS & $\displaystyle \frac{1}{n}\sum_{i=1}^n \sum_{k=0}^{\infty} \big(F_i(k) - \mathbf{1}[y_i \leq k]\big)^2$ \\
+\bottomrule
+\end{tabular}
+\caption{Evaluation metrics, computed separately on each test window. Precision $\mathrm{Prec} = \big(\sum_i a_i \hat a_i\big) / \big(\sum_i \hat a_i\big)$ and recall $\mathrm{Rec} = \big(\sum_i a_i \hat a_i\big) / \big(\sum_i a_i\big)$ are each defined as 0 when their denominator is 0 (no predicted, resp.\ observed, active cell-days); F1 is likewise defined as 0 when $\mathrm{Prec}+\mathrm{Rec}=0$. The inner sum of the CRPS is truncated once $F_i(k)$ is numerically one.}
+\label{tab:metric-formulas}
+\end{table}

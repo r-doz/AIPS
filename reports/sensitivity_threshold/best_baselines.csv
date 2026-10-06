@@ -1,0 +1,11 @@
+month,metric,best_baseline,value
+may,mae_obs,ConvLSTM,0.3397192008793354
+may,rmse_obs,ConvLSTM,0.939516232907772
+may,wasserstein,GNN,0.2086465885576406
+may,accuracy,LAP,0.8848396501457726
+may,f1,LAP,0.5428439486736435
+november,mae_obs,ConvLSTM,0.3224339425563812
+november,rmse_obs,ConvLSTM,0.8413796246051788
+november,wasserstein,ConvLSTM,0.19471261449522023
+november,accuracy,LAP,0.8753644314868805
+november,f1,LAP,0.4896082126237137

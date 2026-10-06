@@ -1,0 +1,34 @@
+% ---- Observation model (replaces the Poisson equation) ----
+\begin{equation}
+    \begin{aligned}
+        &Y_i \mid f(\mathbf{r}_i),\mathbf{x}_i
+        \sim \operatorname{Hurdle}(p_i,\lambda_i),\\
+        &\log \lambda_i
+        = \alpha+\mathbf{x}_i^\top\boldsymbol{\beta}
+        +f(\mathbf{r}_i),\\
+        &\operatorname{logit} p_i
+        = g_{\boldsymbol{\phi}}(\mathbf{r}_i,\mathbf{x}_i),
+    \end{aligned}
+    \label{eq:model}
+\end{equation}
+where $g_{\boldsymbol{\phi}}$ is the activity classifier described below and the hurdle distribution~\citep{mullahy1986specification} assigns to each count $k\in\mathbb{N}_0$ the probability
+\begin{equation}
+    P(Y_i=k)=
+    \begin{cases}
+        1-p_i, & k=0,\\[2pt]
+        p_i\,\dfrac{\operatorname{Poisson}(k\mid\lambda_i)}{1-\operatorname{Poisson}(0\mid\lambda_i)}, & k\geq1,
+    \end{cases}
+    \label{eq:hurdle}
+\end{equation}
+where $\operatorname{Poisson}(k\mid\lambda_i)=\lambda_i^{k}e^{-\lambda_i}/k!$ is the Poisson probability mass function, so that positive counts follow a Poisson distribution with intensity $\lambda_i$ truncated at zero. Thus, the classifier governs whether a cell is active, and the LGCP intensity how much activity it hosts when it is. The classifier weights $\boldsymbol{\phi}$ are learned jointly with the LGCP by maximizing the evidence lower bound of this likelihood (Section~\ref{sec:variational}). Since $g_{\boldsymbol{\phi}}$ contains dropout, we estimate its uncertainty by Monte Carlo dropout~\citep{gal2016dropout}: keeping dropout active at prediction time, we evaluate $g_{\boldsymbol{\phi}}$ 100 times for each cell $j$ on day $t$ and take the mean $\bar p_{j,t}$ and the standard deviation $\sigma_{j,t}$ of the resulting activity probabilities, so that the larger $\sigma_{j,t}$, the less certain the classifier is about whether the cell is active.
+
+% ---- Single paragraph: classifier, gate and redistribution ----
+\paragraph{Classifier, gate and redistribution.}
+Since the LGCP assigns a positive intensity to every cell, activity is modeled by the classifier $g_{\boldsymbol{\phi}}$ in Eq.~\eqref{eq:model}, a neural network with one hidden layer of 32 ReLU units and dropout. The expected count of the model is then $\mu_{j,t}=\bar p_{j,t}\,m_{j,t}$, where $m_{j,t}=\mathbb{E}_q\bigl[\lambda_{j,t}/(1-e^{-\lambda_{j,t}})\bigr]$ is the expected count of an active cell under the variational posterior. Point predictions are obtained from these quantities in two steps. First, a gate decides which cells are active: a cell is accepted only if the lower bound $\bar p_{j,t}-\sigma_{j,t}$ of its activity probability is at least a threshold $\tau$, i.e., if $\bar p_{j,t}\geq\tau_{j,t}=\tau+\sigma_{j,t}$, so that cells on which the classifier is uncertain need stronger evidence. This defines the accepted cells of day $t$, $A_t=\{j:\bar p_{j,t}\geq\tau_{j,t}\}$, and the rejected ones, $R_t$. Rejected cells receive a zero prediction, which biases the daily total downward whenever a rejected cell is in fact active. Second, part of the removed mass is therefore recovered and redistributed among the accepted cells of the same day,
+\begin{equation}
+    \begin{aligned}
+        C_t&=\sum_{j\in R_t}\rho\,\frac{\bar p_{j,t}}{\tau_{j,t}}\,\mu_{j,t},\\
+        w_{j,t}&=\frac{\mu_{j,t}\,\bar p_{j,t}^{\gamma}}{\sum_{j'\in A_t}\mu_{j',t}\,\bar p_{j',t}^{\gamma}},\quad j\in A_t,
+    \end{aligned}
+\end{equation}
+and the final prediction is $\widehat{\lambda}_{j,t}=0$ for $j\in R_t$ and $\widehat{\lambda}_{j,t}=\mu_{j,t}+w_{j,t}\,C_t$ for $j\in A_t$. The ratio $\bar p_{j,t}/\tau_{j,t}\in[0,1)$ measures how close a rejected cell was to being accepted, so that a narrowly rejected cell returns almost all of its expected count and a confidently rejected one almost nothing, while $\rho\in[0,1]$ scales the overall recovery. The weights are motivated by a property of Poisson counts: conditionally on their total, independent Poisson counts are multinomial with probabilities proportional to their means, so for $\gamma=0$ the recovered mass is allocated as a Poisson total would be; the exponent $\gamma\geq0$ additionally tilts the allocation toward the cells that the classifier deems most likely to be active. We use $\tau=0.3$, $\rho=1$ and $\gamma=1$. The gate and the redistribution produce the point predictions, whereas log-likelihood and CRPS are computed from the hurdle predictive distribution.

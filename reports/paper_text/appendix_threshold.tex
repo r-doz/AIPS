@@ -1,0 +1,13 @@
+\subsection{Sensitivity to the Gate Threshold}
+\label{app:threshold}
+
+The threshold $\tau$ controls how many cells the gate accepts as active, and therefore how much expected count is redistributed. Since the gate and the redistribution only post-process the activity probabilities, their standard deviations and the expected counts, we re-apply them to the saved predictions of all runs for $\tau\in\{0.05,0.10,\dots,0.50,0.60,0.70\}$, keeping $\tau_{j,t}=\tau+\sigma_{j,t}$, $\rho=1$ and $\gamma=1$ (Figure~\ref{fig:threshold}). Log-likelihood and CRPS score the hurdle predictive distribution and do not depend on $\tau$.
+
+The threshold trades off two kinds of errors. A low threshold accepts many inactive cells: RMSE decreases, since predictions approach the expected counts, but accuracy, F1, MAE and Wasserstein distance degrade. A high threshold rejects active cells, which degrades F1 and RMSE and, beyond $\tau=0.5$, all metrics. In between, MAE, Wasserstein distance and F1 have broad optima around $\tau=0.3$, and accuracy peaks between 0.35 and 0.4. Red-LGCP outperforms every baseline in all eight weeks in MAE, Wasserstein distance (among the predictive baselines), accuracy and F1 for every tested $\tau$ between 0.3 and 0.4, and in MAE, Wasserstein distance and F1 for every tested $\tau$ between 0.2 and 0.4, so its advantage does not hinge on the specific value of the threshold.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{threshold_sensitivity.pdf}
+\caption{Sensitivity of Red-LGCP to the gate threshold $\tau$, with $\tau_{j,t}=\tau+\sigma_{j,t}$, $\rho=1$ and $\gamma=1$; each point is the mean over 4 weekly windows $\times$ 10 seeds. Dashed lines mark the best baseline in each month: ConvLSTM for MAE and RMSE, GNN (May) and ConvLSTM (Nov.) for the Wasserstein distance, excluding LAP, and LAP for accuracy and F1. The dotted line marks $\tau=0.3$, used in all other experiments.}
+\label{fig:threshold}
+\end{figure}

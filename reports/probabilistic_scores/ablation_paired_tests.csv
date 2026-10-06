@@ -1,0 +1,43 @@
+variant,metric,full_better_weeks,p
+w/o uncertainty,mae_obs,5,0.6406
+w/o uncertainty,rmse_obs,1,0.0156
+w/o uncertainty,wasserstein,4,0.5469
+w/o uncertainty,accuracy,7,0.0391
+w/o uncertainty,f1,3,0.5469
+w/o uncertainty,log_lik,identical,
+w/o uncertainty,crps,identical,
+w/o redistribution,mae_obs,2,0.0391
+w/o redistribution,rmse_obs,3,0.25
+w/o redistribution,wasserstein,8,0.0078
+w/o redistribution,accuracy,identical,
+w/o redistribution,f1,identical,
+w/o redistribution,log_lik,identical,
+w/o redistribution,crps,identical,
+w/o gate,mae_obs,8,0.0078
+w/o gate,rmse_obs,2,0.0781
+w/o gate,wasserstein,8,0.0078
+w/o gate,accuracy,8,0.0078
+w/o gate,f1,8,0.0078
+w/o gate,log_lik,identical,
+w/o gate,crps,identical,
+w/o joint training,mae_obs,5,0.7422
+w/o joint training,rmse_obs,5,0.3125
+w/o joint training,wasserstein,8,0.0078
+w/o joint training,accuracy,7,0.0234
+w/o joint training,f1,5,0.7422
+w/o joint training,log_lik,8,0.0078
+w/o joint training,crps,8,0.0078
+w/o classifier,mae_obs,8,0.0078
+w/o classifier,rmse_obs,5,0.1953
+w/o classifier,wasserstein,8,0.0078
+w/o classifier,accuracy,8,0.0078
+w/o classifier,f1,8,0.0078
+w/o classifier,log_lik,8,0.0078
+w/o classifier,crps,8,0.0078
+w/o kernel,mae_obs,6,0.1094
+w/o kernel,rmse_obs,5,0.25
+w/o kernel,wasserstein,6,0.3828
+w/o kernel,accuracy,5,0.2188
+w/o kernel,f1,4,0.7422
+w/o kernel,log_lik,6,0.0547
+w/o kernel,crps,6,0.1094

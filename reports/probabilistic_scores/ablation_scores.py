@@ -182,7 +182,7 @@ else:
     df = pd.concat(parts)
     order = ["full", "w/o uncertainty", "w/o redistribution", "w/o gate", "w/o joint training", "w/o classifier", "w/o kernel"]
     labels = {"full": "Red-LGCP (full)", "w/o uncertainty": "w/o uncertainty", "w/o redistribution": "w/o redistribution",
-              "w/o gate": "w/o gate", "w/o joint training": "w/o joint training", "w/o classifier": "w/o classifier",
+              "w/o gate": "w/o gate", "w/o joint training": "two-stage", "w/o classifier": "w/o classifier",
               "w/o kernel": "w/o kernel"}
     order = [v for v in order if v in set(df.variant)]
     metrics = [("mae_obs", min), ("rmse_obs", min), ("wasserstein", min), ("accuracy", max), ("f1", max),
@@ -203,16 +203,16 @@ else:
             lines.append(f"{head} & {mlabel} & " + " & ".join(cells) + " \\\\")
         if i < len(order) - 1:
             lines.append("\\midrule")
-    tex = ("\\begin{table*}[t]\n\\centering\n\\small\n\\setlength{\\tabcolsep}{3pt}\n\\begin{tabular}{llccccccc}\n\\toprule\n"
+    tex = ("\\begin{table*}[t]\n\\centering\n\\footnotesize\n\\setlength{\\tabcolsep}{2.5pt}\n\\begin{tabular}{llccccccc}\n\\toprule\n"
            "Variant & Month & MAE & RMSE & Wasserstein & Accuracy & F1 & Log-lik. & CRPS \\\\\n\\midrule\n"
            + "\n".join(lines) + "\n\\bottomrule\n\\end{tabular}\n"
            "\\caption{Ablation of Red-LGCP on May and Nov.\\ 2025 (same windows and covariates as Table~\\ref{tab:results-main}; "
-           "mean $\\pm$ population std over 10 seeds $\\times$ 4 weekly windows per month). Each variant removes one component from the full model: "
-           "``w/o uncertainty'' uses the fixed threshold $\\tau$ instead of $\\tau+\\sigma$; ``w/o redistribution'' zeroes rejected cells without recovering any of their intensity; "
-           "``w/o gate'' reports the expected counts without zeroing; ``w/o joint training'' trains the LGCP alone and the classifier afterwards, as a separate post-hoc gate; "
-           "``w/o classifier'' is the LGCP alone; ``w/o kernel'' removes the latent Gaussian process, keeping the covariate effects and the classifier. "
-           "The first four variants share the same trained model, so their log-likelihood and CRPS, which score the hurdle predictive distribution, coincide; "
-           "for the two variants without joint training these scores refer to the LGCP predictive distribution, since a post-hoc gate only changes point predictions. "
+           "mean $\\pm$ population std over 10 seeds $\\times$ 4 weekly windows per month). Each variant removes or replaces one component of the full model: "
+           "``w/o uncertainty'' uses the fixed threshold $\\tau$ instead of $\\tau+\\sigma_{j,t}$; ``w/o redistribution'' zeroes rejected cells without recovering any of their expected counts; "
+           "``w/o gate'' reports the expected counts without zeroing; ``two-stage'' is not jointly optimized: the LGCP is fitted alone, with a Poisson likelihood, and the classifier is trained afterwards and used as a post-hoc gate with the fixed threshold $\\tau$; "
+           "``w/o classifier'' is the LGCP alone, with a Poisson likelihood; ``w/o kernel'' removes the latent Gaussian process, keeping the covariate effects and the classifier. "
+           "The first four rows share the same trained model, so their log-likelihood and CRPS, which score the hurdle predictive distribution, coincide; "
+           "for ``two-stage'' and ``w/o classifier'' these scores refer to the predictive distribution of the Poisson LGCP, since a post-hoc gate only changes point predictions. "
            "Bold marks the best value per column within each month.}\n\\label{tab:results-ablation}\n\\end{table*}\n")
     (ROOT / "reports/statistical_tests/ablation_table.tex").write_text(tex)
     print(tex)

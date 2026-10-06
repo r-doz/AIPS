@@ -1,0 +1,25 @@
+\subsection{Statistical Significance}
+\label{app:significance}
+
+We test whether the differences between Red-LGCP and each baseline are statistically significant with paired tests over the eight test weeks (four in May and four in November 2025), which are disjoint 7-day periods on which all methods are evaluated. For the stochastic methods (Red-LGCP, GNN and ConvLSTM), each metric is first averaged over the 10 seeds within each week, so that every method contributes one value per week. For each metric and baseline, we apply a two-sided exact Wilcoxon signed-rank test to the eight paired differences, the standard test for comparing two methods over multiple test sets~\citep{demsar2006statistical}, and we correct the resulting p-values with the Holm--Bonferroni procedure across the five baselines within each metric. With eight weeks, the smallest attainable p-value is $2/2^8\approx0.0078$, reached when one method is better in all eight weeks, which becomes $0.039$ after Holm correction over five comparisons; we pool the two months because with four weeks the smallest attainable p-value would be $0.125$. Table~\ref{tab:significance} reports, for each comparison, the number of weeks in which Red-LGCP outperforms the baseline and the Holm-adjusted p-value.
+
+\begin{table}[t]
+\centering
+\caption{Paired comparison of Red-LGCP with each baseline over the eight test weeks: number of weeks (out of 8) in which Red-LGCP outperforms the baseline and, in parentheses, the Holm-adjusted p-value of the two-sided exact Wilcoxon signed-rank test. Bold: Red-LGCP significantly better ($p<0.05$); $^\dagger$: baseline significantly better.}
+\label{tab:significance}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccc}
+\toprule
+Baseline & MAE & RMSE & Wasserstein & Accuracy & F1 \\
+\midrule
+Last Available Poisson & \textbf{8/8} (0.039) & 5/8 (1.00) & 0/8$^\dagger$ (0.039) & 6/8 (0.055) & \textbf{8/8} (0.039) \\
+Global Cell Mean Poisson & \textbf{8/8} (0.039) & 4/8 (1.00) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) \\
+Window Poisson GLM & \textbf{8/8} (0.039) & 6/8 (0.98) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) \\
+GNN & \textbf{8/8} (0.039) & 4/8 (1.00) & \textbf{7/8} (0.039) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) \\
+ConvLSTM & \textbf{7/8} (0.039) & 3/8 (1.00) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) & \textbf{8/8} (0.039) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Red-LGCP is significantly better than all five baselines in MAE and F1, than all baselines except Last Available Poisson in accuracy (where it is better in six of eight weeks, $p=0.055$), and than all predictive baselines in Wasserstein distance; in each of these comparisons it is better in all eight weeks, except for MAE against ConvLSTM and Wasserstein distance against GNN (seven of eight weeks). Last Available Poisson attains a lower Wasserstein distance in every week because its predictions are the observed counts of the previous day, so their distribution nearly coincides with that of the test counts. No RMSE difference is significant in either direction. The conclusions also hold at the level of individual runs: comparing every Red-LGCP run with every run of a baseline in the same week, Red-LGCP has the lower MAE in 81\% of the comparisons with ConvLSTM, 89\% of those with GNN and at least 97.5\% of those with each other baseline, and the lower Wasserstein distance in 94\% of the comparisons with ConvLSTM, 90\% of those with GNN and all comparisons with the remaining predictive baselines.
