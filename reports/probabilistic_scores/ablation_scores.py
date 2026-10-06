@@ -5,7 +5,7 @@ Variants and where they come from:
   w/o uncertainty      same runs, fixed threshold tau                       (metrics_fixed.yaml)
   w/o redistribution   same runs, zero rejected cells without recovery      (recomputed from hurdle_predictions.csv)
   w/o gate             same runs, expected counts without gating            (metrics_nogate.yaml)
-  w/o joint training   LGCP + post-hoc classifier (previous Red-LGCP)       (seeded_monthly_windows_salinity/11_train_lgcp)
+  two-stage            LGCP + post-hoc classifier, key 'w/o joint training' (seeded_monthly_windows_salinity/11_train_lgcp)
   w/o classifier       LGCP alone                                           (seeded_monthly_windows_ablation/no_classifier)
   w/o kernel           joint hurdle model without Gaussian process          (seeded_monthly_windows_hurdle_ablation/no_kernel)
 
@@ -13,12 +13,15 @@ Log-likelihood and CRPS score each variant's predictive distribution: the hurdle
 joint models (identical for the four gating rules, which only change point predictions) and the LGCP
 posterior predictive E_q[Poisson(y | lambda)] for the two models without joint training (the post-hoc
 gate changes point predictions only).
+
+Stages: "base" and "nokernel" score every run (ablation_base.csv, ablation_nokernel.csv); "table" writes
+the ablation table, mean and population std per variant and month over 10 seeds x 4 weekly windows,
+to reports/statistical_tests/ablation_table.csv.
 """
 
 import argparse
 import glob
 import sys
-from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import numpy as np
@@ -122,11 +125,6 @@ def hurdle_scores(run, seed):
     return pmf_scores(tey, pmf)
 
 
-def r3(x):
-    s = str(Decimal(repr(float(x))).quantize(Decimal("0.001"), rounding=ROUND_HALF_UP))
-    return s.replace("-", "$-$", 1) if s.startswith("-") else s
-
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--stage", choices=["base", "nokernel", "table"], required=True)
 args = parser.parse_args()
@@ -185,34 +183,16 @@ else:
               "w/o gate": "w/o gate", "w/o joint training": "two-stage", "w/o classifier": "w/o classifier",
               "w/o kernel": "w/o kernel"}
     order = [v for v in order if v in set(df.variant)]
-    metrics = [("mae_obs", min), ("rmse_obs", min), ("wasserstein", min), ("accuracy", max), ("f1", max),
-               ("log_lik", max), ("crps", min)]
-    stats = df.groupby(["variant", "month"])[[m for m, _ in metrics]].agg(["mean", lambda s: s.std(ddof=0)])
-    print(df.groupby(["month", "variant"])[[m for m, _ in metrics]].mean().reindex(order, level=1).round(3).to_string())
-    lines = []
-    for i, v in enumerate(order):
-        for j, (month, mlabel) in enumerate((("may", "May"), ("november", "Nov."))):
-            cells = []
-            for m, pick in metrics:
-                means = {u: round(stats.loc[(u, month), (m, "mean")], 3) for u in order}
-                best = pick(means.values())
-                mu, sd = stats.loc[(v, month), (m, "mean")], stats.loc[(v, month), (m, "<lambda_0>")]
-                mean = f"\\textbf{{{r3(mu)}}}" if means[v] == best else r3(mu)
-                cells.append(f"{mean}\\,{{\\scriptsize$\\pm${r3(sd)}}}")
-            head = f"\\multirow{{2}}{{*}}{{{labels[v]}}}" if j == 0 else ""
-            lines.append(f"{head} & {mlabel} & " + " & ".join(cells) + " \\\\")
-        if i < len(order) - 1:
-            lines.append("\\midrule")
-    tex = ("\\begin{table*}[t]\n\\centering\n\\footnotesize\n\\setlength{\\tabcolsep}{2.5pt}\n\\begin{tabular}{llccccccc}\n\\toprule\n"
-           "Variant & Month & MAE & RMSE & Wasserstein & Accuracy & F1 & Log-lik. & CRPS \\\\\n\\midrule\n"
-           + "\n".join(lines) + "\n\\bottomrule\n\\end{tabular}\n"
-           "\\caption{Ablation of Red-LGCP on May and Nov.\\ 2025 (same windows and covariates as Table~\\ref{tab:results-main}; "
-           "mean $\\pm$ population std over 10 seeds $\\times$ 4 weekly windows per month). Each variant removes or replaces one component of the full model: "
-           "``w/o uncertainty'' uses the fixed threshold $\\tau$ instead of $\\tau+\\sigma_{j,t}$; ``w/o redistribution'' zeroes rejected cells without recovering any of their expected counts; "
-           "``w/o gate'' reports the expected counts without zeroing; ``two-stage'' is not jointly optimized: the LGCP is fitted alone, with a Poisson likelihood, and the classifier is trained afterwards and used as a post-hoc gate with the fixed threshold $\\tau$; "
-           "``w/o classifier'' is the LGCP alone, with a Poisson likelihood; ``w/o kernel'' removes the latent Gaussian process, keeping the covariate effects and the classifier. "
-           "The first four rows share the same trained model, so their log-likelihood and CRPS, which score the hurdle predictive distribution, coincide; "
-           "for ``two-stage'' and ``w/o classifier'' these scores refer to the predictive distribution of the Poisson LGCP, since a post-hoc gate only changes point predictions. "
-           "Bold marks the best value per column within each month.}\n\\label{tab:results-ablation}\n\\end{table*}\n")
-    (ROOT / "reports/statistical_tests/ablation_table.tex").write_text(tex)
-    print(tex)
+    metrics = ["mae_obs", "rmse_obs", "wasserstein", "accuracy", "f1", "log_lik", "crps"]
+    rows = []
+    for v in order:
+        for month in ("may", "november"):
+            q = df[(df.variant == v) & (df.month == month)]
+            row = {"variant": labels[v], "month": month}
+            for m in metrics:
+                row[f"{m}_mean"] = q[m].mean()
+                row[f"{m}_std"] = q[m].std(ddof=0)
+            rows.append(row)
+    table = pd.DataFrame(rows)
+    table.to_csv(ROOT / "reports/statistical_tests/ablation_table.csv", index=False)
+    print(table.round(3).to_string(index=False))

@@ -112,13 +112,13 @@ per-run plots were removed to keep the repository small; the training scripts re
 ## Reproducing the tables and figures
 
 The following scripts read the saved results and do not retrain any model. Run them from the
-repository root, in this order:
+repository root, in this order; every table is written as a CSV file:
 
 ```bash
 python reports/seeded_monthly_windows_hurdle_analysis.py      # pools the Red-LGCP seeds
 python reports/probabilistic_scores/compute_scores.py         # log-likelihood and CRPS of all methods
 python reports/statistical_tests/make_main_table.py           # main results table
-python reports/statistical_tests/paired_window_tests.py       # paired Wilcoxon tests (significance appendix)
+python reports/statistical_tests/paired_window_tests.py       # paired Wilcoxon tests
 python reports/probabilistic_scores/ablation_scores.py --stage base
 python reports/probabilistic_scores/ablation_scores.py --stage nokernel
 python reports/probabilistic_scores/ablation_scores.py --stage table   # ablation table
@@ -126,6 +126,16 @@ python reports/sensitivity_threshold/threshold_sensitivity.py # sensitivity to t
 python reports/interpretability_hurdle/interpret_hurdle.py    # LGCP parameters and latent field
 python reports/interpretability_hurdle/make_table.py          # parameter table
 ```
+
+| Table | File |
+|---|---|
+| Main results (mean and std per method and month) | `reports/statistical_tests/main_results_table.csv` |
+| Paired tests, point metrics | `reports/statistical_tests/paired_window_tests_hurdle.csv` |
+| Paired tests, log-likelihood and CRPS | `reports/probabilistic_scores/paired_tests.csv` |
+| Ablation | `reports/statistical_tests/ablation_table.csv` |
+| Paired tests, ablation | `reports/probabilistic_scores/ablation_paired_tests.csv` |
+| Sensitivity to the gate threshold | `reports/sensitivity_threshold/summary.csv` |
+| LGCP parameters | `reports/interpretability_hurdle/lgcp_parameters_table.csv` |
 
 The maps of the predictions are produced by `notebooks/62_plot_map_design_last_model.ipynb`.
 
