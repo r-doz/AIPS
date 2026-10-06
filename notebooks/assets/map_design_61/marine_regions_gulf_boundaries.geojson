@@ -1,0 +1,10 @@
+{
+"type": "FeatureCollection",
+"name": "marine_regions_gulf_boundaries",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "line_id": 3511, "line_name": "Croatia - Italy", "line_type": "Treaty", "source1": "Treaty on the delimitation of the frontier for the part not indicated as such in the Peace Treaty of 10 February 1947 (with annexes, exchanges of letters and final act). Signed at Osimo, Ancona, on 10 November 1975", "url1": "https://www.marineregions.org/documents/1975 Osimo Treaty.pdf", "display_status": "treaty" }, "geometry": { "type": "LineString", "coordinates": [ [ 13.47053584, 45.58730881 ], [ 13.3125, 45.545 ], [ 13.21166667, 45.45333333 ] ] } },
+{ "type": "Feature", "properties": { "line_id": 3512, "line_name": "Italy - Slovenia", "line_type": "Treaty", "source1": "Treaty on the delimitation of the frontier for the part not indicated as such in the Peace Treaty of 10 February 1947 (with annexes, exchanges of letters and final act). Signed at Osimo, Ancona, on 10 November 1975", "url1": "https://www.marineregions.org/documents/1975 Osimo Treaty.pdf", "display_status": "treaty" }, "geometry": { "type": "LineString", "coordinates": [ [ 13.72261012, 45.59451532 ], [ 13.71916667, 45.59416667 ], [ 13.7125, 45.59833333 ], [ 13.63, 45.63 ], [ 13.47053584, 45.58730881 ] ] } },
+{ "type": "Feature", "properties": { "line_id": 3513, "line_name": "Croatia - Slovenia", "line_type": "Court ruling", "source1": "FINAL AWARD. ARBITRATION AGREEMENT BETWEEN THE GOVERNMENT OF THE REPUBLIC OF CROATIA AND THE GOVERNMENT OF THE REPUBLIC OF SLOVENIA", "url1": "https://www.marineregions.org/documents/HR-SI Final Award.pdf", "display_status": "2017 arbitration line; disputed by Croatia" }, "geometry": { "type": "LineString", "coordinates": [ [ 13.6065402, 45.46557307 ], [ 13.52380556, 45.51158333 ], [ 13.45213889, 45.53958333 ], [ 13.38700668, 45.56494667 ] ] } }
+]
+}
