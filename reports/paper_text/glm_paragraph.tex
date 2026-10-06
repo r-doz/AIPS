@@ -1,0 +1,9 @@
+\paragraph{Window Poisson GLM.}
+This baseline is a Poisson generalized linear model with a log link, whose predictors include a sliding window of the most recent counts of each cell:
+\begin{equation}
+\begin{split}
+    \log\widehat{\lambda}_{j,t} ={}& \beta_0+\boldsymbol{\beta}_s^\top\mathbf{s}_j+\beta_\tau\tau_t+\boldsymbol{\beta}_x^\top\mathbf{x}_{j,t}\\
+    &+\sum_{k=1}^{W}\gamma_k\,y_{j,t-k},
+\end{split}
+\end{equation}
+where $\mathbf{s}_j$ are the coordinates of cell $j$, $\tau_t$ is the position of day $t$ within the year (day of the year divided by the number of days in the year), $\mathbf{x}_{j,t}$ are the environmental and calendar covariates of the target day, and $y_{j,t-1},\dots,y_{j,t-W}$ are the counts observed in the same cell over the previous $W=14$ days. All predictors are standardized with the training mean and standard deviation, and a single set of coefficients is shared by all cells and days. The coefficients are estimated by maximizing the Poisson log-likelihood over all training cell-days with a complete window, with an $\ell_2$ penalty of strength $\alpha=0.01$ on all coefficients except the intercept; $W$ and $\alpha$ were selected on the validation weeks (App.~\ref{app:hyperparameters}). The model is fitted once before the test week; during evaluation, its window is filled with the observed counts of the preceding days, so that each test day is predicted from the counts observed up to the previous day.

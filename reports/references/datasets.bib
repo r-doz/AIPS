@@ -1,0 +1,78 @@
+% ---------------- Copernicus Marine Service (CMEMS) ----------------
+% Sea temperature (2025) and salinity (2024-2025): cmems_mod_med_phy-temp_my / phy-sal_my, 4.2 km, daily
+@misc{cmems_med_phy_my,
+  author       = {{European Union-Copernicus Marine Service}},
+  title        = {{Mediterranean Sea} Physics Reanalysis},
+  howpublished = {Product MEDSEA\_MULTIYEAR\_PHY\_006\_004},
+  publisher    = {Mercator Ocean International},
+  year         = {2025},
+  doi          = {10.48670/mds-00375},
+  url          = {https://doi.org/10.48670/mds-00375}
+}
+
+% Chlorophyll-a (2025): cmems_mod_med_bgc-plankton_my, 4.2 km, daily
+@misc{cmems_med_bgc_my,
+  author       = {Teruzzi, Anna and Feudale, Laura and Bolzon, Giorgio and Lazzari, Paolo and Salon, Stefano and Di Biagio, Valeria and Coidessa, Gianluca and Cossarini, Gianpiero},
+  title        = {{Mediterranean Sea} Biogeochemical Reanalysis {INTERIM} ({CMEMS} {MED-Biogeochemistry}, {MedBFM3i} system)},
+  howpublished = {Product MEDSEA\_MULTIYEAR\_BGC\_006\_008, Copernicus Marine Service},
+  year         = {2021},
+  doi          = {10.25423/CMCC/MEDSEA_MULTIYEAR_BGC_006_008_MEDBFM3I},
+  url          = {https://doi.org/10.25423/CMCC/MEDSEA_MULTIYEAR_BGC_006_008_MEDBFM3I}
+}
+
+% Sea temperature (2024): cmems_mod_med_phy-tem_anfc, 4.2 km, daily
+@misc{cmems_med_phy_anfc,
+  author       = {{European Union-Copernicus Marine Service}},
+  title        = {{Mediterranean Sea} Physics Analysis and Forecast},
+  howpublished = {Product MEDSEA\_ANALYSISFORECAST\_PHY\_006\_013},
+  publisher    = {Mercator Ocean International},
+  year         = {2025},
+  doi          = {10.48670/mds-00359},
+  url          = {https://doi.org/10.48670/mds-00359}
+}
+
+% Chlorophyll-a (2024): cmems_mod_med_bgc-pft_anfc, 4.2 km, daily
+@misc{cmems_med_bgc_anfc,
+  author       = {{European Union-Copernicus Marine Service}},
+  title        = {{Mediterranean Sea} Biogeochemistry Analysis and Forecast},
+  howpublished = {Product MEDSEA\_ANALYSISFORECAST\_BGC\_006\_014},
+  publisher    = {Mercator Ocean International},
+  year         = {2025},
+  doi          = {10.48670/mds-00358},
+  url          = {https://doi.org/10.48670/mds-00358}
+}
+
+% ---------------- Global Fishing Watch (GFW) ----------------
+% AIS apparent fishing effort via the GFW API (4Wings), 0.01 deg, daily, grouped by vessel.
+% 2024 data: public-global-fishing-effort v3.0; 2025 data: v4.0 (both downloaded June 2026).
+@misc{gfw_fishing_effort,
+  author       = {{Global Fishing Watch}},
+  title        = {{AIS}-based apparent fishing effort (public-global-fishing-effort, versions 3.0 and 4.0), daily, 0.01$^\circ$ resolution, 2024--2025},
+  howpublished = {Global Fishing Watch API, \url{https://globalfishingwatch.org/our-apis/}},
+  note         = {Copyright 2026, Global Fishing Watch, Inc. Accessed June 2026},
+  year         = {2026}
+}
+
+% Method behind GFW apparent fishing effort
+@article{kroodsma2018tracking,
+  author  = {Kroodsma, David A. and Mayorga, Juan and Hochberg, Timothy and Miller, Nathan A. and Boerder, Kristina and Ferretti, Francesco and Wilson, Alex and Bergman, Bjorn and White, Timothy D. and Block, Barbara A. and Woods, Paul and Sullivan, Brian and Costello, Christopher and Worm, Boris},
+  title   = {Tracking the global footprint of fisheries},
+  journal = {Science},
+  volume  = {359},
+  number  = {6378},
+  pages   = {904--908},
+  year    = {2018},
+  doi     = {10.1126/science.aao5646}
+}
+
+% Satellite vessel detections, incl. vessels not broadcasting AIS (for the conclusions' future work)
+@article{paolo2024satellite,
+  author  = {Paolo, Fernando S. and Kroodsma, David and Raynor, Jennifer and Hochberg, Tim and Davis, Pete and Cleary, Jesse and Marsaglia, Luca and Orofino, Sara and Thomas, Christian and Halpin, Patrick},
+  title   = {Satellite mapping reveals extensive industrial activity at sea},
+  journal = {Nature},
+  volume  = {625},
+  number  = {7993},
+  pages   = {85--91},
+  year    = {2024},
+  doi     = {10.1038/s41586-023-06825-8}
+}

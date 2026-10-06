@@ -1,0 +1,106 @@
+M_inducing: 300
+covariate_cols:
+- chl
+- thetao
+- fishing_block
+- is_holiday
+- is_weekend
+- cell_lag_1
+- cell_lag_7
+- salinity
+data_seed: 8
+device: cpu
+global_cell_mean_mode: expanding
+global_cell_mean_run_name: dataseed42_npseed0
+global_mean_run_name: dataseed42_npseed0
+grad_clip: 10.0
+gulf_csv_path: data/raw/ts_gulf_coords.csv
+kernel_noise:
+  trainable: false
+  value: 0.001
+lag_features:
+  cell_cols:
+  - longitude
+  - latitude
+  cell_lags:
+  - 1
+  - 7
+  cell_rolling_windows:
+  - 7
+  daily_total_lags:
+  - 1
+  - 7
+  daily_total_rolling_windows:
+  - 7
+  date_col: date
+  enabled: true
+  fillna_value: 0.0
+  mode: observed_past
+  target_col: ais_vessels_count
+last_available_mode: one_step_ahead
+last_available_run_name: dataseed42_npseed0_onestep
+log_every: 100
+lr: 0.001
+minibatch: 1024
+model:
+  spatial_composition: sum
+  spatial_kernels:
+  - hyperparameters:
+      lengthscale: 0.2
+      variance: 1.0e-10
+    trainable:
+      lengthscale: false
+      variance: false
+    type: RBF
+  - hyperparameters:
+      lengthscale: 0.01
+      variance: 1.0e-10
+    trainable:
+      lengthscale: false
+      variance: false
+    type: RBF
+  temporal_composition: sum
+  temporal_kernels:
+  - hyperparameters:
+      lengthscale: 0.01
+      variance: 1.0e-10
+    trainable:
+      lengthscale: false
+      variance: false
+    type: RBF
+  - hyperparameters:
+      lengthscale: 0.8
+      period_days: 14
+      variance: 1.0e-10
+    trainable:
+      lengthscale: false
+      period: true
+      variance: false
+    type: periodic
+model_family: 2025_may_08_14
+np_seed: 8
+num_mc: 32
+num_pred_samples: 300
+num_steps: 5000
+num_vis_samples: 500
+parquet_path: data/processed/cpr_gfw_salinity.parquet
+report_root: /u/rominadoz/projects/AIPS/reports/seeded_monthly_windows_ablation/no_kernel/seed_8/runs
+run_name: 2025_may_08_14
+split_strategy: fixed_test_window
+test_end_date: '2025-05-14'
+test_start_date: '2025-05-08'
+train_fraction: 0.9
+years:
+- 2024
+- 2025
+zero_gate:
+  activation: relu
+  alpha: 0.0001
+  enabled: true
+  hidden_layer_sizes:
+  - 32
+  max_iter: 500
+  mode: confidence_redistribute
+  redistribution_gamma: 1.0
+  redistribution_scale: 1.0
+  threshold: 0.3

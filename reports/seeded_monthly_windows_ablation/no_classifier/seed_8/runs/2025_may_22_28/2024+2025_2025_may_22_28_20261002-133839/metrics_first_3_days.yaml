@@ -1,0 +1,20 @@
+dates:
+- '2025-05-22'
+- '2025-05-23'
+- '2025-05-24'
+num_observations: 147
+aggregation: pooled_first_three_test_days
+metrics:
+  mean_ll_obs: -0.5293524737793873
+  mae_obs: 0.4460742973063623
+  rmse_obs: 2.4337649247357636
+  wasserstein: 0.3361321917773056
+  mean_ll_daily: -9.766885036664542
+  mae_daily: 14.814963062604269
+  rmse_daily: 19.501293258584518
+  daily_delta_corr: null
+  daily_direction_accuracy_moving: 0.5
+  accuracy: 0.061224489795918366
+  precision: 0.061224489795918366
+  recall: 1.0
+  f1: 0.11538461538461538

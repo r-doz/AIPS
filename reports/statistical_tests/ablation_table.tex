@@ -1,0 +1,30 @@
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llccccccc}
+\toprule
+Variant & Month & MAE & RMSE & Wasserstein & Accuracy & F1 & Log-lik. & CRPS \\
+\midrule
+\multirow{2}{*}{Red-LGCP (full)} & May & 0.286\,{\scriptsize$\pm$0.041} & 0.941\,{\scriptsize$\pm$0.115} & \textbf{0.101}\,{\scriptsize$\pm$0.047} & \textbf{0.912}\,{\scriptsize$\pm$0.009} & \textbf{0.645}\,{\scriptsize$\pm$0.072} & \textbf{$-$0.441}\,{\scriptsize$\pm$0.061} & \textbf{0.208}\,{\scriptsize$\pm$0.042} \\
+ & Nov. & 0.283\,{\scriptsize$\pm$0.058} & 0.881\,{\scriptsize$\pm$0.278} & \textbf{0.085}\,{\scriptsize$\pm$0.015} & \textbf{0.899}\,{\scriptsize$\pm$0.021} & 0.573\,{\scriptsize$\pm$0.096} & \textbf{$-$0.455}\,{\scriptsize$\pm$0.042} & \textbf{0.209}\,{\scriptsize$\pm$0.043} \\
+\midrule
+\multirow{2}{*}{w/o uncertainty} & May & 0.289\,{\scriptsize$\pm$0.042} & 0.928\,{\scriptsize$\pm$0.126} & 0.104\,{\scriptsize$\pm$0.045} & 0.903\,{\scriptsize$\pm$0.008} & 0.637\,{\scriptsize$\pm$0.065} & \textbf{$-$0.441}\,{\scriptsize$\pm$0.061} & \textbf{0.208}\,{\scriptsize$\pm$0.042} \\
+ & Nov. & 0.281\,{\scriptsize$\pm$0.053} & 0.864\,{\scriptsize$\pm$0.263} & 0.090\,{\scriptsize$\pm$0.016} & 0.895\,{\scriptsize$\pm$0.024} & \textbf{0.590}\,{\scriptsize$\pm$0.089} & \textbf{$-$0.455}\,{\scriptsize$\pm$0.042} & \textbf{0.209}\,{\scriptsize$\pm$0.043} \\
+\midrule
+\multirow{2}{*}{w/o redistribution} & May & \textbf{0.275}\,{\scriptsize$\pm$0.051} & 0.910\,{\scriptsize$\pm$0.141} & 0.126\,{\scriptsize$\pm$0.053} & \textbf{0.912}\,{\scriptsize$\pm$0.009} & \textbf{0.645}\,{\scriptsize$\pm$0.072} & \textbf{$-$0.441}\,{\scriptsize$\pm$0.061} & \textbf{0.208}\,{\scriptsize$\pm$0.042} \\
+ & Nov. & \textbf{0.275}\,{\scriptsize$\pm$0.052} & 0.873\,{\scriptsize$\pm$0.257} & 0.115\,{\scriptsize$\pm$0.014} & \textbf{0.899}\,{\scriptsize$\pm$0.021} & 0.573\,{\scriptsize$\pm$0.096} & \textbf{$-$0.455}\,{\scriptsize$\pm$0.042} & \textbf{0.209}\,{\scriptsize$\pm$0.043} \\
+\midrule
+\multirow{2}{*}{w/o gate} & May & 0.356\,{\scriptsize$\pm$0.047} & \textbf{0.903}\,{\scriptsize$\pm$0.140} & 0.218\,{\scriptsize$\pm$0.044} & 0.131\,{\scriptsize$\pm$0.030} & 0.231\,{\scriptsize$\pm$0.046} & \textbf{$-$0.441}\,{\scriptsize$\pm$0.061} & \textbf{0.208}\,{\scriptsize$\pm$0.042} \\
+ & Nov. & 0.344\,{\scriptsize$\pm$0.045} & \textbf{0.849}\,{\scriptsize$\pm$0.241} & 0.200\,{\scriptsize$\pm$0.012} & 0.122\,{\scriptsize$\pm$0.019} & 0.217\,{\scriptsize$\pm$0.030} & \textbf{$-$0.455}\,{\scriptsize$\pm$0.042} & \textbf{0.209}\,{\scriptsize$\pm$0.043} \\
+\midrule
+\multirow{2}{*}{w/o joint training} & May & 0.304\,{\scriptsize$\pm$0.079} & 1.244\,{\scriptsize$\pm$0.482} & 0.164\,{\scriptsize$\pm$0.075} & 0.895\,{\scriptsize$\pm$0.013} & 0.632\,{\scriptsize$\pm$0.068} & $-$0.520\,{\scriptsize$\pm$0.082} & 0.247\,{\scriptsize$\pm$0.068} \\
+ & Nov. & 0.286\,{\scriptsize$\pm$0.061} & 0.945\,{\scriptsize$\pm$0.374} & 0.137\,{\scriptsize$\pm$0.029} & 0.891\,{\scriptsize$\pm$0.020} & 0.577\,{\scriptsize$\pm$0.084} & $-$0.525\,{\scriptsize$\pm$0.054} & 0.226\,{\scriptsize$\pm$0.044} \\
+\midrule
+\multirow{2}{*}{w/o classifier} & May & 0.377\,{\scriptsize$\pm$0.078} & 1.206\,{\scriptsize$\pm$0.456} & 0.256\,{\scriptsize$\pm$0.063} & 0.131\,{\scriptsize$\pm$0.030} & 0.231\,{\scriptsize$\pm$0.046} & $-$0.520\,{\scriptsize$\pm$0.082} & 0.247\,{\scriptsize$\pm$0.068} \\
+ & Nov. & 0.354\,{\scriptsize$\pm$0.048} & 0.933\,{\scriptsize$\pm$0.317} & 0.250\,{\scriptsize$\pm$0.028} & 0.122\,{\scriptsize$\pm$0.019} & 0.217\,{\scriptsize$\pm$0.030} & $-$0.525\,{\scriptsize$\pm$0.054} & 0.226\,{\scriptsize$\pm$0.044} \\
+\bottomrule
+\end{tabular}
+\caption{Ablation of Red-LGCP on May and Nov.\ 2025 (same windows and covariates as Table~\ref{tab:results-main}; mean $\pm$ population std over 10 seeds $\times$ 4 weekly windows per month). Each variant removes one component from the full model: ``w/o uncertainty'' uses the fixed threshold $\tau$ instead of $\tau+\sigma$; ``w/o redistribution'' zeroes rejected cells without recovering any of their intensity; ``w/o gate'' reports the expected counts without zeroing; ``w/o joint training'' trains the LGCP alone and the classifier afterwards, as a separate post-hoc gate; ``w/o classifier'' is the LGCP alone; ``w/o kernel'' removes the latent Gaussian process, keeping the covariate effects and the classifier. The first four variants share the same trained model, so their log-likelihood and CRPS, which score the hurdle predictive distribution, coincide; for the two variants without joint training these scores refer to the LGCP predictive distribution, since a post-hoc gate only changes point predictions. Bold marks the best value per column within each month.}
+\label{tab:results-ablation}
+\end{table*}

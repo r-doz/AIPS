@@ -268,12 +268,11 @@ def add_calendar_features(df: pd.DataFrame, config: dict) -> pd.DataFrame:
 
     df["fishing_block"] = False
 
-    if year == 2024:
-        df.loc[
-            (df["date"] >= pd.Timestamp(f"{year}-07-31"))
-            & (df["date"] <= pd.Timestamp(f"{year}-09-13")),
-            "fishing_block",
-        ] = True
+    df.loc[
+        (df["date"] >= pd.Timestamp(f"{year}-07-31"))
+        & (df["date"] <= pd.Timestamp(f"{year}-09-13")),
+        "fishing_block",
+    ] = True
 
     return df
 

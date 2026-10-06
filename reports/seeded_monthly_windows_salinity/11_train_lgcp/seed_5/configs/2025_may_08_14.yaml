@@ -89,11 +89,10 @@ zero_gate:
   mode: confidence_redistribute
   hidden_layer_sizes:
   - 32
-  - 16
   activation: relu
-  alpha: 0.01
+  alpha: 0.0001
   max_iter: 500
-  threshold: 0.1
+  threshold: 0.3
   redistribution_gamma: 1.0
   redistribution_scale: 1.0
 lr: 0.001

@@ -1,0 +1,19 @@
+\paragraph{Spatio-temporal kernel.}
+We use a separable covariance obtained by multiplying a spatial and a temporal kernel:
+\begin{equation}
+    k\!\left((\mathbf{s},t),(\mathbf{s}',t')\right)
+    =
+    \left(k_{s,0}+k_{s,1}\right)
+    \left(k_{t,0}+k_{t,1}\right),
+    \label{eq:kernel}
+\end{equation}
+where $k_{s,0}$, $k_{s,1}$ and $k_{t,0}$ are radial basis function (RBF) kernels and $k_{t,1}$ is a periodic kernel:
+\begin{align}
+    k_{s,j}(\mathbf{s},\mathbf{s}') &= \sigma^2_{s,j}\exp\!\left(-\frac{\|\mathbf{s}-\mathbf{s}'\|^2}{2\ell_{s,j}^2}\right),\quad j\in\{0,1\},\\
+    k_{t,0}(t,t') &= \sigma^2_{t,0}\exp\!\left(-\frac{(t-t')^2}{2\ell_{t,0}^2}\right),\\
+    k_{t,1}(t,t') &= \sigma^2_{t,1}\exp\!\left[-\frac{2\sin^2\!\left(\pi|t-t'|/p\right)}{\ell_{t,1}^2}\right].
+\end{align}
+The spatial kernels act on the cell coordinates (longitude and latitude, each standardized with the training mean and standard deviation) and the temporal kernels on standardized time, so the RBF lengthscales are expressed in standardized units. The broad spatial kernel $k_{s,0}$ ($\ell_{s,0}=0.2$, about 2.8\,km east--west and 1.4\,km north--south, since each axis is standardized separately) correlates neighboring cells, mainly along the east--west direction, whereas the local kernel $k_{s,1}$ ($\ell_{s,1}=0.01$) is effectively independent across cells and allows spatially localized departures.
+Similarly, the temporal RBF $k_{t,0}$ ($\ell_{t,0}=0.01$, about 1.4--2 days) represents short-term, non-recurrent variation, while the periodic kernel $k_{t,1}$ captures recurrent patterns; its lengthscale is fixed to $\ell_{t,1}=0.8$ and its period $p$ is initialized at 14 days and subsequently learned.
+The variances $\sigma^2_{s,0}$, $\sigma^2_{s,1}$, $\sigma^2_{t,0}$ and $\sigma^2_{t,1}$ are also optimized, whereas all lengthscales are fixed.
+Equation~\eqref{eq:kernel} consequently allows both spatial scales to contribute to short-term and recurrent temporal variation.

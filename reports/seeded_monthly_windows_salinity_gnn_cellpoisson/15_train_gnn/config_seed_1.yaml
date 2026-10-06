@@ -1,0 +1,64 @@
+years:
+- 2024
+- 2025
+parquet_path: data/processed/cpr_gfw_salinity.parquet
+gulf_csv_path: data/raw/ts_gulf_coords.csv
+target_col: ais_vessels_count
+split_strategy: fixed_test_window
+train_fraction: 0.9
+data_seed: 1
+test_start_date: '2025-05-05'
+test_end_date: '2025-05-11'
+covariate_cols:
+- chl
+- thetao
+- fishing_block
+- is_holiday
+- is_weekend
+- cell_lag_1
+- cell_lag_7
+- salinity
+include_coords: true
+include_time: true
+standardize_features: true
+lag_features:
+  enabled: true
+  mode: observed_past
+  target_col: ais_vessels_count
+  date_col: date
+  cell_cols:
+  - longitude
+  - latitude
+  cell_lags:
+  - 1
+  - 7
+  cell_rolling_windows:
+  - 7
+  daily_total_lags:
+  - 1
+  - 7
+  daily_total_rolling_windows:
+  - 7
+  fillna_value: 0.0
+adjacency: queen
+hidden_dim: 64
+num_layers: 1
+dropout: 0.1
+loss:
+  mode: cell_poisson
+  daily_weight: 1.0
+lr: 0.1
+weight_decay: 1.0e-05
+num_epochs: 300
+torch_seed: 1
+device: cpu
+log_every: 25
+report_root: reports/experiments/final_experiments
+model_family: new_tests
+run_name: may_5_11_gnn
+spatial_plot:
+  radius_cells: 1
+  diffusion_strength: 0.25
+  display_method: pchip
+  nx: 2700
+  ny: 1800

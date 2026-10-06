@@ -1,0 +1,30 @@
+\begin{table*}[t]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llccccc}
+\toprule
+Method & Month & MAE$_{\text{obs}}$ & RMSE$_{\text{obs}}$ & Wasserstein & Accuracy & F1 \\
+\midrule
+\multirow{2}{*}{Last Available Poisson} & May & 0.353 $\pm$ 0.071 & 1.096 $\pm$ 0.165 & \textbf{0.041 $\pm$ 0.012} & 0.885 $\pm$ 0.010 & 0.543 $\pm$ 0.097 \\
+ & Nov. & 0.354 $\pm$ 0.065 & 1.058 $\pm$ 0.288 & \textbf{0.015 $\pm$ 0.007} & 0.875 $\pm$ 0.020 & 0.490 $\pm$ 0.072 \\
+\midrule
+\multirow{2}{*}{Global Cell Mean Poisson} & May & 0.426 $\pm$ 0.070 & 1.155 $\pm$ 0.236 & 0.342 $\pm$ 0.077 & 0.254 $\pm$ 0.030 & 0.259 $\pm$ 0.051 \\
+ & Nov. & 0.401 $\pm$ 0.031 & 0.954 $\pm$ 0.154 & 0.300 $\pm$ 0.051 & 0.212 $\pm$ 0.027 & 0.235 $\pm$ 0.034 \\
+\midrule
+\multirow{2}{*}{Window Poisson GLM} & May & 0.432 $\pm$ 0.124 & 1.371 $\pm$ 0.750 & 0.329 $\pm$ 0.061 & 0.131 $\pm$ 0.030 & 0.231 $\pm$ 0.046 \\
+ & Nov. & 0.444 $\pm$ 0.079 & 1.198 $\pm$ 0.631 & 0.380 $\pm$ 0.042 & 0.122 $\pm$ 0.019 & 0.217 $\pm$ 0.030 \\
+\midrule
+\multirow{2}{*}{GNN} & May & 0.350 $\pm$ 0.058 & 0.944 $\pm$ 0.138 & 0.209 $\pm$ 0.063 & 0.131 $\pm$ 0.030 & 0.231 $\pm$ 0.046 \\
+ & Nov. & 0.345 $\pm$ 0.029 & 0.904 $\pm$ 0.194 & 0.230 $\pm$ 0.049 & 0.122 $\pm$ 0.019 & 0.217 $\pm$ 0.030 \\
+\midrule
+\multirow{2}{*}{ConvLSTM} & May & 0.340 $\pm$ 0.054 & \textbf{0.940 $\pm$ 0.136} & 0.229 $\pm$ 0.057 & 0.131 $\pm$ 0.030 & 0.231 $\pm$ 0.046 \\
+ & Nov. & 0.322 $\pm$ 0.042 & \textbf{0.841 $\pm$ 0.174} & 0.195 $\pm$ 0.039 & 0.122 $\pm$ 0.019 & 0.217 $\pm$ 0.030 \\
+\midrule
+\multirow{2}{*}{LGCP (ours)} & May & \textbf{0.304 $\pm$ 0.079} & 1.244 $\pm$ 0.482 & 0.164 $\pm$ 0.075$^{\boldsymbol{\dagger}}$ & \textbf{0.895 $\pm$ 0.013} & \textbf{0.632 $\pm$ 0.068} \\
+ & Nov. & \textbf{0.286 $\pm$ 0.061} & 0.945 $\pm$ 0.374 & 0.137 $\pm$ 0.029$^{\boldsymbol{\dagger}}$ & \textbf{0.891 $\pm$ 0.020} & \textbf{0.577 $\pm$ 0.084} \\
+\bottomrule
+\end{tabular}%
+}
+\caption{Model results on May and Nov.\ 2025 (4 weekly test windows per month: 01--07, 08--14, 15--21, 22--28), with salinity added as a covariate for Window Poisson GLM, GNN, ConvLSTM, and LGCP (Global Cell Mean and Last Available Poisson use no covariates). Mean $\pm$ population std pooled over all (window $\times$ seed) values -- 10 seeds for LGCP, GNN and ConvLSTM, 1 seed (seed-invariant) for the other two methods. Bold marks the best value per column within each month. Last Available Poisson's low Wasserstein distance is not a sign of good calibration: it simply reuses real observed counts shifted by one day, so its predicted value distribution trivially matches the true one by construction. $^{\boldsymbol{\dagger}}$ marks the best Wasserstein distance among the remaining, genuinely predictive models.}
+\label{tab:results-main}
+\end{table*}

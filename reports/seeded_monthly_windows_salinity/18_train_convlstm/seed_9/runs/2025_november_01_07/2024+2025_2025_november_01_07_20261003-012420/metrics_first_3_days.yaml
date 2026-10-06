@@ -1,0 +1,20 @@
+dates:
+- '2025-11-01'
+- '2025-11-02'
+- '2025-11-03'
+num_observations: 147
+aggregation: pooled_first_three_test_days
+metrics:
+  mean_ll_obs: -0.27228111028671265
+  mae_obs: 0.14197222888469696
+  rmse_obs: 0.44025418162345886
+  wasserstein: 0.0763936804145129
+  mean_ll_daily: -1.082844853401184
+  mae_daily: 1.228703260421753
+  rmse_daily: 1.8171930313110352
+  daily_delta_corr: null
+  daily_direction_accuracy_moving: 1.0
+  accuracy: 0.08163265306122448
+  precision: 0.08163265306122448
+  recall: 1.0
+  f1: 0.15094339622641506
