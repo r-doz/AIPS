@@ -21,7 +21,7 @@ METHODS = {
     "Window Poisson GLM": "reports/seeded_monthly_windows_salinity/14_train_window_poisson_glm",
     "GNN": "reports/seeded_monthly_windows_salinity_gnn_cellpoisson/15_train_gnn",
     "ConvLSTM": "reports/seeded_monthly_windows_salinity/18_train_convlstm",
-    "LGCP": "reports/seeded_monthly_windows_salinity/11_train_lgcp",
+    "LGCP": "reports/seeded_monthly_windows_hurdle",
 }
 METRICS = {"mae_obs": "lower", "rmse_obs": "lower", "wasserstein": "lower", "accuracy": "higher", "f1": "higher"}
 BASELINES = [m for m in METHODS if m != "LGCP"]
@@ -39,7 +39,7 @@ def holm(pvals):
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gnn-dir", default=METHODS["GNN"], help="Seeded results directory of the GNN to test.")
-parser.add_argument("--out", default="reports/statistical_tests/paired_window_tests.csv")
+parser.add_argument("--out", default="reports/statistical_tests/paired_window_tests_hurdle.csv")
 parser.add_argument("--main-dir", default=METHODS["LGCP"], help="Seeded results directory of the main model.")
 args = parser.parse_args()
 METHODS["GNN"] = args.gnn_dir

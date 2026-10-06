@@ -3,7 +3,7 @@
 Example:
     python scripts/run_monthly_windows.py \
         --script scripts/15_train_gnn.py \
-        --config config/15_gnn.yaml
+        --config config/15_gnn_salinity_cellpoisson.yaml
 """
 
 from __future__ import annotations

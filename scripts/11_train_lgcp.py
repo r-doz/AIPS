@@ -881,7 +881,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        default="config/train_basic_lgcp.yaml",
+        default="config/exp4_salinity.yaml",
         help="Path to YAML config file.",
     )
     args = parser.parse_args()

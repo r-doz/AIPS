@@ -327,7 +327,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        default="config/train_basic_lgcp.yaml",
+        default="config/13_evaluate_last_available_poisson.yaml",
         help="Path to shared YAML config file.",
     )
     args = parser.parse_args()

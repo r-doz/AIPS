@@ -8,12 +8,12 @@ Unlike the original manual chain (which retrained the full 5000-step LGCP
 for every single classifier setting), this loads a cached pre-gate LGCP
 prediction per validation week (see scripts/11_train_lgcp.py's
 cache_pregate_path option, and the configs under
-reports/paper/hparam_revalidation_2weeks_before/configs/pregate_*.yaml)
+reports/paper/hparam_revalidation_2weeks_before_salinity/configs/pregate_*.yaml)
 and only retrains the cheap MLPClassifier for each grid point, which is
 mathematically equivalent but orders of magnitude faster.
 
 Usage:
-    python scripts/classifier_hparam_rerun_2weeks_before.py --lr 0.001
+    python scripts/classifier_hparam_rerun_2weeks_before_salinity.py --lr 0.001
     (--lr selects which pregate cache, i.e. which winning LGCP learning
     rate, to use; defaults to reading selected_hyperparameters.yaml from
     the LGCP lr sweep if present.)

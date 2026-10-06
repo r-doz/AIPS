@@ -17,8 +17,9 @@ class FirstThreeDayMetricsTests(unittest.TestCase):
         self.assertEqual(result['metrics']['mae_obs'], 0)
         self.assertEqual(result['metrics']['wasserstein'], 0)
         self.assertEqual(result['metrics']['accuracy'], 1)
+        self.assertEqual(result['metrics']['f1'], 1)
         self.assertIsNone(result['metrics']['daily_delta_corr'])
-        self.assertEqual(len(result['metrics']), 12)
+        self.assertEqual(len(result['metrics']), 13)
 
     def test_short_windows_skip_supplementary_report(self):
         for n in range(4):

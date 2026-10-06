@@ -6,10 +6,10 @@ min-max normalized per week, averaged across weeks).
 
 Each run also leaves behind a pre-gate prediction cache (via
 cache_pregate_path in its config) that the classifier hyperparameter
-sweep (scripts/classifier_hparam_rerun_2weeks_before.py) reads afterward.
+sweep (scripts/classifier_hparam_rerun_2weeks_before_salinity.py) reads afterward.
 
 Usage:
-    python scripts/lgcp_lr_sweep_2weeks_before.py --parallel 4
+    python scripts/lgcp_lr_sweep_2weeks_before_salinity.py --parallel 4
 """
 
 from __future__ import annotations

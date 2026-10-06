@@ -1,15 +1,15 @@
-"""Re-run the Window Poisson GLM and GNN hyperparameter grid searches from
-notebooks/51_paper_baseline_hyperparameter_selection.ipynb, on validation
+"""Re-run the Window Poisson GLM and GNN hyperparameter grid searches of the
+original baseline selection notebook, on validation
 weeks redefined as the two 7-day blocks immediately preceding each
 reporting week (2025-05-05..11 and 2025-11-03..09), instead of the
 original April/October blocks.
 
 Grids, scoring (compute_relative_scores) and module-loading pattern are
-copied verbatim from notebook 51 cells 2/3/5/9/11 -- only TEST_WEEKS and
+copied verbatim from that notebook -- only TEST_WEEKS and
 RESULTS_DIR_NAME differ.
 
 Usage:
-    python scripts/51b_baseline_hparam_rerun_2weeks_before.py
+    python scripts/51c_baseline_hparam_rerun_2weeks_before_salinity.py
 """
 
 from __future__ import annotations

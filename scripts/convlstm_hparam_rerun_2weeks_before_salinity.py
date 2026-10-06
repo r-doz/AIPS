@@ -1,15 +1,14 @@
 """Re-run the ConvLSTM (seq_length x lr) hyperparameter sweep on validation
 weeks redefined as the two 7-day blocks immediately preceding each
 reporting week (2025-05-05..11 and 2025-11-03..09), instead of the
-original April/October blocks used in reports/paper/convlstm_tuning/
-(whose driver script no longer exists in the working tree).
+original April/October blocks.
 
 Grid matches the original sweep: seq_length in {3, 7, 14}, lr in
 {0.001, 0.01}, scored by mean mean_ll_obs across the 4 validation weeks
-(same convention as the original convlstm_search_results.csv).
+(same convention as the original sweep).
 
 Usage:
-    python scripts/convlstm_hparam_rerun_2weeks_before.py
+    python scripts/convlstm_hparam_rerun_2weeks_before_salinity.py
 """
 
 from __future__ import annotations

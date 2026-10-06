@@ -109,7 +109,7 @@ def download_copernicus_product(
 
 def download_copernicus_data(config: dict | None = None) -> list[Path]:
     """
-    Download all Copernicus products listed in config/config.yaml.
+    Download all Copernicus products listed in config/data.yaml.
     """
     if config is None:
         config = load_config()
@@ -236,7 +236,7 @@ def clean_copernicus_product(
 
 def clean_copernicus_data(config: dict | None = None) -> list[Path]:
     """
-    Clean all Copernicus products listed in config/config.yaml.
+    Clean all Copernicus products listed in config/data.yaml.
     """
     if config is None:
         config = load_config()

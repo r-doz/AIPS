@@ -476,7 +476,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        default="config/14_window_poisson_glm.yaml",
+        default="config/14_window_poisson_glm_salinity.yaml",
         help="Path to YAML config file.",
     )
     args = parser.parse_args()

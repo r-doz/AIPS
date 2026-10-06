@@ -1,7 +1,0 @@
-daily_delta_corr: 0.7115281130846625
-daily_direction_accuracy_moving: 0.8333333333333334
-mae_daily: 9.84858228647229
-mean_ll_daily: -6.661104826077339
-n_test_days: 7
-n_train_days: 691
-rmse_daily: 12.11613799479376

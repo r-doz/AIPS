@@ -6,11 +6,11 @@ classifier, which has no coefficient-level interpretation.
 
 1. Parameters: alpha, beta, kernel variances and period of every run.
 2. Effects: multiplicative effect exp(beta / sd) on lambda per physical unit (per training SD for
-   chlorophyll-a, on vs off for the binary indicators), with the training statistics of each
-   window (identical across seeds and to the two-stage runs, which use the same data).
+   chlorophyll-a, on vs off for the binary indicators), where sd comes from the covariate scaler
+   fitted on the training data of each window, rebuilt with the same prepare_data call as in training.
 3. Latent field: the posterior mean f = K_xZ K_ZZ^{-1} m on the 49 cells x training days is split
-   into a time-constant map, a periodic component and a short-term component, as in
-   reports/interpretability/decompose_latent_field.py.
+   into a time-constant map, a periodic component and a short-term component, splitting the
+   periodic kernel into its time-constant Fourier term and an oscillating remainder.
 """
 
 import sys
@@ -25,25 +25,36 @@ from scipy.stats import spearmanr
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+from src.models.data_pp_lgcp import prepare_data  # noqa: E402
 from src.models.lgcp import build_Kuu, periodic_kernel, rbf_kernel  # noqa: E402
 
 torch.set_default_dtype(torch.float64)
 RUNS = ROOT / "reports/seeded_monthly_windows_hurdle"
 OUT = ROOT / "reports/interpretability_hurdle"
 COVS = ["chl", "thetao", "fishing_block", "is_holiday", "is_weekend", "cell_lag_1", "cell_lag_7", "salinity"]
-MU_LON, SD_LON = 13.39795918, 0.17917775
-MU_LAT, SD_LAT = 45.63052718, 0.0622551
 T0, SPAN_DAYS = pd.Timestamp("2024-01-01"), 730
+_scalers = {}
 
-stats = (pd.read_csv(ROOT / "reports/interpretability/lgcp_params_all_runs_converted.csv")
-         .groupby("window")[[f"{p}_{c}" for c in COVS for p in ("sd", "mean")]].first())
+
+def window_scalers(run, window):
+    """Coordinate and covariate scalers fitted on the training data of a window, as in training."""
+    if window not in _scalers:
+        cfg = yaml.safe_load(open(run / "params.yaml"))
+        *_, scalers, _ = prepare_data(
+            str(ROOT / cfg["parquet_path"]), train_fraction=cfg["train_fraction"], random_seed=cfg["data_seed"],
+            split_strategy=cfg.get("split_strategy", "random_day"), covariate_cols=cfg.get("covariate_cols"),
+            test_start_date=cfg.get("test_start_date"), test_end_date=cfg.get("test_end_date"),
+            lag_features=cfg.get("lag_features"), years=cfg.get("years"))
+        _scalers[window] = scalers
+    return _scalers[window]
+
+
 data = pd.concat([pd.read_parquet(ROOT / f"data/processed/cpr_gfw_salinity_{y}.parquet",
                                   columns=["date", "longitude", "latitude", "ais_vessels_count"]) for y in (2024, 2025)])
 data["date"] = pd.to_datetime(data["date"])
 cells = (data[["longitude", "latitude"]].drop_duplicates().sort_values(["latitude", "longitude"])
          .to_numpy().astype(np.float64))
 assert len(cells) == 49
-cells_std = np.column_stack([(cells[:, 0] - MU_LON) / SD_LON, (cells[:, 1] - MU_LAT) / SD_LAT])
 
 rows, maps, profiles = [], [], []
 files = sorted(RUNS.glob("seed_*/runs/*/*/model.pt"))
@@ -55,6 +66,9 @@ for f in files:
     assert yaml.safe_load(open(run / "params.yaml"))["covariate_cols"] == COVS
     st = {k: v.double() for k, v in torch.load(f, map_location="cpu", weights_only=False)["model_state"].items()}
     td = yaml.safe_load(open(run / "time_diagnostics.yaml"))
+    sc = window_scalers(run, window)
+    cov_sd = dict(zip(COVS, sc["cov_scaler"].scale_))
+    cells_std = (cells - sc["coord_scaler"].mean_) / sc["coord_scaler"].scale_
     ex = lambda k: torch.exp(st[k])  # noqa: E731
     vs0, vs1, vt0, vt1 = (ex(f"log_{k}_variance") for k in ("spatial_0", "spatial_1", "temporal_0", "temporal_1"))
     ls0, ls1, lt0, lt1 = (ex(f"log_{k}_lengthscale") for k in ("spatial_0", "spatial_1", "temporal_0", "temporal_1"))
@@ -64,7 +78,7 @@ for f in files:
            "period_days": float(per) * td["days_per_standardized_unit"],
            "ls_t_rbf_days": float(lt0) * td["days_per_standardized_unit"]}
     for c, b in zip(COVS, st["beta"].tolist()):
-        sd = stats.loc[window, f"sd_{c}"]
+        sd = cov_sd[c]
         rec[f"beta_{c}"] = b
         rec[f"effect_{c}"] = np.exp(b) if c == "chl" else np.exp(b / sd)
 

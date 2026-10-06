@@ -1,9 +1,10 @@
-"""Pool the 10 joint-hurdle seeds (tau + sigma rule) and compare them with Red-LGCP."""
+"""Pool the 10 joint-hurdle seeds and compare them with the two-stage model.
+
+Writes per_window_per_seed_all_rules.csv (all gating rules) and per_window_per_seed_metrics.csv
+(tau + sigma rule, the one reported in the paper), used by the tables and tests in reports/.
+"""
 
 import glob
-import shutil
-import subprocess
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -15,15 +16,6 @@ OUT = Path("reports/seeded_monthly_windows_hurdle")
 RED = "reports/seeded_monthly_windows_salinity/11_train_lgcp/per_window_per_seed_metrics.csv"
 METRICS = [("mae_obs", "lower"), ("rmse_obs", "lower"), ("wasserstein", "lower"), ("accuracy", "higher"), ("f1", "higher")]
 RULES = ["nogate", "fixed", "lower", "higher"]
-
-# Seed 1 was run first with "lower" as the reported rule; reuse it with "higher" as metrics.yaml.
-seed1 = OUT / "seed_1"
-if not seed1.exists():
-    shutil.copytree("reports/hurdle_lgcp_seed1", seed1)
-    for run in glob.glob(str(seed1 / "runs/*/*/")):
-        shutil.copy(Path(run) / "metrics_higher.yaml", Path(run) / "metrics.yaml")
-    subprocess.run([sys.executable, "scripts/run_monthly_windows.py", "--aggregate-only", str(seed1)],
-                   check=True, stdout=subprocess.DEVNULL)
 
 rows = []
 for seed in range(1, 11):

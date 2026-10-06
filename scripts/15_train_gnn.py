@@ -594,7 +594,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--config",
         type=str,
-        default="config/15_gnn.yaml",
+        default="config/15_gnn_salinity_cellpoisson.yaml",
         help="Path to YAML config file.",
     )
     args = parser.parse_args()

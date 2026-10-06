@@ -12,7 +12,7 @@ computed over all (window x seed) values.
 Example:
     python scripts/run_seeded_monthly_windows.py \
         --script scripts/15_train_gnn.py \
-        --config config/15_gnn.yaml \
+        --config config/15_gnn_salinity_cellpoisson.yaml \
         --seeds 1-10 \
         --parallel 3
 """

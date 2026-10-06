@@ -1,6 +1,0 @@
-catboost_mae: 6.731587586706288
-catboost_mae_wins: 3
-catboost_rmse: 8.726923244572493
-gnn_mae: 6.880508288741112
-gnn_rmse: 9.446647450327873
-n_windows: 8

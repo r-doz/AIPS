@@ -17,15 +17,15 @@ class ActivityMetricsTests(unittest.TestCase):
 
     def test_zero_denominators(self):
         self.assertEqual(evaluate_activity_metrics([0, 0], [0, 0]),
-                         dict(accuracy=1., precision=0., recall=0.))
+                         dict(accuracy=1., precision=0., recall=0., f1=0.))
         self.assertEqual(evaluate_activity_metrics([1, 0], [0, 0]),
-                         dict(accuracy=.5, precision=0., recall=0.))
+                         dict(accuracy=.5, precision=0., recall=0., f1=0.))
         self.assertEqual(evaluate_activity_metrics([0, 0], [1, 1]),
-                         dict(accuracy=0., precision=0., recall=0.))
+                         dict(accuracy=0., precision=0., recall=0., f1=0.))
 
     def test_strict_positive_threshold(self):
         self.assertEqual(evaluate_activity_metrics([0, 1], [1e-12, .1]),
-                         dict(accuracy=.5, precision=.5, recall=1.))
+                         dict(accuracy=.5, precision=.5, recall=1., f1=2 / 3))
 
     def test_empty_and_mismatched_inputs(self):
         self.assertTrue(all(np.isnan(x) for x in evaluate_activity_metrics([], []).values()))

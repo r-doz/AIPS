@@ -13,10 +13,15 @@ trainer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(trainer)
 
 
+LGCP_CONFIGS = ['exp4_salinity.yaml', 'exp4_salinity_no_classifier.yaml',
+                'exp4_salinity_hurdle.yaml', 'exp4_salinity_hurdle_no_kernel.yaml']
+
+
 class PeriodDaysTests(unittest.TestCase):
     def test_calendar_conversion_and_model_construction(self):
-        for i in range(1, 9):
-            cfg = trainer.load_config(ROOT / f'config/exp{i}.yaml')
+        for name in LGCP_CONFIGS:
+            cfg = trainer.load_config(ROOT / 'config' / name)
+            period_days = cfg['model']['temporal_kernels'][1]['hyperparameters']['period_days']
             original = copy.deepcopy(cfg['kernel_config'])
             cutoff = np.datetime64(cfg['test_start_date'])
             days = np.arange(int((cutoff - np.datetime64('2024-01-01')).astype(int)))
@@ -25,8 +30,8 @@ class PeriodDaysTests(unittest.TestCase):
             scaler = StandardScaler().fit((days / span).astype(np.float32).reshape(-1, 1))
             resolved = trainer.resolve_period_days(original, {'t_scaler': scaler}, span)
             hp = resolved['temporal'][1]['hyperparameters']
-            week = scaler.transform(np.array([[0.0], [7 / span]]))
-            self.assertAlmostEqual(hp['period'], float(week[1, 0] - week[0, 0]))
+            period = scaler.transform(np.array([[0.0], [period_days / span]]))
+            self.assertAlmostEqual(hp['period'], float(period[1, 0] - period[0, 0]))
             self.assertEqual(cfg['kernel_config'], original)
             self.assertNotIn('period_days', hp)
             model = trainer.SparseLGCP(
@@ -36,15 +41,20 @@ class PeriodDaysTests(unittest.TestCase):
             )
             params = model.kernel_params()['temporal'][1]['params']
             self.assertAlmostEqual(float(params['period']), hp['period'], places=6)
-            self.assertFalse(params['period'].requires_grad)
+            trainable = cfg['model']['temporal_kernels'][1].get('trainable', {}).get('period', False)
+            self.assertEqual(params['period'].requires_grad, trainable)
 
     def test_legacy_period_unchanged(self):
-        cfg = trainer.load_config(ROOT / 'config/train_basic_lgcp_multi_kernel.yaml')
+        cfg = trainer.load_config(ROOT / 'config/exp4_salinity.yaml')
+        legacy = copy.deepcopy(cfg['kernel_config'])
+        hp = legacy['temporal'][1]['hyperparameters']
+        hp['period'] = 1.0
+        del hp['period_days']
         scaler = StandardScaler().fit([[0.0], [1.0]])
-        self.assertEqual(trainer.resolve_period_days(cfg['kernel_config'], {'t_scaler': scaler}, 730), cfg['kernel_config'])
+        self.assertEqual(trainer.resolve_period_days(legacy, {'t_scaler': scaler}, 730), legacy)
 
     def test_invalid_periods(self):
-        cfg = trainer.load_config(ROOT / 'config/exp1.yaml')
+        cfg = trainer.load_config(ROOT / 'config/exp4_salinity.yaml')
         block = cfg['model']['temporal_kernels'][1]
         for value in [0, -1, float('nan'), float('inf')]:
             invalid = copy.deepcopy(block)
