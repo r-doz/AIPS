@@ -161,11 +161,15 @@ LGCP learning rate and the GLM, GNN and ConvLSTM settings correspond to these se
 python -m unittest discover -s tests
 ```
 
-## Data sources
+## Data sources and licenses
 
 - Copernicus Marine Service, Mediterranean Sea physics and biogeochemistry products (sea temperature,
-  salinity, chlorophyll-a).
-- Global Fishing Watch, AIS-based apparent fishing effort.
-- Global Fishing Watch, vessel detections from Sentinel-2 imagery (Zenodo, doi:10.5281/zenodo.15978308).
+  salinity, chlorophyll-a), distributed under the Copernicus Marine Service licence.
+- Global Fishing Watch, AIS-based apparent fishing effort, licensed under CC BY-NC 4.0 (non-commercial
+  use with attribution; Copyright 2026, Global Fishing Watch, Inc., https://globalfishingwatch.org).
+- Global Fishing Watch, vessel detections from Sentinel-2 imagery (Zenodo, doi:10.5281/zenodo.15978308),
+  released under CC0.
 
-Please cite the data providers as indicated in the paper when using the data.
+Because they include Global Fishing Watch data, the processed datasets may be used for non-commercial
+purposes only, under CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/). Please cite the
+data providers as indicated in the paper when using the data.

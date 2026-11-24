@@ -1,0 +1,13 @@
+models:
+- ConvLSTM
+- GCMP
+- GLM
+- GNN
+- GNN (rerun)
+- LAP
+rows: 122108
+minutes: 12.4
+configs:
+  GLM: config/14_window_poisson_glm_salinity.yaml
+  GNN: config/15_gnn_salinity_cellpoisson.yaml
+  ConvLSTM: config/18_convlstm_salinity.yaml

@@ -1,0 +1,24 @@
+config: config/rebuttal/r1_gnn_hurdle.yaml
+head: hurdle
+grid:
+  hidden_dim:
+  - 16
+  - 32
+  - 64
+  num_layers:
+  - 1
+  - 2
+  - 3
+  lr:
+  - 0.0001
+  - 0.001
+  - 0.01
+  - 0.1
+seed: 0
+criterion: App. B.2 relative score (mean_ll_obs, rmse_daily)
+selected:
+  hidden_dim: 64
+  num_layers: 1
+  lr: 0.1
+score: 0.936076762236298
+minutes: 4.7

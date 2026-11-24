@@ -1,0 +1,23 @@
+spatial:
+- type: rbf
+  params:
+    lengthscale: 0.19999998807907104
+    variance: 1.5666526556015015
+- type: rbf
+  params:
+    lengthscale: 0.009999999776482582
+    variance: 0.25654181838035583
+temporal:
+- type: rbf
+  params:
+    lengthscale: 0.009999999776482582
+    variance: 0.20884743332862854
+- type: periodic
+  params:
+    lengthscale: 0.800000011920929
+    variance: 0.2640654444694519
+    period: 0.07172951847314835
+spatial_composition: sum
+temporal_composition: sum
+spacetime_composition: product
+noise_var: 0.0009999999310821295

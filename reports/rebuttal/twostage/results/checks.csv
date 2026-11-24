@@ -1,0 +1,8 @@
+,value
+S0 log-lik. recomputed vs Table 5 (max abs gap),4.266095499183553e-05
+S0 CRPS recomputed vs Table 5 (max abs gap),1.342015001248864e-05
+S0 MAE recomputed with the retrained gate classifier vs saved (max abs gap),0.0017635556456009338
+S0 MAE recomputed vs saved (mean abs gap),0.0004257364152869834
+S0 gate decisions reproduced (min share of cell-days per run),1.0
+S0 gate decisions reproduced (mean share),1.0
+rows with extended pmf support (total),0.0

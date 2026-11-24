@@ -1,0 +1,17 @@
+config: config/rebuttal/r1_convlstm_lag.yaml
+head: poisson
+grid:
+  seq_length:
+  - 3
+  - 7
+  - 14
+  lr:
+  - 0.001
+  - 0.01
+seed: 0
+criterion: mean log-likelihood over the 4 validation weeks
+selected:
+  seq_length: 7
+  lr: 0.01
+score: -0.4999828364813693
+minutes: 4.6

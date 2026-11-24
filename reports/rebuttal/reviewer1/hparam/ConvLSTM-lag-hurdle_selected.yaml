@@ -1,0 +1,17 @@
+config: config/rebuttal/r1_convlstm_lag.yaml
+head: hurdle
+grid:
+  seq_length:
+  - 3
+  - 7
+  - 14
+  lr:
+  - 0.001
+  - 0.01
+seed: 0
+criterion: mean log-likelihood over the 4 validation weeks
+selected:
+  seq_length: 3
+  lr: 0.01
+score: -0.4449729504683574
+minutes: 4.4

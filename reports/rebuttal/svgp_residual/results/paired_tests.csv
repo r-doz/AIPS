@@ -1,0 +1,29 @@
+comparison,metric,mean_a,mean_b,weeks_won,p
+SVGP (retrained) vs SoR (retrained),log_lik,-0.44585603474123453,-0.4484888280184468,6,0.078125
+SVGP (retrained) vs SoR (retrained),crps,0.20912432827011085,0.20790709230664028,2,0.078125
+SVGP (retrained) vs SoR (retrained),mae_obs,0.2863909764925904,0.2844255602192054,3,0.1953125
+SVGP (retrained) vs SoR (retrained),rmse_obs,0.9241191799504148,0.9089873401694977,0,0.0078125
+SVGP (retrained) vs SoR (retrained),wasserstein,0.09460074138374924,0.09319919478915686,3,0.1953125
+SVGP (retrained) vs SoR (retrained),accuracy,0.9058673469387755,0.9053571428571429,3,0.84375
+SVGP (retrained) vs SoR (retrained),f1,0.6100530877598925,0.6077547621426957,3,0.84375
+SVGP (retrained) vs SoR (paper),log_lik,-0.44585603474123453,-0.4482860746724735,6,0.078125
+SVGP (retrained) vs SoR (paper),crps,0.20912432827011085,0.2080314797152829,1,0.0546875
+SVGP (retrained) vs SoR (paper),mae_obs,0.2863909764925904,0.2844172259147162,2,0.3125
+SVGP (retrained) vs SoR (paper),rmse_obs,0.9241191799504148,0.91076691783701,1,0.109375
+SVGP (retrained) vs SoR (paper),wasserstein,0.09460074138374924,0.09296923068017549,3,0.109375
+SVGP (retrained) vs SoR (paper),accuracy,0.9058673469387755,0.9056851311953353,4,0.84375
+SVGP (retrained) vs SoR (paper),f1,0.6100530877598925,0.6089598814472206,4,0.84375
+SoR + residual at prediction vs SoR (paper),log_lik,-0.4513947702695148,-0.4482860746724735,2,0.25
+SoR + residual at prediction vs SoR (paper),crps,0.2128837549101073,0.2080314797152829,1,0.015625
+SoR + residual at prediction vs SoR (paper),mae_obs,0.33591797573500326,0.2844172259147162,0,0.0078125
+SoR + residual at prediction vs SoR (paper),rmse_obs,1.1099544901792622,0.91076691783701,0,0.0078125
+SoR + residual at prediction vs SoR (paper),wasserstein,0.10184170671645462,0.09296923068017549,4,0.84375
+SoR + residual at prediction vs SoR (paper),accuracy,0.9056851311953353,0.9056851311953353,0,
+SoR + residual at prediction vs SoR (paper),f1,0.6089598814472206,0.6089598814472206,0,
+SoR (retrained) vs SoR (paper),log_lik,-0.4484888280184468,-0.4482860746724735,5,1.0
+SoR (retrained) vs SoR (paper),crps,0.20790709230664028,0.2080314797152829,5,0.546875
+SoR (retrained) vs SoR (paper),mae_obs,0.2844255602192054,0.2844172259147162,4,0.7421875
+SoR (retrained) vs SoR (paper),rmse_obs,0.9089873401694977,0.91076691783701,6,0.3828125
+SoR (retrained) vs SoR (paper),wasserstein,0.09319919478915686,0.09296923068017549,4,1.0
+SoR (retrained) vs SoR (paper),accuracy,0.9053571428571429,0.9056851311953353,2,0.25
+SoR (retrained) vs SoR (paper),f1,0.6077547621426957,0.6089598814472206,2,0.1953125
