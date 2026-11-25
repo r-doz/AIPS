@@ -1,0 +1,69 @@
+year: 2024
+
+region:
+  name: Ebro Delta
+  identifier: ebro
+  country: Spain
+  country_iso2: ES
+  country_iso3: ESP
+  administrative_region: Catalonia
+  timezone: Europe/Madrid
+  sea: Mediterranean Sea
+
+area:
+  minimum_longitude: 0.85
+  maximum_longitude: 1.30
+  minimum_latitude: 40.45
+  maximum_latitude: 40.78
+
+dates:
+  start_month: "01"
+  start_day: "01"
+  end_month: "12"
+  end_day: "31"
+
+paths:
+  raw: data/raw/ebro
+  interim: data/interim/ebro
+  processed: data/processed/ebro
+  secrets: secrets
+
+static_files:
+  gulf_coords: null
+  marine_bounds: null
+
+calendar:
+  country: ES
+  subdivision: CT
+  fishing_block:
+    enabled: false
+
+copernicus:
+  products:
+    - cmems_mod_med_phy-temp_my_4.2km_P1D-m
+    - cmems_mod_med_bgc-plankton_my_4.2km_P1D-m
+  min_depth: 0.0
+  max_depth: 1.5
+  remove_nc_after_conversion: true
+  overwrite: true
+  overwrite_clean: true
+
+gfw_ais:
+  product_name: public-global-fishing-effort:latest
+  flag: ESP
+  spatial_resolution: HIGH
+  temporal_resolution: DAILY
+  group_by: VESSEL_ID
+  token_file: secrets/gfw_token.txt
+  overwrite: true
+  overwrite_clean: true
+
+gfw_sar:
+  table: global-fishing-watch.pipe_sentinel2_v1_published.detect_scene_match_pipe_v3
+  output_name: s2_vessel_detections
+  key_file: secrets/gcp_bigquery_key.json
+  overwrite: true
+  overwrite_clean: true
+
+processed:
+  overwrite: true

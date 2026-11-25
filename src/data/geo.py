@@ -57,6 +57,32 @@ def filter_above_boundary(
     return filtered.drop(columns=["geometry", "above"])
 
 
+def filter_configured_marine_area(
+    df: pd.DataFrame,
+    config: dict,
+    lat_col: str = "latitude",
+    lon_col: str = "longitude",
+) -> pd.DataFrame:
+    """Apply the configured boundary line, if the region defines one."""
+    bounds_file = config.get("static_files", {}).get("marine_bounds")
+    if bounds_file is None:
+        return df.copy()
+
+    from src.data.paths import project_path
+
+    bounds_path = project_path(bounds_file)
+    if not bounds_path.exists():
+        raise FileNotFoundError(f"Marine bounds file not found: {bounds_path}")
+
+    bounds_df = pd.read_csv(bounds_path)
+    return filter_above_boundary(
+        df=df,
+        bounds_df=bounds_df,
+        lat_col=lat_col,
+        lon_col=lon_col,
+    )
+
+
 def project_to_nearest(
     coords_to_project: pd.DataFrame,
     coords_target: pd.DataFrame,

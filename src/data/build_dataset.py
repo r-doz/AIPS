@@ -1,11 +1,12 @@
+from datetime import date
 from pathlib import Path
 
-import pandas as pd
 import holidays
+import pandas as pd
 
 from src.data.config import load_config
-from src.data.paths import get_data_dirs, ensure_dir
 from src.data.geo import project_to_nearest
+from src.data.paths import ensure_dir, get_data_dirs
 
 
 def get_processed_dataset_path(config: dict) -> Path:
@@ -253,26 +254,43 @@ def add_ais_counts(
 
 def add_calendar_features(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """
-    Add Italian holidays, weekend and fishing block information.
+    Add region-configured holidays, weekend and optional fishing block features.
     """
     year = int(config["year"])
 
     df = df.copy()
     df["date"] = pd.to_datetime(df["date"])
 
-    it_holidays = holidays.country_holidays("IT", years=year)
+    calendar_config = config.get("calendar", {})
+    holiday_country = calendar_config.get("country", "IT")
+    subdivision = calendar_config.get("subdivision")
+    if subdivision:
+        region_holidays = holidays.country_holidays(
+            holiday_country,
+            years=year,
+            subdiv=subdivision,
+        )
+    else:
+        region_holidays = holidays.country_holidays(holiday_country, years=year)
 
-    df["is_holiday"] = df["date"].dt.date.isin(it_holidays)
-    df["holiday_name"] = df["date"].dt.date.map(lambda d: it_holidays.get(d))
+    df["is_holiday"] = df["date"].dt.date.isin(region_holidays)
+    df["holiday_name"] = df["date"].dt.date.map(
+        lambda holiday_date: (
+            region_holidays.get(holiday_date)
+            if isinstance(holiday_date, date)
+            else None
+        )
+    )
     df["is_weekend"] = df["date"].dt.dayofweek >= 5
 
-    df["fishing_block"] = False
-
-    df.loc[
-        (df["date"] >= pd.Timestamp(f"{year}-07-31"))
-        & (df["date"] <= pd.Timestamp(f"{year}-09-13")),
-        "fishing_block",
-    ] = True
+    block_config = calendar_config.get("fishing_block", {})
+    block_years = block_config.get("years")
+    if block_config.get("enabled", True) and (
+        block_years is None or year in block_years
+    ):
+        block_start = pd.Timestamp(f"{year}-{block_config.get('start', '07-31')}")
+        block_end = pd.Timestamp(f"{year}-{block_config.get('end', '09-13')}")
+        df["fishing_block"] = df["date"].between(block_start, block_end)
 
     return df
 
@@ -302,6 +320,7 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
 
     gear_cols = sorted(gear_cols)
 
+    base_cols = [col for col in base_cols if col in df.columns]
     return df[base_cols + gear_cols]
 
 
