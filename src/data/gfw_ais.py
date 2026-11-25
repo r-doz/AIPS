@@ -105,6 +105,7 @@ def download_gfw_ais_data(config: dict | None = None) -> Path:
         return output_path
 
     df = asyncio.run(_download_gfw_ais_async(config))
+    df["aips_acquired_at_utc"] = pd.Timestamp.now(tz="UTC")
 
     print(f"[INFO] Saving GFW AIS raw file: {output_path}")
     df.to_parquet(output_path, index=False)

@@ -49,7 +49,7 @@ copernicus:
   overwrite_clean: true
 
 gfw_ais:
-  product_name: public-global-fishing-effort:latest
+  product_name: public-global-fishing-effort:v4.0
   flag: ESP
   spatial_resolution: HIGH
   temporal_resolution: DAILY
