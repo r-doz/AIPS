@@ -1,0 +1,212 @@
+{
+  "year": 2025,
+  "regions": {
+    "Ebro Delta": {
+      "region": "Ebro Delta",
+      "year": 2025,
+      "processed_file": "data/processed/ebro_vGearAndFlag/cpr_gfw_2025.parquet",
+      "shape": {
+        "rows": 31390,
+        "columns": 17
+      },
+      "period": {
+        "first_date": "2025-01-01",
+        "last_date": "2025-12-31",
+        "observed_days": 365,
+        "expected_days": 365,
+        "missing_days": 0
+      },
+      "grid": {
+        "cells": 86,
+        "latitude_count": 8,
+        "longitude_count": 11,
+        "rectangular_occupancy": 0.9773,
+        "cells_per_day_min": 86,
+        "cells_per_day_max": 86,
+        "median_latitude_step_deg": 0.041667938232421875,
+        "median_longitude_step_deg": 0.041666626930236816,
+        "approx_latitude_step_km": 4.64,
+        "approx_longitude_step_km": 3.52,
+        "longitude_min": 0.875,
+        "longitude_max": 1.2916666269302368,
+        "latitude_min": 40.47916793823242,
+        "latitude_max": 40.77083206176758,
+        "all_cells_inside_configured_bbox": true,
+        "cells_outside_bbox": 0,
+        "configured_bbox_approx_km": {
+          "width": 38.0,
+          "height": 36.7,
+          "area": 1396.8
+        }
+      },
+      "integrity": {
+        "duplicate_date_cell_keys": 0,
+        "missing_core_values": {
+          "chl": 0,
+          "thetao": 0,
+          "salinity": 0,
+          "ais_vessels_count": 0,
+          "sar_vessels_count": 0
+        }
+      },
+      "ais": {
+        "configured_group_by": "FLAGANDGEARTYPE",
+        "configured_dataset": "public-global-fishing-effort:v4.0",
+        "raw_report_versions": [
+          "public-global-fishing-effort:v4.0"
+        ],
+        "total_count": 13128,
+        "active_cell_days": 4709,
+        "active_cell_day_rate": 0.15,
+        "count_per_cell_day": 0.4182,
+        "gear_columns": [
+          "DRIFTING_LONGLINES",
+          "FISHING",
+          "FIXED_GEAR",
+          "OTHER_PURSE_SEINES",
+          "SET_GILLNETS",
+          "TRAWLERS"
+        ],
+        "gear_count_sum_equals_ais_total_per_row": true
+      },
+      "satellite": {
+        "total_count": 640,
+        "active_cell_days": 526
+      },
+      "features": {
+        "columns": [
+          "date",
+          "is_holiday",
+          "holiday_name",
+          "is_weekend",
+          "latitude",
+          "longitude",
+          "chl",
+          "thetao",
+          "salinity",
+          "sar_vessels_count",
+          "ais_vessels_count",
+          "DRIFTING_LONGLINES",
+          "FISHING",
+          "FIXED_GEAR",
+          "OTHER_PURSE_SEINES",
+          "SET_GILLNETS",
+          "TRAWLERS"
+        ],
+        "calendar_features": [
+          "is_holiday",
+          "holiday_name",
+          "is_weekend"
+        ],
+        "holiday_country": "ES",
+        "holiday_subdivision": "CT"
+      }
+    },
+    "Trieste": {
+      "region": "Trieste",
+      "year": 2025,
+      "processed_file": "data/processed/cpr_gfw_2025.parquet",
+      "shape": {
+        "rows": 17885,
+        "columns": 15
+      },
+      "period": {
+        "first_date": "2025-01-01",
+        "last_date": "2025-12-31",
+        "observed_days": 365,
+        "expected_days": 365,
+        "missing_days": 0
+      },
+      "grid": {
+        "cells": 49,
+        "latitude_count": 7,
+        "longitude_count": 14,
+        "rectangular_occupancy": 0.5,
+        "cells_per_day_min": 49,
+        "cells_per_day_max": 49,
+        "median_latitude_step_deg": 0.041667938232421875,
+        "median_longitude_step_deg": 0.04166698455810547,
+        "approx_latitude_step_km": 4.64,
+        "approx_longitude_step_km": 3.24,
+        "longitude_min": 13.166666984558105,
+        "longitude_max": 13.708333015441895,
+        "latitude_min": 45.47916793823242,
+        "latitude_max": 45.72916793823242,
+        "all_cells_inside_configured_bbox": true,
+        "cells_outside_bbox": 0,
+        "configured_bbox_approx_km": {
+          "width": 53.1,
+          "height": 37.6,
+          "area": 1999.4
+        }
+      },
+      "integrity": {
+        "duplicate_date_cell_keys": 0,
+        "missing_core_values": {
+          "chl": 0,
+          "thetao": 0,
+          "ais_vessels_count": 0,
+          "sar_vessels_count": 0
+        }
+      },
+      "ais": {
+        "configured_group_by": "VESSEL_ID",
+        "configured_dataset": "public-global-fishing-effort:latest",
+        "raw_report_versions": [
+          "public-global-fishing-effort:v4.0"
+        ],
+        "total_count": 4818,
+        "active_cell_days": 1923,
+        "active_cell_day_rate": 0.1075,
+        "count_per_cell_day": 0.2694,
+        "gear_columns": [
+          "DREDGE_FISHING",
+          "FISHING",
+          "NA",
+          "TRAWLERS"
+        ],
+        "gear_count_sum_equals_ais_total_per_row": true
+      },
+      "satellite": {
+        "total_count": 4276,
+        "active_cell_days": 1286
+      },
+      "features": {
+        "columns": [
+          "date",
+          "is_holiday",
+          "holiday_name",
+          "is_weekend",
+          "fishing_block",
+          "latitude",
+          "longitude",
+          "chl",
+          "thetao",
+          "sar_vessels_count",
+          "ais_vessels_count",
+          "DREDGE_FISHING",
+          "FISHING",
+          "NA",
+          "TRAWLERS"
+        ],
+        "calendar_features": [
+          "is_holiday",
+          "holiday_name",
+          "is_weekend",
+          "fishing_block"
+        ],
+        "holiday_country": "IT",
+        "holiday_subdivision": null
+      }
+    }
+  },
+  "comparison": {
+    "same_gfw_effort_version": true,
+    "same_ais_grouping": false,
+    "common_gear_columns": [
+      "FISHING",
+      "TRAWLERS"
+    ],
+    "same_calendar_country": false
+  }
+}
