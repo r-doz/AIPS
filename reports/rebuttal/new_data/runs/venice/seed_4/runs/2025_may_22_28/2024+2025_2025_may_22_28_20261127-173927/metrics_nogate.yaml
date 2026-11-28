@@ -1,0 +1,13 @@
+accuracy: 0.35
+daily_delta_corr: 0.8047812575063724
+daily_direction_accuracy_moving: 0.5
+f1: 0.5185185185185185
+mae_daily: 35.56037562234061
+mae_obs: 0.9447412195548948
+mean_ll_daily: -18.764312490286834
+mean_ll_obs: -1.2113960501350538
+precision: 0.35
+recall: 1.0
+rmse_daily: 48.095959552545395
+rmse_obs: 1.5457586888796002
+wasserstein: 0.6282368004743364

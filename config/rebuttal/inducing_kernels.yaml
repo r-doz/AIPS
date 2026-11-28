@@ -1,0 +1,76 @@
+# Inducing-point and kernel ablation of Red-LGCP (rebuttal).
+# Every variant starts from the definitive per-run configs of Red-LGCP (config/exp4_salinity_hurdle.yaml,
+# reports/seeded_monthly_windows_hurdle/seed_*/configs) and changes only the keys given here; seeds,
+# windows, optimizer, classifier and gate are the paper's. The paper's model is M = 300 with the kernel
+#   (RBF l=0.2 + RBF l=0.01) in space  x  (RBF l=0.01 + periodic l=0.8, period 14 d) in time,
+# lengthscales fixed, variances and period learned (its runs are not retrained).
+# Used by scripts/rebuttal/ik_make_configs.py.
+
+kernel_blocks:
+  space_broad: &space_broad
+    type: RBF
+    hyperparameters: {lengthscale: 0.2, variance: 2.0}
+    trainable: {lengthscale: false, variance: true}
+  space_local: &space_local
+    type: RBF
+    hyperparameters: {lengthscale: 0.01, variance: 0.5}
+    trainable: {lengthscale: false, variance: true}
+  time_short: &time_short
+    type: RBF
+    hyperparameters: {lengthscale: 0.01, variance: 0.5}
+    trainable: {lengthscale: false, variance: true}
+  time_periodic: &time_periodic
+    type: periodic
+    hyperparameters: {lengthscale: 0.8, variance: 0.2, period_days: 14}
+    trainable: {lengthscale: false, variance: true, period: true}
+  time_constant: &time_constant   # lengthscale 1000 standardized time units: constant over the 2 years
+    type: RBF
+    hyperparameters: {lengthscale: 1000.0, variance: 1.0}
+    trainable: {lengthscale: false, variance: true}
+
+inducing_points:          # M_inducing; the paper uses 300
+  M50: 50
+  M100: 100
+  M200: 200
+  M500: 500
+  M1000: 1000
+
+# Kernels whose K_uu is near-singular with this data (smallest eigenvalue at the 1e-3 nugget at initialization,
+# condition number > 1e3: with 49 cells, a static or additive kernel has rank <= 49 + number of distinct days,
+# and periodic-only time kernels repeat every 14 days) are trained and scored in float64 (dtype: float64);
+# float32 Cholesky is unreliable for them (it failed for the static field within 30 steps). All other
+# variants use float32 as in the paper.
+kernels:                  # replaces model.spatial_kernels, model.temporal_kernels, model.spacetime_composition
+  no_local_space:
+    label: "w/o local spatial RBF"
+    spatial_kernels: [*space_broad]
+    temporal_kernels: [*time_short, *time_periodic]
+    spacetime_composition: product
+  no_broad_space:
+    label: "w/o broad spatial RBF"
+    spatial_kernels: [*space_local]
+    temporal_kernels: [*time_short, *time_periodic]
+    spacetime_composition: product
+  no_short_time:
+    label: "w/o short-term temporal RBF"
+    spatial_kernels: [*space_broad, *space_local]
+    temporal_kernels: [*time_periodic]
+    spacetime_composition: product
+    dtype: float64
+  no_periodic:
+    label: "w/o periodic"
+    spatial_kernels: [*space_broad, *space_local]
+    temporal_kernels: [*time_short]
+    spacetime_composition: product
+  space_only:
+    label: "space only (static field)"
+    spatial_kernels: [*space_broad, *space_local]
+    temporal_kernels: [*time_constant]
+    spacetime_composition: product
+    dtype: float64
+  additive:
+    label: "space + time (additive)"
+    spatial_kernels: [*space_broad, *space_local]
+    temporal_kernels: [*time_short, *time_periodic]
+    spacetime_composition: sum
+    dtype: float64
