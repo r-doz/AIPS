@@ -105,6 +105,7 @@ def download_gfw_ais_data(config: dict | None = None) -> Path:
         return output_path
 
     df = asyncio.run(_download_gfw_ais_async(config))
+    df["aips_acquired_at_utc"] = pd.Timestamp.now(tz="UTC")
 
     print(f"[INFO] Saving GFW AIS raw file: {output_path}")
     df.to_parquet(output_path, index=False)
@@ -142,8 +143,8 @@ def clean_gfw_ais_data(config: dict | None = None) -> Path:
     Steps:
     - drop unnecessary metadata columns;
     - rename lat/lon to latitude/longitude;
-    - keep Italian vessels only;
-    - keep only points above the Italy marine boundary;
+    - keep vessels matching the configured flag;
+    - apply the configured marine boundary, if present;
     - save to data/interim/gfw_ais.
     """
     if config is None:
@@ -160,11 +161,6 @@ def clean_gfw_ais_data(config: dict | None = None) -> Path:
 
     if not raw_path.exists():
         raise FileNotFoundError(f"Raw GFW AIS file not found: {raw_path}")
-
-    bounds_path = project_path(config["static_files"]["marine_bounds"])
-
-    if not bounds_path.exists():
-        raise FileNotFoundError(f"Marine bounds file not found: {bounds_path}")
 
     print("[START] Cleaning GFW AIS data")
 
@@ -208,15 +204,14 @@ def clean_gfw_ais_data(config: dict | None = None) -> Path:
 
     df = df[cols]
 
-    df = df[df["flag"] == "ITA"].copy()
+    flag = config["gfw_ais"].get("flag", "ITA")
+    df = df[df["flag"] == flag].copy()
 
-    bounds_df = pd.read_csv(bounds_path)
+    from src.data.geo import filter_configured_marine_area
 
-    from src.data.geo import filter_above_boundary
-
-    df = filter_above_boundary(
+    df = filter_configured_marine_area(
         df=df,
-        bounds_df=bounds_df,
+        config=config,
         lat_col="latitude",
         lon_col="longitude",
     )

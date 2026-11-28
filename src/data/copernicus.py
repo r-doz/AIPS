@@ -160,7 +160,7 @@ def clean_copernicus_product(
     - check that only one depth level is present;
     - drop depth;
     - rename time to date;
-    - keep only points above the Italy marine boundary;
+    - apply the configured marine boundary, if present;
     - save to data/interim/copernicus.
     """
     if config is None:
@@ -189,16 +189,6 @@ def clean_copernicus_product(
     if not raw_path.exists():
         raise FileNotFoundError(f"Raw Copernicus file not found: {raw_path}")
 
-    bounds_path = Path(config["static_files"]["marine_bounds"])
-
-    if not bounds_path.is_absolute():
-        from src.data.paths import project_path
-
-        bounds_path = project_path(bounds_path)
-
-    if not bounds_path.exists():
-        raise FileNotFoundError(f"Marine bounds file not found: {bounds_path}")
-
     print(f"[START] Cleaning Copernicus product: {product_name}")
 
     df = pd.read_parquet(raw_path)
@@ -213,13 +203,11 @@ def clean_copernicus_product(
 
     df = df.rename(columns={"time": "date"})
 
-    bounds_df = pd.read_csv(bounds_path)
+    from src.data.geo import filter_configured_marine_area
 
-    from src.data.geo import filter_above_boundary
-
-    df = filter_above_boundary(
+    df = filter_configured_marine_area(
         df=df,
-        bounds_df=bounds_df,
+        config=config,
         lat_col="latitude",
         lon_col="longitude",
     )

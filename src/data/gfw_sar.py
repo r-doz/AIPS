@@ -200,7 +200,7 @@ def clean_gfw_sar_data(config: dict | None = None) -> Path:
     - rename detect_lat/detect_lon to latitude/longitude;
     - apply quality filters;
     - drop filtering metadata columns;
-    - keep only points above the Italy marine boundary;
+    - apply the configured marine boundary, if present;
     - save to data/interim/gfw_sar.
     """
     if config is None:
@@ -217,11 +217,6 @@ def clean_gfw_sar_data(config: dict | None = None) -> Path:
 
     if not raw_path.exists():
         raise FileNotFoundError(f"Raw GFW SAR file not found: {raw_path}")
-
-    bounds_path = project_path(config["static_files"]["marine_bounds"])
-
-    if not bounds_path.exists():
-        raise FileNotFoundError(f"Marine bounds file not found: {bounds_path}")
 
     print("[START] Cleaning GFW SAR data")
 
@@ -293,13 +288,11 @@ def clean_gfw_sar_data(config: dict | None = None) -> Path:
 
     df = df.drop(columns=cols_to_drop)
 
-    bounds_df = pd.read_csv(bounds_path)
+    from src.data.geo import filter_configured_marine_area
 
-    from src.data.geo import filter_above_boundary
-
-    df = filter_above_boundary(
+    df = filter_configured_marine_area(
         df=df,
-        bounds_df=bounds_df,
+        config=config,
         lat_col="latitude",
         lon_col="longitude",
     )

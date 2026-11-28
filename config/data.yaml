@@ -22,6 +22,15 @@ static_files:
   gulf_coords: data/raw/ts_gulf_coords.csv
   marine_bounds: data/raw/italy_marine_bounds.csv
 
+calendar:
+  country: IT
+  subdivision: null
+  fishing_block:
+    enabled: true
+    start: "07-31"
+    end: "09-13"
+    years: [2024]
+
 copernicus:
   products:
     - cmems_mod_med_phy-temp_my_4.2km_P1D-m
@@ -36,6 +45,7 @@ copernicus:
 
 gfw_ais:
   product_name: public-global-fishing-effort:latest
+  flag: ITA
   spatial_resolution: HIGH
   temporal_resolution: DAILY
   group_by: VESSEL_ID
